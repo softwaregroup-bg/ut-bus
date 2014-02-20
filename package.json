@@ -1,0 +1,7 @@
+{
+  "name": "ut-bus",
+  "version": "5.0.0",
+  "dependencies": {
+    "multitransport-jsonrpc": "~0.4.0"
+  }
+}
