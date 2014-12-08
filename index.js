@@ -57,7 +57,8 @@
                                     var path = fn.split('.');
                                     var last = path.pop();
                                     path.reduce(function(prev, current) {
-                                        return (prev[current] = {});
+                                        if (!prev.hasOwnProperty(current)) prev[current]={};
+                                        return (prev[current]);
                                     }, rpc)[last] = adapt(cur, fn);
                                 });
                                 resolve(result);
@@ -116,13 +117,13 @@
             if (methods instanceof Array) {
                 methods.forEach(function(fn) {
                     if (fn.name) {
-                        this.server.register(fn.name, adapt(null, fn));
+                        this.server.register(this.id + '.' + fn.name, adapt(null, fn));
                     }
                 }.bind(this));
             } else {
                 Object.keys(methods).forEach(function(key) {
                     if (methods[key] instanceof Function) {
-                        this.server.register(key, adapt(methods, methods[key]));
+                        this.server.register(this.id + '.' + key, adapt(methods, methods[key]));
                     }
                 }.bind(this));
             }

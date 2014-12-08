@@ -7,7 +7,7 @@ m = wire({
         properties:{
             serverPort:3000,
             clientPort:3001,
-            id:'bus1'
+            id:'bus'
         }
     },
     bus2:{
@@ -16,23 +16,23 @@ m = wire({
         properties:{
             serverPort:3001,
             clientPort:3000,
-            id:'bus2'
+            id:'port'
         }
     }
 }, {require:require});
 
 m.then(function(c) {
     x = c;
-    fn1 = function() {c.bus2.rpc.test.m1('bus2').then(function(result) {console.log(result);});};
-    fn2 = function() {c.bus2.rpc.m2('bus2').then(function(result) {console.log(result);});};
-    fn3 = function() {c.bus1.rpc.m3('bus1').then(function(result) {console.log(result);});};
+    fn1 = function() {c.bus2.rpc.bus.test.m1('bus2').then(function(result) {console.log(result);});};
+    fn2 = function() {c.bus2.rpc.bus.m2('bus2').then(function(result) {console.log(result);});};
+    fn3 = function() {c.bus1.rpc.port.m3('bus1').then(function(result) {console.log(result);});};
     c.bus1.register({
-        'test.m1':function(test) { return 'bus1(test):' + test;},
-        m2:function(test) { return 'bus1:' + test;}
+        'test.m1':function(test) { return 'test.m1 invoked with argument ' + test;},
+        m2:function(test) { return 'm2 invoked with argument ' + test;}
     }).then(function(r) {
         console.log(r);
         return c.bus2.register({
-            m3:function(test) { return 'bus2:' + test;}
+            m3:function(test) { return 'm3 invoked with argument ' + test;}
         });
     }).then(function(r) {
         console.log(r);
