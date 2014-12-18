@@ -1,13 +1,30 @@
 var wire = require('wire');
 
 m = wire({
+    bunyan : {
+        create : {
+            module  : 'ut-log',
+            args    : {
+                type : 'bunyan',
+                name : 'bunyan_test',
+                streams :  [
+                    {
+                        level: 'trace',
+                        stream: 'process.stdout'
+                    }
+                ]
+            }
+        }
+    },
     bus1:{
         create:'ut-bus',
         init:'init',
         properties:{
             serverPort:3000,
             clientPort:3001,
-            id:'bus'
+            id:'bus',
+            logger: {$ref : 'bunyan'},
+            logLevel: 'trace'
         }
     },
     bus2:{
@@ -16,7 +33,9 @@ m = wire({
         properties:{
             serverPort:3001,
             clientPort:3000,
-            id:'port'
+            id:'port',
+            logger: {$ref : 'bunyan'},
+            logLevel: 'trace'
         }
     }
 }, {require:require});
@@ -42,4 +61,4 @@ m.then(function(c) {
     }).catch(function(err) {
         console.log(err);
     });
-});
+}).done();

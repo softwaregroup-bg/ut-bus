@@ -7,6 +7,10 @@
         //private fields
         var clients = [];
         var server = null;
+        var logOut = '';
+        var logIn = '';
+        var level = {};
+        var log = null;
 
         return {
             //properties
@@ -14,6 +18,8 @@
             serverPort: null,
             clientPort: null,
             rpc: {},
+            logLevel : 'warn',
+            logger: null,
 
             init: function() {
                 server = new jsonrpc.server(new jsonrpc.transports.server.tcp(this.serverPort), {
@@ -22,6 +28,9 @@
                 if (this.clientPort) {
                     this.connect('localhost', this.clientPort);
                 }
+                logOut = 'out ' + this.id + ':';
+                logIn = 'in  ' + this.id + ':';
+                (log = this.logger) && (level = log.initLevels(this.logLevel));
             },
 
             reload: function(x, cb) {
@@ -81,7 +90,14 @@
             },
 
             connect: function(host, port, cb) {
-                var x = new jsonrpc.client(new jsonrpc.transports.client.tcp(host, port));
+                var transport = new jsonrpc.transports.client.tcp(host, port);
+                var x = new jsonrpc.client(transport, {namespace : this.id});
+                transport.on('outMessage', function(msg) {
+                    level.trace && log.trace(logOut + JSON.stringify(msg));
+                });
+                transport.on('message', function(msg) {
+                    level.trace && log.trace(logIn + JSON.stringify(msg));
+                });
                 x.register('reload');
                 clients.push(x);
                 if (cb) {
