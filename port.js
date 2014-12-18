@@ -20,11 +20,16 @@ Port.prototype.init = function init() {
 };
 
 Port.prototype.start = function start() {
-    this.level.info && this.log.info('port.start ' + this.config.id);
+    this.level.info && this.log.info({_opcode:'port.start', id:this.config.id, config:this.config});
 };
 
 Port.prototype.stop = function stop() {
-    this.level.info && this.log.info('port.stop ' + this.config.id);
+    this.level.info && this.log.info({_opcode:'port.stop', id:this.config.id});
+};
+
+Port.prototype.receive = function(msg) {
+    this.level.debug && this.log.debug(msg);
+    return this.config.receive && this.config.receive.call(this, msg);
 };
 
 module.exports = Port;
