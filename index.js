@@ -30,7 +30,7 @@
                 }
                 logOut = 'out ' + this.id + ':';
                 logIn = 'in  ' + this.id + ':';
-                (log = this.logger) && (level = log.initLevels(this.logLevel));
+                (log = this.logger) && (level = log.initLevels(this.logLevel, {name:this.id, context:'bus'}));
             },
 
             reload: function(x, cb) {
