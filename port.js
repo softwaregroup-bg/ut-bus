@@ -4,8 +4,8 @@ var Readable = require('readable-stream/readable');
 function Port() {
     this.logOut = '';
     this.logIn = '';
-    this.level = {};
-    this.log = null;
+    this.log = {};
+    this.logFactory = null;
     this.bus = null;
     this.queue = this.createQueue();
     this.incoming = this.receive();
@@ -15,7 +15,7 @@ function Port() {
 Port.prototype.init = function init() {
     this.logOut = 'out ' + this.config.id + ':';
     this.logIn = 'in  ' + this.config.id + ':';
-    this.log && (this.level = this.log.initLevels(this.config.logLevel, {name:this.config.id, context:this.config.type + ' port'}));
+    this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name:this.config.id, context:this.config.type + ' port'}));
 
     var methods = {};
     methods['ports.' + this.config.id + '.start'] = this.start;
@@ -26,17 +26,17 @@ Port.prototype.init = function init() {
 };
 
 Port.prototype.start = function start() {
-    this.level.info && this.level.info({_opcode:'port.start', id:this.config.id, config:this.config});
+    this.log.info && this.log.info({_opcode:'port.start', id:this.config.id, config:this.config});
 };
 
 Port.prototype.stop = function stop() {
-    this.level.info && this.level.info({_opcode:'port.stop', id:this.config.id});
+    this.log.info && this.log.info({_opcode:'port.stop', id:this.config.id});
 };
 
 Port.prototype.receive = function receive() {
     var port = this;
     return through2.obj(function receive(msg, enc, callback) {
-        port.level.debug && port.level.debug(msg);
+        port.log.debug && port.log.debug(msg);
         var err = port.config.receive && port.config.receive.call(port, msg);
         if (err) {
             callback(err);
@@ -50,7 +50,7 @@ Port.prototype.send = function send() {
     var port = this;
     return through2.obj(function send(msg, enc, callback) {
         var err = port.config.send && port.config.send.call(port, msg);
-        port.level.debug && port.level.debug(msg);
+        port.log.debug && port.log.debug(msg);
         if (err) {
             callback(err);
         } else {

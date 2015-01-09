@@ -9,8 +9,7 @@
         var server = null;
         var logOut = '';
         var logIn = '';
-        var level = {};
-        var log = null;
+        var log = {};
 
         return {
             //properties
@@ -19,7 +18,7 @@
             clientPort: null,
             rpc: {},
             logLevel : 'warn',
-            logger: null,
+            logFactory: null,
 
             init: function() {
                 server = new jsonrpc.server(new jsonrpc.transports.server.tcp(this.serverPort), {
@@ -30,7 +29,7 @@
                 }
                 logOut = 'out ' + this.id + ':';
                 logIn = 'in  ' + this.id + ':';
-                (log = this.logger) && (level = log.initLevels(this.logLevel, {name:this.id, context:'bus'}));
+                this.logFactory && (log = logFactory.createLog(this.logLevel, {name:this.id, context:'bus'}));
             },
 
             reload: function(x, cb) {
@@ -93,10 +92,10 @@
                 var transport = new jsonrpc.transports.client.tcp(host, port);
                 var x = new jsonrpc.client(transport, {namespace : this.id});
                 transport.on('outMessage', function(msg) {
-                    level.trace && log.trace(logOut + JSON.stringify(msg));
+                    log.trace && log.trace(logOut + JSON.stringify(msg));
                 });
                 transport.on('message', function(msg) {
-                    level.trace && log.trace(logIn + JSON.stringify(msg));
+                    log.trace && log.trace(logIn + JSON.stringify(msg));
                 });
                 x.register('reload');
                 clients.push(x);
