@@ -1,13 +1,38 @@
 var through2 = require('through2');
 var Readable = require('readable-stream/readable');
 
+createQueue = function queue() {
+    var q = [];
+    var r = new Readable({objectMode:true});
+    var forQueue = false;
+
+    r._read = function readQueue() {
+        if (q.length) {
+            this.push(q.shift());
+        } else {
+            forQueue = false;
+        }
+    };
+
+    r.add = function add(msg) {
+        if (forQueue) {
+            q.push(msg);
+        } else {
+            forQueue = true;
+            r.push(msg);
+        }
+    };
+
+    return r;
+};
+
 function Port() {
     this.logOut = '';
     this.logIn = '';
     this.log = {};
     this.logFactory = null;
     this.bus = null;
-    this.queue = this.createQueue();
+    this.queue = createQueue();
     this.incoming = this.receive();
     this.outgoing = this.send();
 }
@@ -61,9 +86,9 @@ Port.prototype.send = function send() {
 
 Port.prototype.pipe = function pipe(stream) {
     if (typeof this.decode === 'function') {
-        stream.pipe(this.decode()).pipe(this.incoming,{end:false});
+        stream.pipe(this.decode()).pipe(this.incoming, {end:false});
     } else {
-        stream.pipe(this.incoming,{end:false});
+        stream.pipe(this.incoming, {end:false});
     }
 
     if (typeof this.encode === 'function') {
@@ -71,31 +96,39 @@ Port.prototype.pipe = function pipe(stream) {
     } else {
         this.queue.pipe(this.outgoing).pipe(stream);
     }
+    return stream;
 };
 
-Port.prototype.createQueue = function queue() {
-    var q = [];
-    var r = new Readable({objectMode:true});
-    var forQueue = false;
+Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
+    var countActive = 0;
+    concurrency = concurrency || 10;
+    var stream = through2({objectMode:true}, function(chunk, enc, callback) {
+        countActive++;
 
-    r._read = function readQueue() {
-        if (q.length) {
-            this.push(q.shift());
-        } else {
-            forQueue = false;
+        try {
+            exec(chunk, function(err, result) {
+                countActive--;
+                stream.push(err ? err : result);
+                if (countActive + 1 === concurrency) {
+                    callback(err);
+                }
+            });
+        } catch (e) {
+            countActive--;
+            chunk._mtid = 'error';
+            chunk.error = e;
+            this.push(chunk);
+            if (countActive < concurrency) {
+                callback(e);
+            }
+            return;
         }
-    };
 
-    r.add = function add(msg) {
-        if (forQueue) {
-            q.push(msg);
-        } else {
-            forQueue = true;
-            r.push(msg);
+        if (countActive < concurrency) {
+            callback();
         }
-    };
-
-    return r;
+    });
+    return this.pipe(stream);
 };
 
 module.exports = Port;
