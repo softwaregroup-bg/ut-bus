@@ -33,10 +33,8 @@ function Port() {
     this.bus = null;
     this.queue = null;
     this.queues = {};
-    this.incoming = this.receive();
-    this.outgoing = this.send();
 
-    function getPublish(port) {
+    function getMasterPublish(port) {
         var fn = null;
         function publish(msg) {
             if (msg.$$ && typeof msg.$$.callback === 'function') {
@@ -53,8 +51,7 @@ function Port() {
         }
         return publish;
     }
-
-    this.incoming.on('data', getPublish(this));
+    this.masterPublish = getMasterPublish(this);
 }
 
 Port.prototype.init = function init() {
@@ -114,32 +111,6 @@ Port.prototype.publish = function publish(msg) {
     }
 };
 
-Port.prototype.receive = function receive() {
-    var port = this;
-    return through2.obj(function receive(msg, enc, callback) {
-        port.log.debug && port.log.debug(msg);
-        var err = port.config.receive && port.config.receive.call(port, msg);
-        if (err) {
-            callback(err);
-        } else {
-            callback(null, msg);
-        }
-    });
-};
-
-Port.prototype.send = function send() {
-    var port = this;
-    return through2.obj(function send(msg, enc, callback) {
-        var err = port.config.send && port.config.send.call(port, msg);
-        port.log.debug && port.log.debug(msg);
-        if (err) {
-            callback(err);
-        } else {
-            callback(null, msg);
-        }
-    });
-};
-
 Port.prototype.findCallback = function findCallback(context, message) {
     var $$ = message.$$;
     if ($$.trace && ($$.mtid === 'response' || $$.mtid === 'error')) {
@@ -155,7 +126,7 @@ Port.prototype.decode = function decode(context) {
     var buffer = new Buffer(0);
     var port = this;
 
-    function setConId(msg) {
+    function convert(msg) {
         if (context && context.conId) {
             if (msg.$$) {
                 msg.$$.conId = context.conId;
@@ -163,27 +134,36 @@ Port.prototype.decode = function decode(context) {
                 msg.$$ = {conId:context.conId};
             }
         }
+        port.log.debug && port.log.debug(msg);
+        port.config.receive && port.config.receive.call(port, msg, context);
         return msg;
     }
+
+    function push(stream, msg) {
+        if (port.codec) {
+            var message = port.codec.decode(msg, context);
+            port.findCallback(context, message);
+            stream.push(convert(message));
+        } else if (msg && msg.constgructor && msg.constructor.name === 'Buffer') {
+            stream.push(convert({payload: msg, $$:{mtid:'notification', opcode:'payload'}}));
+        } else {
+            stream.push(msg);
+        }
+    }
+
     return through2.obj(function decodePacket(packet, enc, callback) {
-        port.log.trace && port.log.trace({$$:{opcode:'bytes.in'}, buffer:packet});
+        port.log.trace && port.log.trace({$$:{opcode:'frameIn', frame:packet}});
 
         if (port.framePattern) {
             buffer = Buffer.concat([buffer, packet]);
             var frame;
             while (frame = port.framePattern(buffer)) {
                 buffer = frame.rest;
-                if (port.codec) {
-                    var message = port.codec.decode(frame.data, context);
-                    port.findCallback(context, message);
-                    this.push(setConId(message));
-                } else {
-                    this.push(setConId({payload: frame.data, $$:{mtid:'notification', opcode:'payload'}}));
-                }
+                push(this, frame.data);
             }
             callback();
         } else {
-            callback(null, setConId({payload:packet, $$:{mtid:'notification', opcode:'payload'}}));
+            push(this, packet);
         }
     });
 };
@@ -199,25 +179,25 @@ Port.prototype.encode = function encode(context) {
     var port = this;
 
     return through2.obj(function encodePacket(message, enc, callback) {
-        port.log.trace && port.log.trace(message);
+        port.config.send && port.config.send.call(port, message, context);
+        port.log.debug && port.log.debug(message);
         var buffer;
         var size;
         if (port.codec) {
             buffer = port.codec.encode(message, context);
             size = buffer && buffer.length;
             port.traceCallback(context, message);
-        } else if (message && message.payload) {
-            buffer = message.payload;
+        } else if (message) {
+            buffer = message;
             size = buffer && buffer.length;
-        } else {
-            buffer = null;
-            size = null;
         }
+
         if (port.frameBuilder) {
             buffer =  port.frameBuilder({size:size, data:buffer});
         }
+
         if (buffer) {
-            port.log.trace && port.log.trace({$$:{opcode:'bytes.out'}, buffer:buffer});
+            port.log.trace && port.log.trace({$$:{opcode:'frameOut', frame:buffer}});
             callback(null, buffer)
         } else {
             callback();
@@ -233,11 +213,9 @@ Port.prototype.pipe = function pipe(stream, context, useCodec) {
     } else {
         queue = this.queue = createQueue();
     }
-    if (useCodec) {
-        queue.pipe(this.outgoing).pipe(this.encode(context)).pipe(stream).pipe(this.decode(context)).pipe(this.incoming, {end:false});
-    } else {
-        queue.pipe(this.outgoing).pipe(stream).pipe(this.incoming, {end:false});
-    }
+
+    queue.pipe(this.encode(context)).pipe(stream).pipe(this.decode(context)).on('data', this.masterPublish);
+
     return stream;
 };
 
