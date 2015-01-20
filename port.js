@@ -31,7 +31,8 @@ function Port() {
     this.log = {};
     this.logFactory = null;
     this.bus = null;
-    this.queue = createQueue();
+    this.queue = null;
+    this.queues = {};
     this.incoming = this.receive();
     this.outgoing = this.send();
 
@@ -66,7 +67,7 @@ Port.prototype.init = function init() {
             call: this.call.bind(this)
         }, 'ports.' + this.config.id);
         this.bus.subscribe({
-            publish: this.queue.add
+            publish: this.publish.bind(this)
         }, 'ports.' + this.config.id);
     }
 };
@@ -93,6 +94,24 @@ Port.prototype.call = function call(message) {
         }
         this.queue.add(message);
     }.bind(this));
+};
+
+Port.prototype.publish = function publish(msg) {
+    var conId;
+    var queue;
+    if (this.queue) {
+        queue = this.queue;
+    } else
+    if (conId = (msg.$$ && msg.$$.conId)) {
+        queue = this.queues[conId];
+    } else {
+        queue = this.queue;
+    }
+    if (queue) {
+        queue.add(msg);
+    } else {
+        this.log.error && this.log.error('Queue not found', {message:msg});
+    }
 };
 
 Port.prototype.receive = function receive() {
@@ -136,6 +155,16 @@ Port.prototype.decode = function decode(context) {
     var buffer = new Buffer(0);
     var port = this;
 
+    function setConId(msg) {
+        if (context && context.conId) {
+            if (msg.$$) {
+                msg.$$.conId = context.conId;
+            } else {
+                msg.$$ = {conId:context.conId};
+            }
+        }
+        return msg;
+    }
     return through2.obj(function decodePacket(packet, enc, callback) {
         port.log.trace && port.log.trace({$$:{opcode:'bytes.in'}, buffer:packet});
 
@@ -147,14 +176,14 @@ Port.prototype.decode = function decode(context) {
                 if (port.codec) {
                     var message = port.codec.decode(frame.data, context);
                     port.findCallback(context, message);
-                    this.push(message);
+                    this.push(setConId(message));
                 } else {
-                    this.push({payload: frame.data});
+                    this.push(setConId({payload: frame.data, $$:{mtid:'notification', opcode:'payload'}}));
                 }
             }
             callback();
         } else {
-            callback(null, {payload:packet});
+            callback(null, setConId({payload:packet, $$:{mtid:'notification', opcode:'payload'}}));
         }
     });
 };
@@ -197,10 +226,17 @@ Port.prototype.encode = function encode(context) {
 };
 
 Port.prototype.pipe = function pipe(stream, context, useCodec) {
-    if (useCodec) {
-        this.queue.pipe(this.outgoing).pipe(this.encode(context)).pipe(stream).pipe(this.decode(context)).pipe(this.incoming, {end:false});
+    var queue;
+    if (context && context.conId) {
+        queue = createQueue();
+        this.queues[context.conId] = queue;
     } else {
-        this.queue.pipe(this.outgoing).pipe(stream).pipe(this.incoming, {end:false});
+        queue = this.queue = createQueue();
+    }
+    if (useCodec) {
+        queue.pipe(this.outgoing).pipe(this.encode(context)).pipe(stream).pipe(this.decode(context)).pipe(this.incoming, {end:false});
+    } else {
+        queue.pipe(this.outgoing).pipe(stream).pipe(this.incoming, {end:false});
     }
     return stream;
 };
