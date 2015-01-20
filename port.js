@@ -126,7 +126,7 @@ Port.prototype.decode = function decode(context) {
     var buffer = new Buffer(0);
     var port = this;
 
-    function convert(msg) {
+    function push(stream, msg) {
         if (context && context.conId) {
             if (msg.$$) {
                 msg.$$.conId = context.conId;
@@ -135,19 +135,20 @@ Port.prototype.decode = function decode(context) {
             }
         }
         port.log.debug && port.log.debug(msg);
-        port.config.receive && port.config.receive.call(port, msg, context);
-        return msg;
+        when(port.config.receive ? port.config.receive.call(port, msg, context) : msg).then(function(result) {
+            stream.push(result);
+        })
     }
 
-    function push(stream, msg) {
+    function convert(stream, msg) {
         if (port.codec) {
             var message = port.codec.decode(msg, context);
             port.findCallback(context, message);
-            stream.push(convert(message));
+            push(stream, message);
         } else if (msg && msg.constgructor && msg.constructor.name === 'Buffer') {
-            stream.push(convert({payload: msg, $$:{mtid:'notification', opcode:'payload'}}));
+            push(stream, {payload: msg, $$:{mtid:'notification', opcode:'payload'}});
         } else {
-            stream.push(msg);
+            push(stream, msg);
         }
     }
 
@@ -159,11 +160,12 @@ Port.prototype.decode = function decode(context) {
             var frame;
             while (frame = port.framePattern(buffer)) {
                 buffer = frame.rest;
-                push(this, frame.data);
+                convert(this, frame.data);
             }
             callback();
         } else {
-            push(this, packet);
+            convert(this, packet);
+            callback();
         }
     });
 };
@@ -178,34 +180,35 @@ Port.prototype.traceCallback = function traceCallback(context, message) {
 Port.prototype.encode = function encode(context) {
     var port = this;
 
-    return through2.obj(function encodePacket(message, enc, callback) {
-        port.config.send && port.config.send.call(port, message, context);
-        port.log.debug && port.log.debug(message);
-        var buffer;
-        var size;
-        if (port.codec) {
-            buffer = port.codec.encode(message, context);
-            size = buffer && buffer.length;
-            port.traceCallback(context, message);
-        } else if (message) {
-            buffer = message;
-            size = buffer && buffer.length;
-        }
+    return through2.obj(function encodePacket(packet, enc, callback) {
+        when(port.config.send ? port.config.send.call(port, packet, context) : packet).then(function(message) {
+            port.log.debug && port.log.debug(message);
+            var buffer;
+            var size;
+            if (port.codec) {
+                buffer = port.codec.encode(message, context);
+                size = buffer && buffer.length;
+                port.traceCallback(context, message);
+            } else if (message) {
+                buffer = message;
+                size = buffer && buffer.length;
+            }
 
-        if (port.frameBuilder) {
-            buffer =  port.frameBuilder({size:size, data:buffer});
-        }
+            if (port.frameBuilder) {
+                buffer = port.frameBuilder({size: size, data: buffer});
+            }
 
-        if (buffer) {
-            port.log.trace && port.log.trace({$$:{opcode:'frameOut', frame:buffer}});
-            callback(null, buffer)
-        } else {
-            callback();
-        }
+            if (buffer) {
+                port.log.trace && port.log.trace({$$: {opcode: 'frameOut', frame: buffer}});
+                callback(null, buffer)
+            } else {
+                callback();
+            }
+        });
     });
 };
 
-Port.prototype.pipe = function pipe(stream, context, useCodec) {
+Port.prototype.pipe = function pipe(stream, context) {
     var queue;
     if (context && context.conId) {
         queue = createQueue();
@@ -214,7 +217,9 @@ Port.prototype.pipe = function pipe(stream, context, useCodec) {
         queue = this.queue = createQueue();
     }
 
-    queue.pipe(this.encode(context)).pipe(stream).pipe(this.decode(context)).on('data', this.masterPublish);
+    [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
+        return next ? prev.pipe(next) : prev;
+    }, queue).on('data', this.masterPublish);
 
     return stream;
 };

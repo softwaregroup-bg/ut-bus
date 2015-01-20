@@ -127,10 +127,10 @@
                 var transport = new jsonrpc.transports.client.tcp(host, port);
                 var x = new jsonrpc.client(transport, {namespace : this.id});
                 transport.on('outMessage', function(msg) {
-                    log.trace && log.trace({$$:{opcode:'rpc.out'}, payload:msg});
+                    log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
                 });
                 transport.on('message', function(msg) {
-                    log.trace && log.trace({$$:{opcode:'rpc.in'}, payload:msg});
+                    log.trace && log.trace({$$:{opcode:'frameIn'}, payload:msg});
                 });
                 x.register('registerRemote');
                 clients.push(x);
