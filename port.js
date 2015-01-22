@@ -160,7 +160,7 @@ Port.prototype.decode = function decode(context) {
             var message = port.codec.decode(msg, context);
             port.findCallback(context, message);
             push(stream, message);
-        } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
+        } else if (msg && msg.constgructor && msg.constructor.name === 'Buffer') {
             push(stream, {payload: msg, $$:{mtid:'notification', opcode:'payload'}});
         } else {
             push(stream, msg);
