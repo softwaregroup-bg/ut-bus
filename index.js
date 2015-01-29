@@ -66,7 +66,14 @@
             logFactory: null,
 
             init: function() {
-                server = new jsonrpc.server(new jsonrpc.transports.server.tcp(this.serverPort), {
+                var transport = new jsonrpc.transports.server.tcp(this.serverPort);
+                transport.on('outMessage', function(msg) {
+                    log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
+                });
+                transport.on('message', function(msg) {
+                    log.trace && log.trace({$$:{opcode:'frameIn'}, payload:msg});
+                });
+                server = new jsonrpc.server(transport, {
                     registerRemote: this.registerRemote.bind(this)
                 });
                 if (this.clientPort) {
@@ -149,7 +156,6 @@
                 var pub = {};
                 var thisPub = this.pub;
                 function publish(msg) {
-                    console.log('publish', msg);
                     var d = msg.$$ && msg.$$.destination;
                     if (d) {
                         var ports;
@@ -174,15 +180,14 @@
                 var RPC = {};
                 var thisRPC = this.rpc;
                 function rpc(msg) {
-                    console.log('rpc', msg);
                     var d = msg.$$ && msg.$$.destination;
                     if (d) {
                         var ports;
                         var port;
                         var fn;
-                        if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.rpc))) {
+                        if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.call))) {
                             delete msg.$$.destination;
-                            fn(msg);
+                            return fn(msg);
                         }
                     }
                 }
@@ -202,7 +207,7 @@
                         var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
                         var callback = arguments[arguments.length - 1];
                         when(f.apply(self, args))
-                            .then(function(result) {
+                            .then(function(result,a,b,c) {
                                 callback(undefined, result);
                             })
                             .catch(function(error) {
