@@ -1,4 +1,5 @@
 var wire = require('wire');
+var when = require('when');
 
 m = wire({
     bunyan : {
@@ -19,6 +20,7 @@ m = wire({
     bus1:{
         create:'../',
         init:'init',
+        destroy: 'destroy',
         properties:{
             serverPort:3000,
             clientPort:3001,
@@ -30,6 +32,7 @@ m = wire({
     bus2:{
         create:'../',
         init:'init',
+        destroy: 'destroy',
         properties:{
             serverPort:3001,
             clientPort:3000,
@@ -42,9 +45,9 @@ m = wire({
 
 m.then(function(c) {
     x = c;
-    fn1 = function() {c.bus2.rpc.bus.test.m1('bus2').then(function(result) {console.log(result);});};
-    fn2 = function() {c.bus2.rpc.bus.m2('bus2').then(function(result) {console.log(result);});};
-    fn3 = function() {c.bus1.rpc.port.m3('bus1').then(function(result) {console.log(result);});};
+    fn1 = function() {return c.bus2.rpc.bus.test.m1('bus2').then(function(result) {console.log(result);});};
+    fn2 = function() {return c.bus2.rpc.bus.m2('bus2').then(function(result) {console.log(result);});};
+    fn3 = function() {return c.bus1.rpc.port.m3('bus1').then(function(result) {console.log(result);});};
     c.bus1.register({
         'test.m1':function(test) { return 'test.m1 invoked with argument ' + test;},
         m2:function(test) { return 'm2 invoked with argument ' + test;}
@@ -55,8 +58,8 @@ m.then(function(c) {
         });
     }).then(function(r) {
         console.log(r);
-        fn1();
-        fn2();
-        fn3();
+        when.all([fn1(), fn2(), fn3()]).then(function() {
+            c.destroy();
+        });
     }).done();
 }).done();

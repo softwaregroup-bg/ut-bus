@@ -82,6 +82,13 @@
                 this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name:this.id, context:'bus'}));
             },
 
+            destroy: function() {
+                server.shutdown();
+                clients.forEach(function(client){
+                    client.shutdown();
+                });
+            },
+
             registerRemote: function(type, methods, cb) {
                 var adapt = {rpc: function rpc(client, methodName) {
                         var fn = client && client[methodName] && (client[methodName] instanceof Function) && client[methodName];
