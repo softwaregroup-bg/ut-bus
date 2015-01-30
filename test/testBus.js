@@ -58,7 +58,5 @@ m.then(function(c) {
         fn1();
         fn2();
         fn3();
-    }).catch(function(err) {
-        console.log(err);
-    });
+    }).done();
 }).done();
