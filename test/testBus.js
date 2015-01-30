@@ -17,7 +17,7 @@ m = wire({
         }
     },
     bus1:{
-        create:'ut-bus',
+        create:'../',
         init:'init',
         properties:{
             serverPort:3000,
@@ -28,7 +28,7 @@ m = wire({
         }
     },
     bus2:{
-        create:'ut-bus',
+        create:'../',
         init:'init',
         properties:{
             serverPort:3001,
