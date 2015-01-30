@@ -41,8 +41,7 @@ function Port() {
                 var cb = msg.$$.callback;
                 delete msg.$$.callback;
                 cb(msg);
-            } else
-            if (fn) {
+            } else if (fn) {
                 return fn(msg);
             } else {
                 var bus;
@@ -56,7 +55,7 @@ function Port() {
     this.messagePublish = getMasterMethod(this, 'pub', 'publish');
     this.messageRPC = getMasterMethod(this, 'rpc', 'rpc');
     this.rpc = function rpc(method) {
-        var tokens = method.split('.', 1);
+        var tokens = method.split('.');
         var $$ = {};
         $$.destination = tokens.shift() || 'ut';
         $$.opcode = tokens.join('.') || 'rpc';
