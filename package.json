@@ -3,6 +3,7 @@
   "version": "5.0.0",
   "dependencies": {
     "multitransport-jsonrpc": "https://github.com/softwaregroup-bg/multitransport-jsonrpc/archive/master.tar.gz",
+    "ut-log": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-log.git#master"
     "readable-stream": "~1.1.13",
     "through2": "~1.1.1",
     "when": "~3.6.3",
