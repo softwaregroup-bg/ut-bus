@@ -102,7 +102,13 @@ Port.prototype.call = function call(message) {
         if (!message.$$) {
             reject(new Error('Missing message type'))
         } else {
-            message.$$.callback = resolve;
+            message.$$.callback = function(msg) {
+                if (msg.$$ && msg.$$.mtid && msg.$$.mtid != 'error') {
+                    resolve(msg);
+                }else {
+                    reject(msg);
+                }
+            };
         }
         this.queue.add(message);
     }.bind(this));
@@ -151,6 +157,7 @@ Port.prototype.decode = function decode(context) {
         }
         port.log.debug && port.log.debug(msg);
         when(port.config.receive ? port.config.receive.call(port, msg, context) : msg).then(function(result) {
+            port.findCallback(context, result);
             stream.push(result);
         })
     }
@@ -158,9 +165,8 @@ Port.prototype.decode = function decode(context) {
     function convert(stream, msg) {
         if (port.codec) {
             var message = port.codec.decode(msg, context);
-            port.findCallback(context, message);
             push(stream, message);
-        } else if (msg && msg.constgructor && msg.constructor.name === 'Buffer') {
+        } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
             push(stream, {payload: msg, $$:{mtid:'notification', opcode:'payload'}});
         } else {
             push(stream, msg);
