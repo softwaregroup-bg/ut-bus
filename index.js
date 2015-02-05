@@ -1,7 +1,7 @@
 (function(define) {define(function(require) {
     //dependencies
     var when = require('when');
-    var jsonrpc = require('multitransport-jsonrpc');
+    var jsonrpc = require('ut-multitransport-jsonrpc');
 
     return function Bus() {
         //private fields
