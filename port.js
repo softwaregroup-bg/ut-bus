@@ -34,35 +34,11 @@ function Port() {
     this.queue = null;
     this.queues = {};
 
-    function getMasterMethod(port, typeName, methodName) {
-        var fn = null;
-        function masterMethod(msg) {
-            if (msg.$$ && typeof msg.$$.callback === 'function') {
-                var cb = msg.$$.callback;
-                delete msg.$$.callback;
-                cb(msg);
-            } else if (fn) {
-                return fn(msg);
-            } else {
-                var bus;
-                var type;
-                var master;
-                return (bus = port.bus) && (type = bus[typeName]) && (master = type.master) && (fn = master[methodName]) && fn(msg)
-            }
-        }
-        return masterMethod;
-    }
-    this.messagePublish = getMasterMethod(this, 'pub', 'publish');
-    this.messageRPC = getMasterMethod(this, 'rpc', 'rpc');
-    this.rpc = function rpc(method) {
+    this.method = function method(method) {
         var tokens = method.split('.');
-        var $$ = {};
-        $$.destination = tokens.shift() || 'ut';
-        $$.opcode = tokens.join('.') || 'rpc';
-        return function(msg) {
-            msg.$$ = $$;
-            return this.messageRPC(msg);
-        }.bind(this);
+        var destination = tokens.shift() || 'ut';
+        var opcode = tokens.join('.') || 'request';
+        return this.bus.getMethod('req', 'request', destination, opcode);
     }
 }
 
@@ -70,29 +46,30 @@ Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name:this.config.id, context:this.config.type + ' port'}));
 
     if (this.bus) {
-        var methods = {rpc:{}, pub:{}};
-        methods.rpc[this.config.id + '.start'] = this.start;
-        methods.rpc[this.config.id + '.stop'] = this.stop;
+        var methods = {req:{}, pub:{}};
+        methods.req[this.config.id + '.start'] = this.start;
+        methods.req[this.config.id + '.stop'] = this.stop;
 
         (this.config.namespace || [this.config.id]).reduce(function(prev, next) {
-            prev.rpc[next + '.call'] = this.call.bind(this);
+            prev.req[next + '.call'] = this.call.bind(this);
             prev.pub[next + '.publish'] = this.publish.bind(this);
             return prev;
         }.bind(this), methods);
-        this.bus.register(methods.rpc, 'ports');
+        this.bus.register(methods.req, 'ports');
         this.bus.subscribe(methods.pub, 'ports');
+        this.messagePublish = this.bus.getMethod('pub', 'publish');
     }
 };
 
 Port.prototype.start = function start() {
     this.log.info && this.log.info({$$:{opcode:'port.start'}, id:this.config.id, config:this.config});
-    this.config.start && this.config.start.call(this);
+    this.config.start && this.config.start(this);
     return true;
 };
 
 Port.prototype.stop = function stop() {
     this.log.info && this.log.info({$$:{opcode:'port.stop'}, id:this.config.id});
-    this.config.stop && this.config.stop.call(this);
+    this.config.stop && this.config.stop(this);
     return true;
 };
 
@@ -250,11 +227,12 @@ Port.prototype.pipe = function pipe(stream, context) {
 Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var countActive = 0;
     concurrency = concurrency || 10;
+    var self = this;
     var stream = through2({objectMode:true}, function(chunk, enc, callback) {
         countActive++;
 
         try {
-            exec(chunk, function(err, result) {
+            self.exec(chunk, function(err, result) {
                 countActive--;
                 stream.push(err ? err : result);
                 if (countActive + 1 === concurrency) {

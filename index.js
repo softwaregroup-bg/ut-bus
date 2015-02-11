@@ -42,7 +42,7 @@
             return when.all(
                 when.reduce(clients, function(prev, cur) {
                     prev.push(when.promise(function(resolve, reject) {
-                        cur.registerRemote(adapt ? 'rpc' : 'pub', methodNames, function(err, res) {
+                        cur.registerRemote(adapt ? 'req' : 'pub', methodNames, function(err, res) {
                             if (err) {
                                 reject(err);
                             } else {
@@ -60,8 +60,9 @@
             id: null,
             serverPort: null,
             clientPort: null,
-            rpc: {},
+            req: {},
             pub: {},
+            local: {},
             logLevel : 'warn',
             logFactory: null,
 
@@ -90,7 +91,7 @@
             },
 
             registerRemote: function(type, methods, cb) {
-                var adapt = {rpc: function rpc(client, methodName) {
+                var adapt = {req: function req(client, methodName) {
                         var fn = client && client[methodName] && (client[methodName] instanceof Function) && client[methodName];
                         return function() {
                             if (!fn) {
@@ -183,10 +184,10 @@
              * @returns {function} rpc(msg) that executes remote procedure
              *
              */
-            getRPC: function() {
+            getRequest: function() {
                 var RPC = {};
-                var thisRPC = this.rpc;
-                function rpc(msg) {
+                var thisRPC = this.req;
+                function request(msg) {
                     var d = msg.$$ && msg.$$.destination;
                     if (d) {
                         var ports;
@@ -198,7 +199,7 @@
                         }
                     }
                 }
-                return rpc;
+                return request;
             },
 
             /**
@@ -235,6 +236,79 @@
              */
             subscribe: function(methods, namespace) {
                 return serverRegister(methods, namespace ? namespace : this.id);
+            },
+
+            registerLocal: function(methods, namespace){
+                this.local[namespace] = methods;
+            },
+
+            start: function(){
+                this.register([this.getRequest()]);
+                this.subscribe([this.getPublish()]);
+            },
+
+            getMethod: function(typeName, methodName, destination, opcode) {
+                var bus = this;
+                var fn = null;
+                var local;
+                function busMethod() {
+                    var msg = (arguments.length) ? arguments[0] : {};
+                    if (msg && msg.$$ && typeof msg.$$.callback === 'function') {
+                        var cb = msg.$$.callback;
+                        delete msg.$$.callback;
+                        return cb.apply(this, arguments);
+                    } else if (!fn) {
+                        var type;
+                        var master;
+                        (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
+                        ((type = bus[typeName]) && (master = type.master) && (fn = master[methodName]) && (local = false))
+                    };
+                    if (fn) {
+                        if (!local && destination && opcode) {
+                            (msg) || (msg = {$$:{destination:destination, opcode: opcode}});
+                            if (msg.$$ instanceof Object) {
+                                msg.$$.destination = destination;
+                                msg.$$.opcode = opcode;
+                            } else {
+                                (msg.$$ = {destination:destination, opcode: opcode})
+                            }
+                            if (!arguments.length){
+                                return fn.apply(this, [msg]);
+                            } else
+                                arguments[0] = msg;
+                        }
+                        return fn.apply(this, arguments)
+                    } else {
+                        //todo return some error
+                        return {$$:{mtid:'error',errorcode:'111',errorMessage:'Method binding failed for ' + typeName + ' ' + methodName + ' ' + destination + ' ' + opcode}}
+                    }
+                }
+                return busMethod;
+            },
+
+            importMethods: function(target, methods) {
+                var local = this.local;
+                var self = this;
+
+                function importMethod(methodName){
+                    var tokens = methodName.split('.');
+                    var destination = tokens.shift() || 'ut';
+                    var opcode = tokens.join('.') || 'request';
+                    target[methodName] = self.getMethod('req', 'request', destination, opcode);
+                }
+
+                if (methods) {
+                    methods.forEach(function (methodOrModuleName) {
+                        var i = methodOrModuleName.indexOf('.');
+                        if (i >= 0) {
+                            importMethod(methodOrModuleName)
+                        } else if (local[methodOrModuleName]) {
+                            Object.keys(local[methodOrModuleName]).forEach(function (methodName) {
+                                importMethod(methodOrModuleName + '.' + methodName)
+                            })
+                        }
+                    })
+                }
             }
         };
     }
