@@ -234,14 +234,20 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
         try {
             self.exec(chunk, function(err, result) {
                 countActive--;
-                stream.push(err ? err : result);
+                var chunkOut = err ? err : result;
+                if (chunkOut && chunk && chunk.$$ && chunk.$$.callback){
+                    (chunkOut.$$) || (chunkOut.$$ = {});
+                    chunkOut.$$.callback = chunk.$$.callback;
+                }
+                stream.push(chunkOut);
                 if (countActive + 1 === concurrency) {
                     callback(err);
                 }
             });
         } catch (e) {
             countActive--;
-            chunk._mtid = 'error';
+            (chunk.$$) || (chunk.$$ = {});
+            chunk.$$.mtid = 'error';
             chunk.error = e;
             this.push(chunk);
             if (countActive < concurrency) {
