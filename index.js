@@ -1,316 +1,265 @@
-(function(define) {define(function(require) {
-    //dependencies
-    var when = require('when');
-    var jsonrpc = require('ut-multitransport-jsonrpc');
+var through2 = require('through2');
+var Readable = require('readable-stream/readable');
+var when = require('when');
 
-    return function Bus() {
-        //private fields
-        var clients = [];
-        var server = null;
-        var log = {};
+createQueue = function queue() {
+    var q = [];
+    var r = new Readable({objectMode:true});
+    var forQueue = false;
 
-        /**
-         * Register methods available to the server and notify each client to reload the server's methods
-         *
-         * @param {object} methods object containing methods to be registered
-         * @param {string} namespace to use when registering
-         * @param {function} adapt function to adapt a promise method to callback suitable for RPC
-         * @returns {promise}
-         */
-        function serverRegister(methods, namespace, adapt) {
-            var methodNames = [];
-            if (methods instanceof Array) {
-                methods.forEach(function(fn) {
-                    if (fn instanceof Function && fn.name) {
-                        methodNames.push(namespace + '.' + fn.name);
-                        server.register(namespace + '.' + fn.name, adapt ? adapt(null, fn) : fn);
-                    }
-                }.bind(this));
-            } else {
-                Object.keys(methods).forEach(function(key) {
-                    if (methods[key] instanceof Function) {
-                        methodNames.push(namespace + '.' + key);
-                        server.register(namespace + '.' + key, adapt ? adapt(methods, methods[key]) : methods[key].bind(methods));
-                    }
-                }.bind(this));
-            }
-
-            if (!methodNames.length) {
-                return 0;
-            }
-
-            return when.all(
-                when.reduce(clients, function(prev, cur) {
-                    prev.push(when.promise(function(resolve, reject) {
-                        cur.registerRemote(adapt ? 'req' : 'pub', methodNames, function(err, res) {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve(res);
-                            }
-                        });
-                    }));
-                    return prev;
-                }, [])
-            );
+    r._read = function readQueue() {
+        if (q.length) {
+            this.push(q.shift());
+        } else {
+            forQueue = false;
         }
+    };
 
-        return {
-            //properties
-            id: null,
-            serverPort: null,
-            clientPort: null,
-            req: {},
-            pub: {},
-            local: {},
-            logLevel : 'warn',
-            logFactory: null,
+    r.add = function add(msg) {
+        if (forQueue) {
+            q.push(msg);
+        } else {
+            forQueue = true;
+            r.push(msg);
+        }
+    };
 
-            init: function() {
-                var transport = new jsonrpc.transports.server.tcp(this.serverPort);
-                transport.on('outMessage', function(msg) {
-                    log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
-                });
-                transport.on('message', function(msg) {
-                    log.trace && log.trace({$$:{opcode:'frameIn'}, payload:msg});
-                });
-                server = new jsonrpc.server(transport, {
-                    registerRemote: this.registerRemote.bind(this)
-                });
-                if (this.clientPort) {
-                    this.connect('localhost', this.clientPort);
+    return r;
+};
+
+function Port() {
+    this.log = {};
+    this.logFactory = null;
+    this.bus = null;
+    this.queue = null;
+    this.queues = {};
+
+    this.method = function method(method) {
+        var tokens = method.split('.');
+        var destination = tokens.shift() || 'ut';
+        var opcode = tokens.join('.') || 'request';
+        return this.bus.getMethod('req', 'request', destination, opcode);
+    }
+}
+
+Port.prototype.init = function init() {
+    this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name:this.config.id, context:this.config.type + ' port'}));
+
+    if (this.bus) {
+        var methods = {req:{}, pub:{}};
+        methods.req[this.config.id + '.start'] = this.start;
+        methods.req[this.config.id + '.stop'] = this.stop;
+
+        (this.config.namespace || [this.config.id]).reduce(function(prev, next) {
+            prev.req[next + '.call'] = this.call.bind(this);
+            prev.pub[next + '.publish'] = this.publish.bind(this);
+            return prev;
+        }.bind(this), methods);
+        this.messagePublish = this.bus.getMethod('pub', 'publish');
+        return when.all([this.bus.register(methods.req, 'ports'),this.bus.subscribe(methods.pub, 'ports')]);
+    }
+};
+
+Port.prototype.start = function start() {
+    this.log.info && this.log.info({$$:{opcode:'port.start'}, id:this.config.id, config:this.config});
+    this.config.start && this.config.start(this);
+    return true;
+};
+
+Port.prototype.stop = function stop() {
+    this.log.info && this.log.info({$$:{opcode:'port.stop'}, id:this.config.id});
+    this.config.stop && this.config.stop(this);
+    return true;
+};
+
+Port.prototype.call = function call(message) {
+    return when.promise(function(resolve, reject) {
+        if (!message) {
+            reject(new Error('Missing message parameter'))
+        } else
+        if (!message.$$) {
+            reject(new Error('Missing message type'))
+        } else {
+            message.$$.callback = function(msg) {
+                if (msg.$$ && msg.$$.mtid && msg.$$.mtid != 'error') {
+                    resolve(msg);
+                }else {
+                    reject(msg);
                 }
-                this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name:this.id, context:'bus'}));
-            },
+            };
+        }
+        this.queue.add(message);
+    }.bind(this));
+};
 
-            destroy: function() {
-                server.shutdown();
-                clients.forEach(function(client){
-                    client.shutdown();
-                });
-            },
+Port.prototype.publish = function publish(msg) {
+    var conId;
+    var queue;
+    if (this.queue) {
+        queue = this.queue;
+    } else
+    if (conId = (msg.$$ && msg.$$.conId)) {
+        queue = this.queues[conId];
+    } else {
+        queue = this.queue;
+    }
+    if (queue) {
+        queue.add(msg);
+    } else {
+        this.log.error && this.log.error('Queue not found', {message:msg});
+    }
+};
 
-            registerRemote: function(type, methods, cb) {
-                var adapt = {req: function req(client, methodName) {
-                        var fn = client && client[methodName] && (client[methodName] instanceof Function) && client[methodName];
-                        return function() {
-                            if (!fn) {
-                                return when.reject(new Error('Remote method "' + methodName + '" not found for object "' +
-                                    (client && client.id) ? client.id : client + '"'));
-                            }
-                            var args = Array.prototype.slice.call(arguments);
-                            return when.promise(function(resolve, reject) {
-                                args.push(function(err, res) {
-                                    if (err) {
-                                        reject(err);
-                                    } else {
-                                        resolve(res);
-                                    }
-                                });
-                                fn.apply(undefined, args);
-                            });
-                        };
-                    },
-                    pub:function subscribe(client, methodName) {
-                        return client && client[methodName];
-                    }
-                }[type];
+Port.prototype.findCallback = function findCallback(context, message) {
+    var $$ = message.$$;
+    if ($$.trace && ($$.mtid === 'response' || $$.mtid === 'error')) {
+        var x = context[$$.trace];
+        if (x) {
+            delete context[$$.trace];
+            $$.callback = x.callback;
+        }
+    }
+};
 
-                var root = this[type];
+Port.prototype.decode = function decode(context) {
+    var buffer = new Buffer(0);
+    var port = this;
 
-                if (!(methods instanceof Array)) {
-                    methods = [methods];
-                }
-                clients.forEach(function(cur) {
-                    cur.register(methods);
-                    methods.forEach(function(method) {
-                        var path = method.split('.');
-                        var last = path.pop();
-                        path.reduce(function(prev, current) {
-                            if (!prev.hasOwnProperty(current)) {
-                                prev[current] = {};
-                            }
-                            return (prev[current]);
-                        }, root)[last] = adapt(cur, method);
-                    });
-                });
-
-                cb(undefined, 'remotes registered in ' + this.id);
-            },
-
-            connect: function(host, port, cb) {
-                var transport = new jsonrpc.transports.client.tcp(host, port);
-                var x = new jsonrpc.client(transport, {namespace : this.id});
-                transport.on('outMessage', function(msg) {
-                    log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
-                });
-                transport.on('message', function(msg) {
-                    log.trace && log.trace({$$:{opcode:'frameIn'}, payload:msg});
-                });
-                x.register('registerRemote');
-                clients.push(x);
-                if (cb) {
-                    cb(null, 0);
-                }
-            },
-
-            /**
-             * Get publishing method
-             *
-             * @returns {function} publish(msg) that publishes message
-             *
-             */
-            getPublish: function() {
-                var pub = {};
-                var thisPub = this.pub;
-                function publish(msg) {
-                    var d = msg.$$ && msg.$$.destination;
-                    if (d) {
-                        var ports;
-                        var port;
-                        var fn;
-                        if ((fn = thisPub[d]) || ((ports = thisPub.ports) && (port = ports[d]) && (pub[d] = fn = port.publish))) {
-                            delete msg.$$.destination;
-                            fn(msg);
-                        }
-                    }
-                }
-                return publish;
-            },
-
-            /**
-             * Get rpc method
-             *
-             * @returns {function} rpc(msg) that executes remote procedure
-             *
-             */
-            getRequest: function() {
-                var RPC = {};
-                var thisRPC = this.req;
-                function request(msg) {
-                    var d = msg.$$ && msg.$$.destination;
-                    if (d) {
-                        var ports;
-                        var port;
-                        var fn;
-                        if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.call))) {
-                            delete msg.$$.destination;
-                            return fn(msg);
-                        }
-                    }
-                }
-                return request;
-            },
-
-            /**
-             * Register RPC methods available to the server and notify each client to reload the server's methods
-             *
-             * @param {object} methods object containing methods to be registered
-             * @param {namespace} namespace to use when registering
-             * @returns {promise}
-             */
-            register: function(methods, namespace) {
-                function adapt(self, f) {
-                    return function() {
-                        var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
-                        var callback = arguments[arguments.length - 1];
-                        when(f.apply(self, args))
-                            .then(function(result,a,b,c) {
-                                callback(undefined, result);
-                            })
-                            .catch(function(error) {
-                                callback(error);
-                            });
-                    };
-                }
-
-                return serverRegister(methods, namespace ? namespace : this.id, adapt);
-            },
-
-            /**
-             * Register subscribe methods available to the server and notify each client to reload the server's methods
-             *
-             * @param {object} methods object containing methods to be registered
-             * @param {namespace} namespace to use when registering
-             * @returns {promise}
-             */
-            subscribe: function(methods, namespace) {
-                return serverRegister(methods, namespace ? namespace : this.id);
-            },
-
-            registerLocal: function(methods, namespace){
-                this.local[namespace] = methods;
-            },
-
-            start: function(){
-                this.register([this.getRequest()]);
-                this.subscribe([this.getPublish()]);
-            },
-
-            getMethod: function(typeName, methodName, destination, opcode) {
-                var bus = this;
-                var fn = null;
-                var local;
-                function busMethod() {
-                    var msg = (arguments.length) ? arguments[0] : {};
-                    if (msg && msg.$$ && typeof msg.$$.callback === 'function') {
-                        var cb = msg.$$.callback;
-                        delete msg.$$.callback;
-                        return cb.apply(this, arguments);
-                    } else if (!fn) {
-                        var type;
-                        var master;
-                        (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
-                        ((type = bus[typeName]) && (master = type.master) && (fn = master[methodName]) && (local = false))
-                    };
-                    if (fn) {
-                        if (!local && destination && opcode) {
-                            (msg) || (msg = {$$:{destination:destination, opcode: opcode}});
-                            if (msg.$$ instanceof Object) {
-                                msg.$$.destination = destination;
-                                msg.$$.opcode = opcode;
-                            } else {
-                                (msg.$$ = {destination:destination, opcode: opcode})
-                            }
-                            if (!arguments.length){
-                                return fn.apply(this, [msg]);
-                            } else
-                                arguments[0] = msg;
-                        }
-                        return fn.apply(this, arguments)
-                    } else {
-                        //todo return some error
-                        return {$$:{mtid:'error',errorcode:'111',errorMessage:'Method binding failed for ' + typeName + ' ' + methodName + ' ' + destination + ' ' + opcode}}
-                    }
-                }
-                return busMethod;
-            },
-
-            importMethods: function(target, methods) {
-                var local = this.local;
-                var self = this;
-
-                function importMethod(methodName){
-                    var tokens = methodName.split('.');
-                    var destination = tokens.shift() || 'ut';
-                    var opcode = tokens.join('.') || 'request';
-                    target[methodName] = self.getMethod('req', 'request', destination, opcode);
-                }
-
-                if (methods) {
-                    methods.forEach(function (methodOrModuleName) {
-                        var i = methodOrModuleName.indexOf('.');
-                        if (i >= 0) {
-                            importMethod(methodOrModuleName)
-                        } else if (local[methodOrModuleName]) {
-                            Object.keys(local[methodOrModuleName]).forEach(function (methodName) {
-                                importMethod(methodOrModuleName + '.' + methodName)
-                            })
-                        }
-                    })
-                }
+    function push(stream, msg) {
+        if (context && context.conId) {
+            if (msg.$$) {
+                msg.$$.conId = context.conId;
+            } else {
+                msg.$$ = {conId:context.conId};
             }
-        };
+        }
+        port.log.debug && port.log.debug(msg);
+        when(port.config.receive ? port.config.receive.call(port, msg, context) : msg).then(function(result) {
+            port.findCallback(context, result);
+            stream.push(result);
+        })
     }
 
-});}(typeof define === 'function' && define.amd ? define : function(factory) { module.exports = factory(require); }));
+    function convert(stream, msg) {
+        if (port.codec) {
+            var message = port.codec.decode(msg, context);
+            push(stream, message);
+        } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
+            push(stream, {payload: msg, $$:{mtid:'notification', opcode:'payload'}});
+        } else {
+            push(stream, msg);
+        }
+    }
+
+    return through2.obj(function decodePacket(packet, enc, callback) {
+        port.log.trace && port.log.trace({$$:{opcode:'frameIn', frame:packet}});
+
+        if (port.framePattern) {
+            buffer = Buffer.concat([buffer, packet]);
+            var frame;
+            while (frame = port.framePattern(buffer)) {
+                buffer = frame.rest;
+                convert(this, frame.data);
+            }
+            callback();
+        } else {
+            convert(this, packet);
+            callback();
+        }
+    });
+};
+
+Port.prototype.traceCallback = function traceCallback(context, message) {
+    var $$ = message.$$;
+    if ($$.trace && $$.callback && $$.mtid === 'request') {
+        context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000};
+    }
+};
+
+Port.prototype.encode = function encode(context) {
+    var port = this;
+
+    return through2.obj(function encodePacket(packet, enc, callback) {
+        when(port.config.send ? port.config.send.call(port, packet, context) : packet).then(function(message) {
+            port.log.debug && port.log.debug(message);
+            var buffer;
+            var size;
+            if (port.codec) {
+                buffer = port.codec.encode(message, context);
+                size = buffer && buffer.length;
+                port.traceCallback(context, message);
+            } else if (message) {
+                buffer = message;
+                size = buffer && buffer.length;
+            }
+
+            if (port.frameBuilder) {
+                buffer = port.frameBuilder({size: size, data: buffer});
+            }
+
+            if (buffer) {
+                port.log.trace && port.log.trace({$$: {opcode: 'frameOut', frame: buffer}});
+                callback(null, buffer)
+            } else {
+                callback();
+            }
+        });
+    });
+};
+
+Port.prototype.pipe = function pipe(stream, context) {
+    var queue;
+    if (context && context.conId) {
+        queue = createQueue();
+        this.queues[context.conId] = queue;
+    } else {
+        queue = this.queue = createQueue();
+    }
+
+    [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
+        return next ? prev.pipe(next) : prev;
+    }, queue).on('data', this.messagePublish);
+
+    return stream;
+};
+
+Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
+    var countActive = 0;
+    concurrency = concurrency || 10;
+    var self = this;
+    var stream = through2({objectMode:true}, function(chunk, enc, callback) {
+        countActive++;
+
+        try {
+            self.exec(chunk, function(err, result) {
+                countActive--;
+                var chunkOut = err ? err : result;
+                if (chunkOut && chunk && chunk.$$ && chunk.$$.callback){
+                    (chunkOut.$$) || (chunkOut.$$ = {});
+                    chunkOut.$$.callback = chunk.$$.callback;
+                }
+                stream.push(chunkOut);
+                if (countActive + 1 === concurrency) {
+                    callback(err);
+                }
+            });
+        } catch (e) {
+            countActive--;
+            (chunk.$$) || (chunk.$$ = {});
+            chunk.$$.mtid = 'error';
+            chunk.error = e;
+            this.push(chunk);
+            if (countActive < concurrency) {
+                callback(e);
+            }
+            return;
+        }
+
+        if (countActive < concurrency) {
+            callback();
+        }
+    });
+    return this.pipe(stream);
+};
+
+module.exports = Port;
