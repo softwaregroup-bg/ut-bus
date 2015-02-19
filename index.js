@@ -139,7 +139,7 @@
             },
 
             connect: function(host, port, cb) {
-                var transport = new jsonrpc.transports.client.tcp(host, port);
+                var transport = new jsonrpc.transports.client.tcp(host, port, {timeout: 1000*2*60});
                 var x = new jsonrpc.client(transport, {namespace : this.id});
                 transport.on('outMessage', function(msg) {
                     log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
