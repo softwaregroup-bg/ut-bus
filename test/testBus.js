@@ -45,9 +45,9 @@ m = wire({
 
 m.then(function(c) {
     x = c;
-    fn1 = function() {return c.bus2.rpc.bus.test.m1('bus2').then(function(result) {console.log(result);});};
-    fn2 = function() {return c.bus2.rpc.bus.m2('bus2').then(function(result) {console.log(result);});};
-    fn3 = function() {return c.bus1.rpc.port.m3('bus1').then(function(result) {console.log(result);});};
+    fn1 = function() {return c.bus2.req.bus.test.m1('bus2').then(function(result) {console.log(result);});};
+    fn2 = function() {return c.bus2.req.bus.m2('bus2').then(function(result) {console.log(result);});};
+    fn3 = function() {return c.bus1.req.port.m3('bus1').then(function(result) {console.log(result);});};
     c.bus1.register({
         'test.m1':function(test) { return 'test.m1 invoked with argument ' + test;},
         m2:function(test) { return 'm2 invoked with argument ' + test;}
