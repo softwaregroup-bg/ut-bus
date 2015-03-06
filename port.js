@@ -62,13 +62,13 @@ Port.prototype.init = function init() {
 
 Port.prototype.start = function start() {
     this.log.info && this.log.info({$$:{opcode:'port.start'}, id:this.config.id, config:this.config});
-    this.config.start && this.config.start(this);
+    this.config.start && this.config.start.call(this);
     return true;
 };
 
 Port.prototype.stop = function stop() {
     this.log.info && this.log.info({$$:{opcode:'port.stop'}, id:this.config.id});
-    this.config.stop && this.config.stop(this);
+    this.config.stop && this.config.stop.call(this);
     return true;
 };
 
