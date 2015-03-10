@@ -2,12 +2,14 @@
     //dependencies
     var when = require('when');
     var jsonrpc = require('ut-multitransport-jsonrpc');
+    var _ = require('lodash');
 
     return function Bus() {
         //private fields
         var clients = [];
         var server = null;
         var log = {};
+        var cache = {};
 
         /**
          * Register methods available to the server and notify each client to reload the server's methods
@@ -283,6 +285,9 @@
                         return {$$:{mtid:'error',errorcode:'111',errorMessage:'Method binding failed for ' + typeName + ' ' + methodName + ' ' + destination + ' ' + opcode}}
                     }
                 }
+                if (bus.local[destination]) {
+                    _.assign(busMethod, bus.local[destination][opcode])
+                }
                 return busMethod;
             },
 
@@ -309,6 +314,16 @@
                         }
                     })
                 }
+            },
+
+            importMethod: function(methodName){
+                var result = cache[methodName];
+                if (!result){
+                    importMethods(cache, [methodName]);
+                    result = cache[methodName];
+                }
+
+                return result;
             }
         };
     }
