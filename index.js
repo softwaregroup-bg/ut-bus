@@ -319,7 +319,7 @@
             importMethod: function(methodName){
                 var result = cache[methodName];
                 if (!result){
-                    importMethods(cache, [methodName]);
+                    this.importMethods(cache, [methodName]);
                     result = cache[methodName];
                 }
 
