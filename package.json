@@ -11,7 +11,7 @@
     "lodash": "*"
   },
   "publishConfig": {
-    "registry": "http://npm.softwaregroup-bg.com"
+    "registry": "http://npm.softwaregroup-bg.com:5001"
   },
   "description": "UT bus module",
   "repository": {
