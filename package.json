@@ -9,5 +9,13 @@
     "when": "~3.7.2",
     "wire": "~0.10.9",
     "lodash": "*"
+  },
+  "publishConfig": {
+    "registry": "http://npm.softwaregroup-bg.com"
+  },
+  "description": "UT bus module",
+  "repository": {
+    "type": "git",
+    "url": "git@git.softwaregroup-bg.com:ut5/ut-bus.git"
   }
 }
