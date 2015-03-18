@@ -2,13 +2,17 @@
   "name": "ut-bus",
   "version": "5.0.0",
   "dependencies": {
-    "ut-multitransport-jsonrpc": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-multitransport-jsonrpc.git#master",
-    "ut-log": "git+ssh://git@git.softwaregroup-bg.com:ut5/ut-log.git#master",
+    "catbox": "^4.2.1",
+    "ut-multitransport-jsonrpc": "~5.0.0",
+    "ut-log": "~5.0.0",
     "readable-stream": "~1.1.13",
     "through2": "~1.1.1",
+    "lodash": "~3.0.1",
+    "readable-stream": "~1.1.13",
+    "rpc-multistream": "0.0.1",
+    "through2": "~1.1.1",
     "when": "~3.7.2",
-    "wire": "~0.10.9",
-    "lodash": "*"
+    "wire": "~0.10.10"
   },
   "publishConfig": {
     "registry": "http://npm.softwaregroup-bg.com:5001"
