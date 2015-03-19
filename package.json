@@ -2,7 +2,7 @@
   "name": "ut-bus",
   "version": "5.0.0",
   "dependencies": {
-    "catbox": "^4.2.1",
+    "catbox": "~4.2.1",
     "ut-multitransport-jsonrpc": "~5.0.0",
     "ut-log": "~5.0.0",
     "readable-stream": "~1.1.13",
