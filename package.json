@@ -7,7 +7,7 @@
     "ut-log": "~5.0.0",
     "readable-stream": "~1.1.13",
     "through2": "~1.1.1",
-    "lodash": "~3.0.1",
+    "lodash": "^3.5.0",
     "readable-stream": "~1.1.13",
     "rpc-multistream": "0.0.1",
     "through2": "~1.1.1",
