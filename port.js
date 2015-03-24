@@ -88,7 +88,11 @@ Port.prototype.call = function call(message) {
                 }
             };
         }
-        this.queue.add(message);
+        if (!this.queue) {
+            reject(new Error('No connection to '+this.config.id))
+        } else {
+            this.queue.add(message);
+        }
     }.bind(this));
 };
 
