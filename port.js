@@ -128,7 +128,6 @@ Port.prototype.findCallback = function findCallback(context, message) {
 Port.prototype.decode = function decode(context) {
     var buffer = new Buffer(0);
     var port = this;
-
     function push(stream, msg) {
         if (context && context.conId) {
             if (msg.$$) {
@@ -138,10 +137,24 @@ Port.prototype.decode = function decode(context) {
             }
         }
         port.log.debug && port.log.debug(msg);
-        when(port.config.receive ? port.config.receive.call(port, msg, context) : msg).then(function(result) {
-            port.findCallback(context, result);
-            stream.push(result);
-        })
+        var $$ = msg.$$ || {};
+        when(port.config.receive ? when.lift(port.config.receive).call(port, msg, context) : msg)
+            .then(function(result) {
+                port.findCallback(context, result);
+                stream.push(result);
+            })
+            .catch(function(err) {
+                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message}};
+                for (var prop in $$) {
+                    if($$.hasOwnProperty(prop)) {
+                        err.$$[prop] = $$[prop];
+                    }
+                }
+                err.$$.mtid = 'error';
+                port.findCallback(context, err);
+                stream.push(err);
+            })
+            .done()
     }
 
     function convert(stream, msg) {
@@ -184,30 +197,39 @@ Port.prototype.encode = function encode(context) {
     var port = this;
 
     return through2.obj(function encodePacket(packet, enc, callback) {
-        when(port.config.send ? port.config.send.call(port, packet, context) : packet).then(function(message) {
-            port.log.debug && port.log.debug(message);
-            var buffer;
-            var size;
-            if (port.codec) {
-                buffer = port.codec.encode(message, context);
-                size = buffer && buffer.length;
-                port.traceCallback(context, message);
-            } else if (message) {
-                buffer = message;
-                size = buffer && buffer.length;
-            }
+        var msgCallback = (packet.$$ && packet.$$.callback) || function() {};
+        when(port.config.send ? when.lift(port.config.send).call(port, packet, context) : packet)
+            .then(function(message) {
+                port.log.debug && port.log.debug(message);
+                var buffer;
+                var size;
+                if (port.codec) {
+                    buffer = port.codec.encode(message, context);
+                    size = buffer && buffer.length;
+                    port.traceCallback(context, message);
+                } else if (message) {
+                    buffer = message;
+                    size = buffer && buffer.length;
+                }
 
-            if (port.frameBuilder) {
-                buffer = port.frameBuilder({size: size, data: buffer});
-            }
+                if (port.frameBuilder) {
+                    buffer = port.frameBuilder({size: size, data: buffer});
+                }
 
-            if (buffer) {
-                port.log.trace && port.log.trace({$$: {opcode: 'frameOut', frame: buffer}});
-                callback(null, buffer)
-            } else {
+                if (buffer) {
+                    port.log.trace && port.log.trace({$$: {opcode: 'frameOut', frame: buffer}});
+                    callback(null, buffer)
+                } else {
+                    callback();
+                }
+            })
+            .catch(function(err){
+                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message}}
+                err.$$.mtid = 'error';
+                msgCallback(err);
                 callback();
-            }
-        });
+            })
+            .done();
     });
 };
 
