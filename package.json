@@ -9,7 +9,6 @@
     "through2": "~1.1.1",
     "lodash": "^3.5.0",
     "readable-stream": "~1.1.13",
-    "rpc-multistream": "0.0.1",
     "through2": "~1.1.1",
     "when": "~3.7.2",
     "wire": "~0.10.10"
