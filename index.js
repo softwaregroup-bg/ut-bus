@@ -24,6 +24,7 @@ module.exports = function Bus() {
                 var ports;
                 var port;
                 var fn;
+                //noinspection JSUnusedAssignment
                 if ((fn = thisPub[d]) || ((ports = thisPub.ports) && (port = ports[d]) && (pub[d] = fn = port.publish))) {
                     delete msg.$$.destination;
                     fn(msg);
@@ -47,6 +48,7 @@ module.exports = function Bus() {
                 var ports;
                 var port;
                 var fn;
+                //noinspection JSUnusedAssignment
                 if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.call))) {
                     delete msg.$$.destination;
                     return fn(msg);
@@ -259,7 +261,13 @@ module.exports = function Bus() {
         },
 
         registerLocal: function(methods, namespace) {
-            this.local[namespace] = methods;
+            if (arguments.length === 1) {
+                Object.keys(methods).forEach(function(namespace) {
+                    this.local[namespace] = methods.namespace;
+                }.bind(this));
+            } else {
+                this.local[namespace] = methods;
+            }
         },
 
         start: function() {
@@ -280,6 +288,7 @@ module.exports = function Bus() {
                 } else if (!fn) {
                     var type;
                     var master;
+                    //noinspection JSUnusedAssignment
                     (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
                     ((type = bus[typeName]) && (master = type.master) && (fn = master[methodName]) && (local = false));
                 }
@@ -295,7 +304,9 @@ module.exports = function Bus() {
                         if (!arguments.length) {
                             return fn.apply(this, [msg]);
                         } else {
-                            arguments[0] = msg;
+                            var args = Array.prototype.slice.call(arguments);
+                            args[0] = msg;
+                            return fn.apply(this, args);
                         }
                     }
                     return fn.apply(this, arguments);
