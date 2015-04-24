@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "dependencies": {
     "catbox": "~4.2.1",
     "ut-multitransport-jsonrpc": "~5.0.0",
@@ -8,8 +8,6 @@
     "readable-stream": "~1.1.13",
     "through2": "~1.1.1",
     "lodash": "^3.5.0",
-    "readable-stream": "~1.1.13",
-    "through2": "~1.1.1",
     "when": "~3.7.2",
     "wire": "~0.10.10"
   },
