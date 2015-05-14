@@ -6,6 +6,7 @@
     "ut-multitransport-jsonrpc": "~5.0.0",
     "ut-log": "~5.0.0",
     "readable-stream": "~1.1.13",
+    "reconnect-core": "^1.0.0",
     "through2": "~1.1.1",
     "lodash": "^3.5.0",
     "when": "~3.7.2",
