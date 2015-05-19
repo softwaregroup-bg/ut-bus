@@ -56,6 +56,7 @@ Port.prototype.init = function init() {
             return prev;
         }.bind(this), methods);
         this.messagePublish = this.bus.getMethod('pub', 'publish');
+        this.directPublish = this.bus.getPublish();
         return when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
     } else {
         this.messagePublish = function() {
@@ -150,7 +151,7 @@ Port.prototype.decode = function decode(context) {
                 stream.push(result);
             })
             .catch(function(err) {
-                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message}};
+                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};
                 for (var prop in $$) {
                     if ($$.hasOwnProperty(prop)) {
                         err.$$[prop] = $$[prop];
@@ -231,7 +232,7 @@ Port.prototype.encode = function encode(context) {
                 }
             })
             .catch(function(err) {
-                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message}};
+                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};
                 err.$$.mtid = 'error';
                 msgCallback(err);
                 callback();
@@ -253,6 +254,38 @@ Port.prototype.pipe = function pipe(stream, context) {
         return next ? prev.pipe(next) : prev;
     }, queue).on('data', this.messagePublish);
 
+    return stream;
+};
+
+Port.prototype.pipeReverse = function pipe2(stream, context) {
+
+    var port = this;
+    var encd = this.encode(context);
+    encd.on('data', function(msg){
+        msg.$$.callback(msg);
+    });
+    var dec = this.decode(context);
+    var st = through2.obj(function(chunk, enc, callback) {
+
+        var cbk =  chunk.$$.callback;
+        delete chunk.$$.callback;
+        port.bus.req.master.request.call(port.bus, chunk)
+            .then(function(ress){
+                ress.$$.callback = cbk;
+                st.push(ress);
+                callback();
+            }).catch(function(err){
+                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}}
+                err.$$.mtid = 'error';
+                err.$$.callback = cbk;
+                st.push(err);
+                callback();
+            })
+            .done();
+    });
+    stream.pipe(dec);
+    dec.pipe(st);
+    st.pipe(encd);
     return stream;
 };
 
