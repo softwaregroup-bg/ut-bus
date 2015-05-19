@@ -56,7 +56,6 @@ Port.prototype.init = function init() {
             return prev;
         }.bind(this), methods);
         this.messagePublish = this.bus.getMethod('pub', 'publish');
-        this.directPublish = this.bus.getPublish();
         return when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
     } else {
         this.messagePublish = function() {
