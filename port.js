@@ -282,9 +282,7 @@ Port.prototype.pipeReverse = function pipe2(stream, context) {
             })
             .done();
     });
-    stream.pipe(dec);
-    dec.pipe(st);
-    st.pipe(encd);
+    stream.pipe(dec).pipe(st).pipe(encd);
     return stream;
 };
 
