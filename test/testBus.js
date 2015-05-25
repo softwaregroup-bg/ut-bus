@@ -1,8 +1,8 @@
 var wire = require('wire');
 var when = require('when');
 
-m = wire({
-    bunyan : {
+var m = wire({
+    log : {
         create : {
             module  : 'ut-log',
             args    : {
@@ -25,7 +25,7 @@ m = wire({
             server:true,
             socket:'test',
             id:'bus',
-            logger: {$ref : 'bunyan'},
+            logFactory:{$ref:'log'},
             logLevel: 'trace'
         }
     },
@@ -37,37 +37,37 @@ m = wire({
             server:false,
             socket:'test',
             id:'port',
-            logger: {$ref : 'bunyan'},
+            logFactory:{$ref:'log'},
             logLevel: 'trace'
         }
     }
 }, {require:require});
 
 m.then(function(c) {
-    x = c;
-    fn1 = function() {return c.bus2.req.bus.test.m1('bus2').then(function(result) {console.log(result);});};
-    fn2 = function() {return c.bus2.req.bus.m2('bus2').then(function(result) {console.log(result);});};
-    fn3 = function() {return c.bus1.req.port.m3('bus1').then(function(result) {console.log(result);});};
+    global.x = c;
+    var fn1 = function() {return c.bus2.req.bus.test.m1('bus2').then(function(result) {console.log(result);});};
+    var fn2 = function() {return c.bus2.req.bus.m2('bus2').then(function(result) {console.log(result);});};
+    var fn3 = function() {return c.bus1.req.port.m3('bus1').then(function(result) {console.log(result);});};
     setTimeout(function() {
         c.bus1.register({
-            'test.m1': function (test) {
+            'test.m1': function(test) {
                 return 'test.m1 invoked with argument ' + test;
             },
-            m2: function (test) {
+            m2: function(test) {
                 return 'm2 invoked with argument ' + test;
             }
-        }).then(function (r) {
+        }).then(function(r) {
             console.log(r);
             return c.bus2.register({
-                m3: function (test) {
+                m3: function(test) {
                     return 'm3 invoked with argument ' + test;
                 }
             });
-        }).then(function (r) {
+        }).then(function(r) {
             console.log(r);
             when.all([fn1(), fn2(), fn3()]).then(function() {
                 c.destroy();
             });
         }).done();
-    },1000);
+    }, 1000);
 }).done();

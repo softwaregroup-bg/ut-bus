@@ -9,6 +9,9 @@ module.exports = function Bus() {
     var locals = [];
     var log = {};
     var cache = {};
+    var listReq = [];
+    var listPub = [];
+    var mapLocal = {};
 
     /**
      * Get publishing method
@@ -58,10 +61,34 @@ module.exports = function Bus() {
         return request;
     }
 
-    function localRegister(name, fn) {
-        locals.forEach(function(local) {
-            local.createLocalCall(name, fn);
+    function registerRemoteMethods(where, methodNames, adapt) {
+        return when.all(
+            when.reduce(where, function(prev, remote) {
+                prev.push(when.promise(function(resolve, reject) {
+                    remote.registerRemote(adapt ? 'req' : 'pub', methodNames, function(err, res) {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(res);
+                        }
+                    });
+                }));
+                return prev;
+            }, [])
+        );
+    }
+
+    function registerLocalMethods(where, methods) {
+        where.forEach(function(rpc) {
+            Object.keys(methods).forEach(function(name) {
+                rpc.createLocalCall(name, methods[name]);
+            });
         });
+    }
+
+    function localRegister(nameSpace, name, fn, adapted) {
+        adapted ? listReq.push(nameSpace + '.' + name) : listPub.push(nameSpace + '.' + name);
+        mapLocal[nameSpace + '.' + name] = fn;
     }
 
     /**
@@ -78,14 +105,14 @@ module.exports = function Bus() {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {
                     methodNames.push(namespace + '.' + fn.name);
-                    localRegister(namespace + '.' + fn.name, adapt ? adapt(null, fn) : fn);
+                    localRegister(namespace, fn.name, adapt ? adapt(null, fn) : fn, adapt);
                 }
             }.bind(this));
         } else {
             Object.keys(methods).forEach(function(key) {
                 if (methods[key] instanceof Function) {
                     methodNames.push(namespace + '.' + key);
-                    localRegister(namespace + '.' + key, adapt ? adapt(methods, methods[key]) : methods[key].bind(methods));
+                    localRegister(namespace, key, adapt ? adapt(methods, methods[key]) : methods[key].bind(methods), adapt);
                 }
             }.bind(this));
         }
@@ -93,21 +120,9 @@ module.exports = function Bus() {
         if (!methodNames.length) {
             return 0;
         }
+        registerLocalMethods(locals, mapLocal);
 
-        return when.all(
-            when.reduce(remotes, function(prev, remote) {
-                prev.push(when.promise(function(resolve, reject) {
-                    remote.registerRemote(adapt ? 'req' : 'pub', methodNames, function(err, res) {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(res);
-                        }
-                    });
-                }));
-                return prev;
-            }, [])
-        );
+        return registerRemoteMethods(remotes, methodNames, adapt);
     }
 
     return {
@@ -134,30 +149,36 @@ module.exports = function Bus() {
                 }
                 net.createServer(function(socket) {
                     socket.on('data', function(msg) {
-                        log.trace && log.trace({$$:{opcode:'frameIn'}, payload:msg});
+                        log.trace && log.trace({$$:{opcode:'frameIn', frame:msg}});
                         //console.log(self.id, msg.toString());
                     });
                     var rpc = utRPC({
-                        registerRemote: self.registerRemote.bind(self)
+                        registerRemote: self.registerRemote.bind(self, locals.length)
                     }, true);
                     locals.push(rpc);
                     rpc.on('remote', function(remote) {
                         remotes.push(remote);
+                        registerRemoteMethods([remote], listReq, true);
+                        registerRemoteMethods([remote], listPub, false);
+                        registerLocalMethods([rpc], mapLocal);
                     });
                     rpc.pipe(socket).pipe(rpc);
                 }).listen(pipe);
             } else {
                 var connection = net.createConnection(pipe, function() {
                     connection.on('data', function(msg) {
-                        log.trace && log.trace({$$:{opcode:'frameIn'}, payload:msg});
+                        log.trace && log.trace({$$:{opcode:'frameIn', frame:msg}});
                         //console.log(self.id, msg.toString());
                     });
                     var rpc = utRPC({
-                        registerRemote: self.registerRemote.bind(self)
+                        registerRemote: self.registerRemote.bind(self, locals.length)
                     }, false);
                     locals.push(rpc);
                     rpc.on('remote', function(remote) {
                         remotes.push(remote);
+                        registerRemoteMethods([remote], listReq, true);
+                        registerRemoteMethods([remote], listPub, false);
+                        registerLocalMethods([rpc], mapLocal);
                     });
                     rpc.pipe(connection).pipe(rpc);
                 });
@@ -175,13 +196,12 @@ module.exports = function Bus() {
             });
         },
 
-        registerRemote: function(type, methods, cb) {
-            var adapt = {req: function req(client, methodName) {
-                    var fn = client && client[methodName] && (client[methodName] instanceof Function) && client[methodName];
+        registerRemote: function(index, type, methods, cb) {
+            var id = this.id;
+            var adapt = {req: function req(fn) {
                     return function() {
                         if (!fn) {
-                            return when.reject(new Error('Remote method "' + methodName + '" not found for object "' +
-                                (client && client.id) ? client.id : client + '"'));
+                            return when.reject(new Error('Remote method not found for object "' + id + '"'));
                         }
                         var args = Array.prototype.slice.call(arguments);
                         return when.promise(function(resolve, reject) {
@@ -196,8 +216,8 @@ module.exports = function Bus() {
                         });
                     };
                 },
-                pub:function subscribe(client, methodName) {
-                    return client && client[methodName];
+                pub:function subscribe(fn) {
+                    return fn;
                 }
             }[type];
 
@@ -206,19 +226,18 @@ module.exports = function Bus() {
             if (!(methods instanceof Array)) {
                 methods = [methods];
             }
-            remotes.forEach(function(remote) {
-                //remote.register(methods);
-                methods.forEach(function(method) {
-                    remote[method] = remote.createRemote(method, type);
-                    var path = method.split('.');
-                    var last = path.pop();
-                    path.reduce(function(prev, current) {
-                        if (!prev.hasOwnProperty(current)) {
-                            prev[current] = {};
-                        }
-                        return (prev[current]);
-                    }, root)[last] = adapt(remote, method);
-                });
+
+            var remote = locals[index];
+            methods.forEach(function(method) {
+                var remoteMethod = remote.createRemote(method, type);
+                var path = method.split('.');
+                var last = path.pop();
+                path.reduce(function(prev, current) {
+                    if (!prev.hasOwnProperty(current)) {
+                        prev[current] = {};
+                    }
+                    return (prev[current]);
+                }, root)[last] = adapt(remoteMethod);
             });
 
             cb(undefined, 'remotes registered in ' + this.id);

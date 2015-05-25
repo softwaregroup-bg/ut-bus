@@ -59,7 +59,7 @@ Port.prototype.init = function init() {
         return when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
     } else {
         this.messagePublish = function() {
-            this.log.error && this.log.error('Cannot publish message to bus', {message:arguments});
+            this.log && this.log.error && this.log.error('Cannot publish message to bus', {message:arguments});
         };
     }
 };
