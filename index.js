@@ -290,8 +290,10 @@ module.exports = function Bus() {
         },
 
         start: function() {
-            this.register([_request(this.req)]);
-            this.subscribe([_publish(this.pub)]);
+            return when.all([
+                this.register([_request(this.req)]),
+                this.subscribe([_publish(this.pub)])
+            ]);
         },
 
         getMethod: function(typeName, methodName, destination, opcode) {
