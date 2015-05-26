@@ -137,57 +137,63 @@ module.exports = function Bus() {
         logFactory: null,
 
         init: function() {
-            var self = this;
-            var pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + this.socket : '/tmp/ut5-' +  this.socket + '.sock';
+            return when.promise(function(resolve, reject) {
+                var self = this;
+                var pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + this.socket : '/tmp/ut5-' + this.socket + '.sock';
 
-            if (this.server) {
-                if (process.platform !== 'win32') {
-                    var fs = require('fs');
-                    if (fs.existsSync(pipe)) {
-                        fs.unlinkSync(pipe);
+                if (this.server) {
+                    if (process.platform !== 'win32') {
+                        var fs = require('fs');
+                        if (fs.existsSync(pipe)) {
+                            fs.unlinkSync(pipe);
+                        }
                     }
+                    net.createServer(function (socket) {
+                        socket.on('data', function (msg) {
+                            log.trace && log.trace({$$: {opcode: 'frameIn', frame: msg}});
+                            //console.log(self.id, msg.toString());
+                        });
+                        var rpc = utRPC({
+                            registerRemote: self.registerRemote.bind(self, locals.length)
+                        }, true);
+                        locals.push(rpc);
+                        rpc.on('remote', function (remote) {
+                            remotes.push(remote);
+                            registerRemoteMethods([remote], listReq, true);
+                            registerRemoteMethods([remote], listPub, false);
+                            registerLocalMethods([rpc], mapLocal);
+                        });
+                        rpc.pipe(socket).pipe(rpc);
+                    }).listen(pipe, function(err){
+                        err ? reject(err) : resolve();
+                    });
+                } else {
+                    var connection = net.createConnection(pipe, function () {
+                        connection.on('data', function (msg) {
+                            log.trace && log.trace({$$: {opcode: 'frameIn', frame: msg}});
+                            //console.log(self.id, msg.toString());
+                        });
+                        var rpc = utRPC({
+                            registerRemote: self.registerRemote.bind(self, locals.length)
+                        }, false);
+                        locals.push(rpc);
+                        rpc.on('remote', function (remote) {
+                            remotes.push(remote);
+                            when.all([
+                                registerRemoteMethods([remote], listReq, true),
+                                registerRemoteMethods([remote], listPub, false),
+                                registerLocalMethods([rpc], mapLocal)
+                            ]).then(resolve).catch(reject);
+                        });
+                        rpc.pipe(connection).pipe(rpc);
+                    });
                 }
-                net.createServer(function(socket) {
-                    socket.on('data', function(msg) {
-                        log.trace && log.trace({$$:{opcode:'frameIn', frame:msg}});
-                        //console.log(self.id, msg.toString());
-                    });
-                    var rpc = utRPC({
-                        registerRemote: self.registerRemote.bind(self, locals.length)
-                    }, true);
-                    locals.push(rpc);
-                    rpc.on('remote', function(remote) {
-                        remotes.push(remote);
-                        registerRemoteMethods([remote], listReq, true);
-                        registerRemoteMethods([remote], listPub, false);
-                        registerLocalMethods([rpc], mapLocal);
-                    });
-                    rpc.pipe(socket).pipe(rpc);
-                }).listen(pipe);
-            } else {
-                var connection = net.createConnection(pipe, function() {
-                    connection.on('data', function(msg) {
-                        log.trace && log.trace({$$:{opcode:'frameIn', frame:msg}});
-                        //console.log(self.id, msg.toString());
-                    });
-                    var rpc = utRPC({
-                        registerRemote: self.registerRemote.bind(self, locals.length)
-                    }, false);
-                    locals.push(rpc);
-                    rpc.on('remote', function(remote) {
-                        remotes.push(remote);
-                        registerRemoteMethods([remote], listReq, true);
-                        registerRemoteMethods([remote], listPub, false);
-                        registerLocalMethods([rpc], mapLocal);
-                    });
-                    rpc.pipe(connection).pipe(rpc);
-                });
-            }
 
-            //todo handle out frames
-            //log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
+                //todo handle out frames
+                //log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
 
-            this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name:this.id, context:'bus'}));
+                this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
+            }.bind(this));
         },
 
         destroy: function() {
