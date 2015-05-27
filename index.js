@@ -3,6 +3,31 @@ var utRPC = require('ut-rpc');
 var net = require('net');
 var _ = require('lodash');
 var joi = require('joi');
+function createFieldError(errType, module, validation) {
+    var error = {};
+    var joiErrors = [];
+    var fieldErrors = {};
+    var fieldErrorType = '';
+    var fieldErrorTypePieces = [];
+    var errorCode = _.capitalize(module) + errType;
+    error = new Error(errorCode);
+    error.code = errorCode;
+    joiErrors = validation.error.details || [];
+    joiErrors.forEach(function(err) {
+        fieldErrorType = 'Joi';
+        fieldErrorTypePieces = err.type.split('.');
+        fieldErrorTypePieces.forEach(function(errorPiece) {
+            fieldErrorType += _.capitalize(errorPiece);
+        });
+        fieldErrors[err.path] = {
+            code: fieldErrorType,
+            message: err.message,
+            errorPrint: err.message
+        };
+    });
+    error.fieldErrors = fieldErrors;
+    throw error;
+};
 
 module.exports = function Bus() {
     //private fields
@@ -310,8 +335,6 @@ module.exports = function Bus() {
             function busMethod() {
                 var msg = (arguments.length) ? arguments[0] : {};
                 var applyArgs = arguments;
-                var errorCode;
-                var error;
                 if (msg && msg.$$ && typeof msg.$$.callback === 'function') {
                     var cb = msg.$$.callback;
                     delete msg.$$.callback;
@@ -340,26 +363,22 @@ module.exports = function Bus() {
                         }
                     }
                     if (validate && bus.local[destination] && bus.local[destination][opcode]) {
-                        var requestSchema = (validate.request && bus.local[destination][opcode].req) || {};
-                        var responseSchema = (validate.response && bus.local[destination][opcode].res) || {};
-                        var request = requestSchema ? joi.validate(msg, requestSchema) : true;
-                        if (request && !request.error) {
-                            var response = fn.apply(this, applyArgs);
-                            var validation = responseSchema ? joi.validate(response, responseSchema) : true;
-                            if (validation && !validation.error) {
-                                return response;
-                            } else {
-                                errorCode = _.capitalize(destination) + 'ResponseFieldError';
-                                error = new Error(errorCode);
-                                error.fieldErrors = validation.error.details || {};
-                                throw error;
+                        var requestSchema = (validate.request && bus.local[destination][opcode].request) || false;
+                        var responseSchema = (validate.response && bus.local[destination][opcode].response) || false;
+                        if (requestSchema) {
+                            var requestValidation = joi.validate(msg, requestSchema, {abortEarly: false});
+                            if (requestValidation.error) {
+                                createFieldError('RequestFieldError', destination, requestValidation);
                             }
-                        } else {
-                            errorCode = _.capitalize(destination) + 'RequestFieldError';
-                            error = new Error(errorCode);
-                            error.code = errorCode;
-                            error.fieldErrors = request.error.details || {};
-                            throw error;
+                        }
+                        if (responseSchema) {
+                            var response = fn.apply(this, applyArgs);
+                            var responseValidation = joi.validate(response, responseSchema, {abortEarly: false});
+                            if (responseValidation.error) {
+                                createFieldError('ResponseFieldError', destination, responseValidation);
+                            } else {
+                                return response;
+                            }
                         }
                     } else {
                         return fn.apply(this, applyArgs);
