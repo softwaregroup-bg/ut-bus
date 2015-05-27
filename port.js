@@ -142,12 +142,12 @@ Port.prototype.decode = function decode(context) {
                 msg.$$ = {conId:context.conId};
             }
         }
-        port.log.debug && port.log.debug(msg);
         var $$ = msg.$$ || {};
         when(port.config.receive ? when.lift(port.config.receive).call(port, msg, context) : msg)
             .then(function(result) {
                 port.findCallback(context, result);
                 stream.push(result);
+                port.log.debug && port.log.debug(result);
             })
             .catch(function(err) {
                 err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};

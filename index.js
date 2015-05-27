@@ -2,6 +2,7 @@ var when = require('when');
 var utRPC = require('ut-rpc');
 var net = require('net');
 var _ = require('lodash');
+var joi = require('joi');
 
 module.exports = function Bus() {
     //private fields
@@ -302,12 +303,15 @@ module.exports = function Bus() {
             ]);
         },
 
-        getMethod: function(typeName, methodName, destination, opcode) {
+        getMethod: function(typeName, methodName, destination, opcode, validate) {
             var bus = this;
             var fn = null;
             var local;
             function busMethod() {
                 var msg = (arguments.length) ? arguments[0] : {};
+                var applyArgs = arguments;
+                var errorCode;
+                var error;
                 if (msg && msg.$$ && typeof msg.$$.callback === 'function') {
                     var cb = msg.$$.callback;
                     delete msg.$$.callback;
@@ -329,14 +333,37 @@ module.exports = function Bus() {
                             msg.$$ = {destination:destination, opcode: opcode};
                         }
                         if (!arguments.length) {
-                            return fn.apply(this, [msg]);
+                            applyArgs = [msg];
                         } else {
-                            var args = Array.prototype.slice.call(arguments);
-                            args[0] = msg;
-                            return fn.apply(this, args);
+                            applyArgs = Array.prototype.slice.call(arguments);
+                            applyArgs[0] = msg;
                         }
                     }
-                    return fn.apply(this, arguments);
+                    if (validate && bus.local[destination] && bus.local[destination][opcode]) {
+                        var requestSchema = (validate.request && bus.local[destination][opcode].req) || {};
+                        var responseSchema = (validate.response && bus.local[destination][opcode].res) || {};
+                        var request = requestSchema ? joi.validate(msg, requestSchema) : true;
+                        if (request && !request.error) {
+                            var response = fn.apply(this, applyArgs);
+                            var validation = responseSchema ? joi.validate(response, responseSchema) : true;
+                            if (validation && !validation.error) {
+                                return response;
+                            } else {
+                                errorCode = _.capitalize(destination) + 'ResponseFieldError';
+                                error = new Error(errorCode);
+                                error.fieldErrors = validation.error.details || {};
+                                throw error;
+                            }
+                        } else {
+                            errorCode = _.capitalize(destination) + 'RequestFieldError';
+                            error = new Error(errorCode);
+                            error.code = errorCode;
+                            error.fieldErrors = request.error.details || {};
+                            throw error;
+                        }
+                    } else {
+                        return fn.apply(this, applyArgs);
+                    }
                 } else {
                     //todo return some error
                     return {
@@ -354,15 +381,24 @@ module.exports = function Bus() {
             return busMethod;
         },
 
-        importMethods: function(target, methods) {
+        importMethods: function(target, methods, validate) {
             var local = this.local;
             var self = this;
 
             function importMethod(methodName) {
+                if (cache[methodName]) {
+                    if (target !== cache){
+                        target[methodName] = cache[methodName];
+                    }
+                    return;
+                }
                 var tokens = methodName.split('.');
                 var destination = tokens.shift() || 'ut';
                 var opcode = tokens.join('.') || 'request';
-                target[methodName] = self.getMethod('req', 'request', destination, opcode);
+                target[methodName] = self.getMethod('req', 'request', destination, opcode, validate);
+                if (target !== cache){
+                    cache[methodName] = target[methodName];
+                }
             }
 
             if (methods) {
@@ -379,10 +415,10 @@ module.exports = function Bus() {
             }
         },
 
-        importMethod: function(methodName) {
+        importMethod: function(methodName, validate) {
             var result = cache[methodName];
             if (!result) {
-                this.importMethods(cache, [methodName]);
+                this.importMethods(cache, [methodName], validate);
                 result = cache[methodName];
             }
 
