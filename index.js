@@ -372,7 +372,7 @@ module.exports = function Bus() {
                         }
                         applyArgs = Array.prototype.slice.call(arguments);
                         if (applyArgs.length) {
-                            applyArgs[0] = _.assign({}, msg);
+                            applyArgs[0] = (msg instanceof Array) ? _.assign([], msg) : _.assign({}, msg);
                             delete applyArgs[0].$$;
                         }
                         applyArgs.push($$);
