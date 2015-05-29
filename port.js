@@ -33,35 +33,29 @@ function Port() {
     this.bus = null;
     this.queue = null;
     this.queues = {};
-
-    this.method = function method(methodName) {
-        var tokens = methodName.split('.');
-        var destination = tokens.shift() || 'ut';
-        var opcode = tokens.join('.') || 'request';
-        return this.bus.getMethod('req', 'request', destination, opcode);
-    };
 }
 
 Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name:this.config.id, context:this.config.type + ' port'}));
 
-    if (this.bus) {
-        var methods = {req:{}, pub:{}};
-        methods.req[this.config.id + '.start'] = this.start;
-        methods.req[this.config.id + '.stop'] = this.stop;
+    var methods = {req:{}, pub:{}};
+    methods.req[this.config.id + '.start'] = this.start;
+    methods.req[this.config.id + '.stop'] = this.stop;
 
-        (this.config.namespace || [this.config.id]).reduce(function(prev, next) {
-            prev.req[next + '.call'] = this.call.bind(this);
-            prev.pub[next + '.publish'] = this.publish.bind(this);
-            return prev;
-        }.bind(this), methods);
-        this.messagePublish = this.bus.getMethod('pub', 'publish');
-        return when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
-    } else {
-        this.messagePublish = function() {
-            this.log && this.log.error && this.log.error('Cannot publish message to bus', {message:arguments});
-        };
+    (this.config.namespace || [this.config.id]).reduce(function(prev, next) {
+        prev.req[next + '.request'] = this.request.bind(this);
+        prev.pub[next + '.publish'] = this.publish.bind(this);
+        return prev;
+    }.bind(this), methods);
+    return this.bus && when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
+};
+
+Port.prototype.messageDispatch = function(msg) {
+    var result = this.bus && this.bus.dispatch(msg);
+    if (!result) {
+        this.log && this.log.error && this.log.error('Cannot dispatch message to bus', {message:msg});
     }
+    return result;
 };
 
 Port.prototype.start = function start() {
@@ -76,37 +70,40 @@ Port.prototype.stop = function stop() {
     return true;
 };
 
-Port.prototype.call = function call(message) {
+Port.prototype.request = function request(message) {
+    var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
     return when.promise(function(resolve, reject) {
         if (!message) {
             reject(new Error('Missing message parameter'));
         } else
-        if (!message.$$) {
+        if (!$$) {
             reject(new Error('Missing message type'));
         } else {
-            message.$$.callback = function(msg) {
+            $$.callback = function(msg) {
                 if (msg.$$ && msg.$$.mtid && msg.$$.mtid !== 'error') {
                     resolve(msg);
                 }else {
                     reject(msg);
                 }
+                return true;
             };
-        }
-        if (!this.queue) {
-            reject(new Error('No connection to ' + this.config.id));
-        } else {
-            this.queue.add(message);
+            if (!this.queue) {
+                reject(new Error('No connection to ' + this.config.id));
+            } else {
+                message.$$ = $$;
+                this.queue.add(message);
+            }
         }
     }.bind(this));
 };
 
-Port.prototype.publish = function publish(msg) {
+Port.prototype.publish = function publish(msg, $$) {
     var conId;
     var queue;
     if (this.queue) {
         queue = this.queue;
     } else {
-        conId = (msg.$$ && msg.$$.conId);
+        conId = ($$ && $$.conId);
         if (conId) {
             queue = this.queues[conId];
         } else {
@@ -114,6 +111,7 @@ Port.prototype.publish = function publish(msg) {
         }
     }
     if (queue) {
+        msg.$$ = $$;
         queue.add(msg);
     } else {
         this.log.error && this.log.error('Queue not found', {message:msg});
@@ -251,38 +249,31 @@ Port.prototype.pipe = function pipe(stream, context) {
 
     [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
-    }, queue).on('data', this.messagePublish);
+    }, queue).on('data', this.messageDispatch.bind(this));
 
     return stream;
 };
 
 Port.prototype.pipeReverse = function pipe2(stream, context) {
-
-    var port = this;
-    var encd = this.encode(context);
-    encd.on('data', function(msg){
-        msg.$$.callback(msg);
+    var self = this;
+    var callStream = through2({objectMode:true}, function(chunk, enc, callback) {
+        var cb = chunk && chunk.$$ && chunk.$$.callback;
+        if (cb) {delete chunk.$$.callback;}
+        var push = function(result) {
+            if (cb) {
+                result.$$ || (result.$$ = {});
+                result.$$.callback = cb;
+            }
+            callStream.push(result);
+        };
+        when(self.messageDispatch(chunk)).then(push).catch(push);
+        callback();
     });
-    var dec = this.decode(context);
-    var st = through2.obj(function(chunk, enc, callback) {
 
-        var cbk =  chunk.$$.callback;
-        delete chunk.$$.callback;
-        port.bus.req.master.request.call(port.bus, chunk)
-            .then(function(ress){
-                ress.$$.callback = cbk;
-                st.push(ress);
-                callback();
-            }).catch(function(err){
-                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}}
-                err.$$.mtid = 'error';
-                err.$$.callback = cbk;
-                st.push(err);
-                callback();
-            })
-            .done();
-    });
-    stream.pipe(dec).pipe(st).pipe(encd);
+    [this.decode(context), callStream, this.encode(context)].reduce(function(prev, next) {
+        return next ? prev.pipe(next) : prev;
+    }, stream).on('data', this.messageDispatch.bind(this));
+
     return stream;
 };
 
@@ -292,7 +283,6 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var self = this;
     var stream = through2({objectMode:true}, function(chunk, enc, callback) {
         countActive += 1;
-
         try {
             self.exec(chunk, function(err, result) {
                 countActive -= 1;

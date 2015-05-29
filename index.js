@@ -3,16 +3,15 @@ var utRPC = require('ut-rpc');
 var net = require('net');
 var _ = require('lodash');
 var joi = require('joi');
+
 function createFieldError(errType, module, validation) {
-    var error = {};
-    var joiErrors = [];
+    var joiErrors = validation.error.details || [];
     var fieldErrors = {};
     var fieldErrorType = '';
     var fieldErrorTypePieces = [];
     var errorCode = _.capitalize(module) + errType;
-    error = new Error(errorCode);
+    var error = new Error(errorCode);
     error.code = errorCode;
-    joiErrors = validation.error.details || [];
     joiErrors.forEach(function(err) {
         fieldErrorType = 'Joi';
         fieldErrorTypePieces = err.type.split('.');
@@ -27,7 +26,7 @@ function createFieldError(errType, module, validation) {
     });
     error.fieldErrors = fieldErrors;
     throw error;
-};
+}
 
 module.exports = function Bus() {
     //private fields
@@ -47,16 +46,18 @@ module.exports = function Bus() {
      */
     function _publish(thisPub) {
         var pub = {};
-        function publish(msg) {
-            var d = msg.$$ && msg.$$.destination;
+        function publish() {
+            var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+            var $$ = (args.length && args[args.length - 1]) || {};
+            var d = $$.destination;
             if (d) {
                 var ports;
                 var port;
                 var fn;
                 //noinspection JSUnusedAssignment
                 if ((fn = thisPub[d]) || ((ports = thisPub.ports) && (port = ports[d]) && (pub[d] = fn = port.publish))) {
-                    delete msg.$$.destination;
-                    fn(msg);
+                    delete $$.destination;
+                    return fn.apply(undefined, args);
                 }
             }
         }
@@ -71,16 +72,17 @@ module.exports = function Bus() {
      */
     function _request(thisRPC) {
         var RPC = {};
-        function request(msg) {
-            var d = msg.$$ && msg.$$.destination;
+        function request() {
+            var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
+            var d = $$.destination;
             if (d) {
                 var ports;
                 var port;
                 var fn;
                 //noinspection JSUnusedAssignment
-                if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.call))) {
-                    delete msg.$$.destination;
-                    return fn(msg);
+                if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.request))) {
+                    delete $$.destination;
+                    return fn.apply(undefined, arguments);
                 }
             }
         }
@@ -163,47 +165,48 @@ module.exports = function Bus() {
         logFactory: null,
 
         init: function() {
+            this.masterRequest = this.getMethod('req', 'request');
+            this.masterPublish = this.getMethod('pub', 'publish');
+            this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
+            var self = this;
             return when.promise(function(resolve, reject) {
-                var self = this;
-                var pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + this.socket : '/tmp/ut5-' + this.socket + '.sock';
+                var pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + self.socket : '/tmp/ut5-' + self.socket + '.sock';
 
-                if (this.server) {
+                if (self.server) {
                     if (process.platform !== 'win32') {
                         var fs = require('fs');
                         if (fs.existsSync(pipe)) {
                             fs.unlinkSync(pipe);
                         }
                     }
-                    net.createServer(function (socket) {
-                        socket.on('data', function (msg) {
+                    net.createServer(function(socket) {
+                        socket.on('data', function(msg) {
                             log.trace && log.trace({$$: {opcode: 'frameIn', frame: msg}});
-                            //console.log(self.id, msg.toString());
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
                         }, true);
                         locals.push(rpc);
-                        rpc.on('remote', function (remote) {
+                        rpc.on('remote', function(remote) {
                             remotes.push(remote);
                             registerRemoteMethods([remote], listReq, true);
                             registerRemoteMethods([remote], listPub, false);
                             registerLocalMethods([rpc], mapLocal);
                         });
                         rpc.pipe(socket).pipe(rpc);
-                    }).listen(pipe, function(err){
+                    }).listen(pipe, function(err) {
                         err ? reject(err) : resolve();
                     });
                 } else {
-                    var connection = net.createConnection(pipe, function () {
-                        connection.on('data', function (msg) {
+                    var connection = net.createConnection(pipe, function() {
+                        connection.on('data', function(msg) {
                             log.trace && log.trace({$$: {opcode: 'frameIn', frame: msg}});
-                            //console.log(self.id, msg.toString());
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
                         }, false);
                         locals.push(rpc);
-                        rpc.on('remote', function (remote) {
+                        rpc.on('remote', function(remote) {
                             remotes.push(remote);
                             when.all([
                                 registerRemoteMethods([remote], listReq, true),
@@ -218,7 +221,6 @@ module.exports = function Bus() {
                 //todo handle out frames
                 //log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
 
-                this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             }.bind(this));
         },
 
@@ -239,9 +241,19 @@ module.exports = function Bus() {
                         return when.promise(function(resolve, reject) {
                             args.push(function(err, res) {
                                 if (err) {
-                                    reject(err);
+                                    if (err.length === 2) {
+                                        err[0].$$ = err[1];
+                                        reject(err[0]);
+                                    } else {
+                                        reject(err);
+                                    }
                                 } else {
-                                    resolve(res);
+                                    if (res.length === 2) {
+                                        if (!res[0] && res[1]) {res[0].$$ = res[1];}
+                                        resolve(res[0]);
+                                    } else {
+                                        resolve(res);
+                                    }
                                 }
                             });
                             fn.apply(undefined, args);
@@ -282,17 +294,21 @@ module.exports = function Bus() {
          * @param {string} [namespace] to use when registering
          * @returns {promise}
          */
-        register: function(methods, namespace) {
+         register: function(methods, namespace) {
             function adapt(self, f) {
                 return function() {
                     var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
                     var callback = arguments[arguments.length - 1];
                     when(f.apply(self, args))
                         .then(function(result) {
-                            callback(undefined, result);
+                            var $$ = result && result.$$;
+                            result && delete result.$$;
+                            callback(undefined, [result, $$]);
                         })
                         .catch(function(error) {
-                            callback(error);
+                            var $$ = error && error.$$;
+                            error && delete error.$$;
+                            callback([error, $$]);
                         });
                 };
             }
@@ -334,10 +350,11 @@ module.exports = function Bus() {
             var local;
             function busMethod() {
                 var msg = (arguments.length) ? arguments[0] : {};
+                var $$ = (msg && msg.$$);
                 var applyArgs = arguments;
-                if (msg && msg.$$ && typeof msg.$$.callback === 'function') {
-                    var cb = msg.$$.callback;
-                    delete msg.$$.callback;
+                if (!destination && $$ && typeof $$.callback === 'function') {
+                    var cb = $$.callback;
+                    delete $$.callback;
                     return cb.apply(this, arguments);
                 } else if (!fn) {
                     var type;
@@ -347,22 +364,20 @@ module.exports = function Bus() {
                     ((type = bus[typeName]) && (master = type.master) && (fn = master[methodName]) && (local = false));
                 }
                 if (fn) {
-                    if (!local && destination && opcode) {
-                        (msg) || (msg = {$$:{destination:destination, opcode: opcode}});
-                        if (msg.$$ instanceof Object) {
-                            msg.$$.destination = destination;
-                            msg.$$.opcode = opcode;
-                        } else {
-                            msg.$$ = {destination:destination, opcode: opcode};
+                    if (!local) {
+                        if (destination && opcode) {
+                            $$ = $$ || {};
+                            $$.destination = destination;
+                            $$.opcode = opcode;
                         }
-                        if (!arguments.length) {
-                            applyArgs = [msg];
-                        } else {
-                            applyArgs = Array.prototype.slice.call(arguments);
-                            applyArgs[0] = msg;
+                        applyArgs = Array.prototype.slice.call(arguments);
+                        if (applyArgs.length) {
+                            applyArgs[0] = _.assign({}, msg);
+                            delete applyArgs[0].$$;
                         }
+                        applyArgs.push($$);
                     }
-                    if (validate && bus.local[destination] && bus.local[destination][opcode]) {
+                    if (local && validate && bus.local[destination] && bus.local[destination][opcode]) {
                         var requestSchema = (validate.request && bus.local[destination][opcode].request) || false;
                         var responseSchema = (validate.response && bus.local[destination][opcode].response) || false;
                         if (requestSchema) {
@@ -406,7 +421,7 @@ module.exports = function Bus() {
 
             function importMethod(methodName) {
                 if (cache[methodName]) {
-                    if (target !== cache){
+                    if (target !== cache) {
                         target[methodName] = cache[methodName];
                     }
                     return;
@@ -415,7 +430,7 @@ module.exports = function Bus() {
                 var destination = tokens.shift() || 'ut';
                 var opcode = tokens.join('.') || 'request';
                 target[methodName] = self.getMethod('req', 'request', destination, opcode, validate);
-                if (target !== cache){
+                if (target !== cache) {
                     cache[methodName] = target[methodName];
                 }
             }
@@ -442,6 +457,21 @@ module.exports = function Bus() {
             }
 
             return result;
+        },
+
+        dispatch: function(msg) {
+            var $$ = msg && msg.$$;
+            var mtid;
+            if ($$) {
+                mtid = $$.mtid;
+                if (mtid === 'request') {
+                    return this.masterRequest(msg);
+                } else {
+                    return this.masterPublish(msg);
+                }
+            } else {
+                return false;
+            }
         }
     };
 };
