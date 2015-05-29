@@ -286,6 +286,10 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
         try {
             self.exec(chunk, function(err, result) {
                 countActive -= 1;
+                if(err) {
+                    err.$$ || (err.$$ = {});
+                    err.$$.mtid = 'error';
+                }
                 var chunkOut = err ? err : result;
                 if (chunkOut && chunk && chunk.$$ && chunk.$$.callback) {
                     (chunkOut.$$) || (chunkOut.$$ = {});
