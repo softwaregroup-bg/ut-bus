@@ -113,8 +113,10 @@ Port.prototype.publish = function publish(msg, $$) {
     if (queue) {
         msg.$$ = $$;
         queue.add(msg);
+        return true;
     } else {
         this.log.error && this.log.error('Queue not found', {message:msg});
+        return false;
     }
 };
 

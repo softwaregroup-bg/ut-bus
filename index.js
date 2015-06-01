@@ -51,11 +51,9 @@ module.exports = function Bus() {
             var $$ = (args.length && args[args.length - 1]) || {};
             var d = $$.destination;
             if (d) {
-                var ports;
-                var port;
                 var fn;
                 //noinspection JSUnusedAssignment
-                if ((fn = thisPub[d]) || ((ports = thisPub.ports) && (port = ports[d]) && (pub[d] = fn = port.publish))) {
+                if ((fn = thisPub[d]) || (pub[d] = fn = thisPub['ports.' + d + '.publish'])) {
                     delete $$.destination;
                     return fn.apply(undefined, args);
                 }
@@ -76,11 +74,9 @@ module.exports = function Bus() {
             var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
             var d = $$.destination;
             if (d) {
-                var ports;
-                var port;
                 var fn;
                 //noinspection JSUnusedAssignment
-                if ((fn = RPC[d]) || ((ports = thisRPC.ports) && (port = ports[d]) && (RPC[d] = fn = port.request))) {
+                if ((fn = RPC[d]) || (RPC[d] = fn = thisRPC['ports.' + d + '.request'])) {
                     delete $$.destination;
                     return fn.apply(undefined, arguments);
                 }
@@ -261,7 +257,10 @@ module.exports = function Bus() {
                     };
                 },
                 pub:function subscribe(fn) {
-                    return fn;
+                    return function() {
+                        fn.apply(undefined, arguments);
+                        return true;
+                    };
                 }
             }[type];
 
@@ -273,15 +272,7 @@ module.exports = function Bus() {
 
             var remote = locals[index];
             methods.forEach(function(method) {
-                var remoteMethod = remote.createRemote(method, type);
-                var path = method.split('.');
-                var last = path.pop();
-                path.reduce(function(prev, current) {
-                    if (!prev.hasOwnProperty(current)) {
-                        prev[current] = {};
-                    }
-                    return (prev[current]);
-                }, root)[last] = adapt(remoteMethod);
+                root[method] = adapt(remote.createRemote(method, type));
             });
 
             cb(undefined, 'remotes registered in ' + this.id);
@@ -361,7 +352,7 @@ module.exports = function Bus() {
                     var master;
                     //noinspection JSUnusedAssignment
                     (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
-                    ((type = bus[typeName]) && (master = type.master) && (fn = master[methodName]) && (local = false));
+                    ((type = bus[typeName]) &&  (fn = type['master.' + methodName]) && (local = false));
                 }
                 if (fn) {
                     if (!local) {
@@ -427,8 +418,8 @@ module.exports = function Bus() {
                     return;
                 }
                 var tokens = methodName.split('.');
-                var destination = tokens.shift() || 'ut';
-                var opcode = tokens.join('.') || 'request';
+                var opcode = tokens.pop() || 'request';
+                var destination = tokens.join('.') || 'ut';
                 target[methodName] = self.getMethod('req', 'request', destination, opcode, validate);
                 if (target !== cache) {
                     cache[methodName] = target[methodName];
@@ -437,10 +428,9 @@ module.exports = function Bus() {
 
             if (methods) {
                 methods.forEach(function(methodOrModuleName) {
-                    var i = methodOrModuleName.indexOf('.');
-                    if (i >= 0) {
+                    if (!local[methodOrModuleName]) {
                         importMethod(methodOrModuleName);
-                    } else if (local[methodOrModuleName]) {
+                    } else {
                         Object.keys(local[methodOrModuleName]).forEach(function(methodName) {
                             importMethod(methodOrModuleName + '.' + methodName);
                         });
