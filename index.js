@@ -9,7 +9,8 @@ function createFieldError(errType, module, validation) {
     var fieldErrors = {};
     var fieldErrorType = '';
     var fieldErrorTypePieces = [];
-    var errorCode = _.capitalize(module) + errType;
+    module = module.split('.');
+    var errorCode = _.capitalize(module[0]) + errType;
     var error = new Error(errorCode);
     error.code = errorCode;
     joiErrors.forEach(function(err) {
