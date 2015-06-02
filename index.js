@@ -406,7 +406,7 @@ module.exports = function Bus() {
             return busMethod;
         },
 
-        importMethods: function(target, methods, validate) {
+        importMethods: function(target, methods, validate, binding) {
             var local = this.local;
             var self = this;
 
@@ -420,7 +420,8 @@ module.exports = function Bus() {
                 var tokens = methodName.split('.');
                 var opcode = tokens.pop() || 'request';
                 var destination = tokens.join('.') || 'ut';
-                target[methodName] = self.getMethod('req', 'request', destination, opcode, validate);
+                var method = self.getMethod('req', 'request', destination, opcode, validate);
+                target[methodName] = binding ? method.bind(binding) : method;
                 if (target !== cache) {
                     cache[methodName] = target[methodName];
                 }
