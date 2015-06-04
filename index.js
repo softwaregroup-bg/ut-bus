@@ -375,21 +375,20 @@ module.exports = function Bus() {
                         if (requestSchema) {
                             var requestValidation = joi.validate(msg, requestSchema, {abortEarly: false});
                             if (requestValidation.error) {
-                                createFieldError('RequestFieldError', destination, requestValidation);
+                                return createFieldError('RequestFieldError', destination, requestValidation);
                             }
                         }
                         if (responseSchema) {
                             var response = fn.apply(this, applyArgs);
                             var responseValidation = joi.validate(response, responseSchema, {abortEarly: false});
                             if (responseValidation.error) {
-                                createFieldError('ResponseFieldError', destination, responseValidation);
+                                return createFieldError('ResponseFieldError', destination, responseValidation);
                             } else {
                                 return response;
                             }
                         }
-                    } else {
-                        return fn.apply(this, applyArgs);
                     }
+                    return fn.apply(this, applyArgs);
                 } else {
                     //todo return some error
                     return {
