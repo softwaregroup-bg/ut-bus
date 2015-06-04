@@ -380,12 +380,15 @@ module.exports = function Bus() {
                         }
                         if (responseSchema) {
                             var response = fn.apply(this, applyArgs);
-                            var responseValidation = joi.validate(response, responseSchema, {abortEarly: false});
-                            if (responseValidation.error) {
-                                return createFieldError('ResponseFieldError', destination, responseValidation);
-                            } else {
-                                return response;
+                            var validateResult = function(result){
+                                var responseValidation = joi.validate(result, responseSchema, {abortEarly: false});
+                                if (responseValidation.error) {
+                                    return createFieldError('ResponseFieldError', destination, responseValidation);
+                                } else {
+                                    return result;
+                                }
                             }
+                            return when(response).then(validateResult).catch(validateResult);
                         }
                     }
                     return fn.apply(this, applyArgs);
