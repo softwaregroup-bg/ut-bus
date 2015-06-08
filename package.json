@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "dependencies": {
     "catbox": "~4.2.1",
     "ut-log": "~5.0.0",
