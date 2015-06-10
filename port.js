@@ -259,7 +259,7 @@ Port.prototype.pipe = function pipe(stream, context) {
 Port.prototype.pipeReverse = function pipe2(stream, context) {
     var self = this;
     var callStream = through2({objectMode:true}, function(chunk, enc, callback) {
-        if(chunk.$$ && chunk.$$.mtid == 'error'){
+        if(chunk.$$ && (chunk.$$.mtid == 'error' || chunk.$$.mtid == 'response')){
             callStream.push(chunk);
             callback();
             return;
