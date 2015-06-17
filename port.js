@@ -213,10 +213,6 @@ Port.prototype.encode = function encode(context) {
                 if (port.codec) {
                     buffer = port.codec.encode(message, context);
                     size = buffer && buffer.length;
-                    var extraSize = size && port.config.format && port.config.format.extraSize;
-                    if (extraSize) {
-                        size += extraSize;
-                    }
                     port.traceCallback(context, message);
                 } else if (message) {
                     buffer = message;
