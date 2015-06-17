@@ -195,7 +195,7 @@ Port.prototype.decode = function decode(context) {
 
 Port.prototype.traceCallback = function traceCallback(context, message) {
     var $$ = message.$$;
-    if ($$.trace && $$.callback && $$.mtid === 'request') {
+    if ($$ && $$.trace && $$.callback && $$.mtid === 'request') {
         context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000};
     }
 };
@@ -213,6 +213,10 @@ Port.prototype.encode = function encode(context) {
                 if (port.codec) {
                     buffer = port.codec.encode(message, context);
                     size = buffer && buffer.length;
+                    var extraSize = size && port.config.format && port.config.format.extraSize;
+                    if (extraSize) {
+                        size += extraSize;
+                    }
                     port.traceCallback(context, message);
                 } else if (message) {
                     buffer = message;
