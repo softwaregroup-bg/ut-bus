@@ -305,7 +305,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
                 }
                 stream.push(chunkOut);
                 if (countActive + 1 === concurrency) {
-                    callback(err);
+                    callback();
                 }
             });
         } catch (e) {
@@ -314,8 +314,8 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
             chunk.$$.mtid = 'error';
             chunk.error = e;
             this.push(chunk);
-            if (countActive < concurrency) {
-                callback(e);
+            if (countActive + 1 >= concurrency) {
+                callback();
             }
             return;
         }
