@@ -195,7 +195,7 @@ Port.prototype.decode = function decode(context) {
 
 Port.prototype.traceCallback = function traceCallback(context, message) {
     var $$ = message.$$;
-    if ($$.trace && $$.callback && $$.mtid === 'request') {
+    if ($$ && $$.trace && $$.callback && $$.mtid === 'request') {
         context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000};
     }
 };
