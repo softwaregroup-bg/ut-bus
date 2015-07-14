@@ -127,8 +127,8 @@ Port.prototype.findCallback = function findCallback(context, message) {
         if (x) {
             delete context[$$.trace];
             $$.callback = x.callback;
-            if(x.startTime){
-                $$.timeTaken = ((Date.now() - x.startTime);
+            if (x.startTime) {
+                $$.timeTaken = Date.now() - x.startTime;
             }
         }
     }
@@ -199,7 +199,7 @@ Port.prototype.decode = function decode(context) {
 Port.prototype.traceCallback = function traceCallback(context, message) {
     var $$ = message.$$;
     if ($$ && $$.trace && $$.callback && $$.mtid === 'request') {
-        context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000, startTime: Date.now() };
+        context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000, startTime: Date.now()};
     }
 };
 
@@ -255,6 +255,10 @@ Port.prototype.pipe = function pipe(stream, context) {
     [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
     }, queue).on('data', this.messageDispatch.bind(this));
+    //todo handle messageDispatch response
+    //}, queue).on('data', function(msg) {
+    //    when(this.messageDispatch(msg)).then(queue.add.bind(queue));
+    //}.bind(this));
 
     return stream;
 };
@@ -262,7 +266,7 @@ Port.prototype.pipe = function pipe(stream, context) {
 Port.prototype.pipeReverse = function pipe2(stream, context) {
     var self = this;
     var callStream = through2({objectMode:true}, function(chunk, enc, callback) {
-        if(chunk.$$ && (chunk.$$.mtid == 'error' || chunk.$$.mtid == 'response')){
+        if (chunk.$$ && (chunk.$$.mtid === 'error' || chunk.$$.mtid === 'response')) {
             callStream.push(chunk);
             callback();
             return;
@@ -298,7 +302,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
             var startTime = Date.now();
             self.exec(chunk, function(err, result) {
                 countActive -= 1;
-                if(err) {
+                if (err) {
                     err.$$ || (err.$$ = {});
                     err.$$.mtid = 'error';
                 }

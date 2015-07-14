@@ -77,7 +77,7 @@ module.exports = function Bus() {
             if (d) {
                 var fn;
                 //noinspection JSUnusedAssignment
-                if ((fn = RPC[d]) || (RPC[d] = fn = thisRPC['ports.' + d + '.request'])) {
+                if ((fn = RPC[d]) || (RPC[d] = fn = thisRPC['ports.' + d + '.request']) || (RPC[d] = fn = thisRPC[d + '.' + $$.opcode])) {
                     delete $$.destination;
                     return fn.apply(undefined, arguments);
                 }
@@ -361,9 +361,10 @@ module.exports = function Bus() {
                             $$ = $$ || {};
                             $$.destination = destination;
                             $$.opcode = opcode;
+                            $$.method = destination + '.' + opcode;
                         }
                         applyArgs = Array.prototype.slice.call(arguments);
-                        if (applyArgs.length) {
+                        if (applyArgs.length && applyArgs[0] && applyArgs[0].$$) {
                             applyArgs[0] = (msg instanceof Array) ? _.assign([], msg) : _.assign({}, msg);
                             delete applyArgs[0].$$;
                         }
@@ -380,14 +381,14 @@ module.exports = function Bus() {
                         }
                         if (responseSchema) {
                             var response = fn.apply(this, applyArgs);
-                            var validateResult = function(result){
+                            var validateResult = function(result) {
                                 var responseValidation = joi.validate(result, responseSchema, {abortEarly: false});
                                 if (responseValidation.error) {
                                     return createFieldError('ResponseFieldError', destination, responseValidation);
                                 } else {
                                     return result;
                                 }
-                            }
+                            };
                             return when(response).then(validateResult).catch(validateResult);
                         }
                     }
