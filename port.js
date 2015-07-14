@@ -128,7 +128,7 @@ Port.prototype.findCallback = function findCallback(context, message) {
             delete context[$$.trace];
             $$.callback = x.callback;
             if(x.startTime){
-                $$.timeTaken = ((new Date()).getTime() - x.startTime);
+                $$.timeTaken = ((Date.now() - x.startTime);
             }
         }
     }
@@ -199,7 +199,7 @@ Port.prototype.decode = function decode(context) {
 Port.prototype.traceCallback = function traceCallback(context, message) {
     var $$ = message.$$;
     if ($$ && $$.trace && $$.callback && $$.mtid === 'request') {
-        context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000, startTime: (new Date()).getTime()};
+        context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000, startTime: Date.now() };
     }
 };
 
@@ -295,7 +295,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var stream = through2({objectMode:true}, function(chunk, enc, callback) {
         countActive += 1;
         try {
-            var startTime = (new Date()).getTime();
+            var startTime = Date.now();
             self.exec(chunk, function(err, result) {
                 countActive -= 1;
                 if(err) {
@@ -306,7 +306,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
                 if (chunkOut && chunk && chunk.$$ && chunk.$$.callback) {
                     (chunkOut.$$) || (chunkOut.$$ = {});
                     chunkOut.$$.callback = chunk.$$.callback;
-                    chunkOut.$$.timeTaken = ((new Date()).getTime() - startTime);
+                    chunkOut.$$.timeTaken = (Date.now() - startTime);
                 }
                 stream.push(chunkOut);
                 if (countActive + 1 === concurrency) {
