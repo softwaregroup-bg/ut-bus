@@ -3,7 +3,8 @@
   "version": "5.1.2",
   "dependencies": {
     "catbox": "~4.2.1",
-    "ut-log": "~5.0.0",
+    "ut-log": "~5.0.2",
+    "ut-rpc": "~5.0.0",
     "readable-stream": "~1.1.13",
     "reconnect-core": "^1.0.0",
     "through2": "~1.1.1",
