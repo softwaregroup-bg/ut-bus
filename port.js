@@ -254,11 +254,18 @@ Port.prototype.pipe = function pipe(stream, context) {
 
     [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
-    }, queue).on('data', this.messageDispatch.bind(this));
+    //}, queue).on('data', this.messageDispatch.bind(this));
     //todo handle messageDispatch response
-    //}, queue).on('data', function(msg) {
-    //    when(this.messageDispatch(msg)).then(queue.add.bind(queue));
-    //}.bind(this));
+    }, queue).on('data', function(msg) {
+        when(this.messageDispatch(msg)).then(function(result){
+            if (msg && msg.$$ && msg.$$.mtid === 'request') {
+                (result.$$) || (result.$$ = {});
+                (result.$$.mtid) || (result.$$.mtid = 'response');
+                (result.$$.opcode) || (result.$$.opcode = msg.$$.opcode);
+                queue.add(result);
+            }
+        });
+    }.bind(this));
 
     return stream;
 };
