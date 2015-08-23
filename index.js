@@ -425,7 +425,7 @@ module.exports = function Bus() {
                 var opcode = tokens.pop() || 'request';
                 var destination = tokens.join('.') || 'ut';
                 var method = self.getMethod('req', 'request', destination, opcode, validate);
-                target[methodName] = binding ? method.bind(binding) : method;
+                target[methodName] = binding ? _.assign(method.bind(binding),method) : method;
                 if (target !== cache) {
                     cache[methodName] = target[methodName];
                 }
