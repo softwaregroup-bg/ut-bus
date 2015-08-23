@@ -167,7 +167,12 @@ module.exports = function Bus() {
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             var self = this;
             return when.promise(function(resolve, reject) {
-                var pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + self.socket : '/tmp/ut5-' + self.socket + '.sock';
+                var pipe;
+                if (typeof self.socket === 'string') {
+                    pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + self.socket : '/tmp/ut5-' + self.socket + '.sock';
+                } else {
+                    pipe = self.socket;
+                }
 
                 if (self.server) {
                     if (process.platform !== 'win32') {
