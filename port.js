@@ -71,6 +71,7 @@ Port.prototype.stop = function stop() {
 };
 
 Port.prototype.request = function request(message) {
+    var port = this;
     var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
     return when.promise(function(resolve, reject) {
         if (!message) {
@@ -87,11 +88,23 @@ Port.prototype.request = function request(message) {
                 }
                 return true;
             };
-            if (!this.queue) {
-                reject(new Error('No connection to ' + this.config.id));
-            } else {
+            if (this.queue) {
                 message.$$ = $$;
                 this.queue.add(message);
+            } else if ($$ && $$.conId && this.queues[$$.conId]) {
+                message.$$ = $$;
+                this.queues[$$.conId].add(message);
+            } else {
+                var q = Object.keys(this.queues);
+
+                if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
+                    q = this.queues[port.connRouter(this.queues)];
+                } else if(!(q = q && q.length && this.queues[q[0]])) {
+                    reject(new Error('No connection to ' + this.config.id));
+                }
+
+                message.$$ = $$;
+                q.add(message);
             }
         }
     }.bind(this));
@@ -248,8 +261,20 @@ Port.prototype.pipe = function pipe(stream, context) {
     if (context && context.conId) {
         queue = createQueue();
         this.queues[context.conId] = queue;
+        stream.on('end', function() {
+            delete this.queues[context.conId];
+        }.bind(this))
+        .on('error', function(error) {
+            delete this.queues[context.conId];
+        }.bind(this));
     } else {
         queue = this.queue = createQueue();
+        stream.on('end', function() {
+            this.queue = null;
+        }.bind(this))
+        .on('error', function(error) {
+            this.queue = null;
+        }.bind(this));
     }
 
     [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
