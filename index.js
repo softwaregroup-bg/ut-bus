@@ -1,8 +1,5 @@
 var when = require('when');
-var utRPC = require('ut-rpc');
-var net = require('net');
 var _ = require('lodash');
-var joi = require('joi');
 
 function createFieldError(errType, module, validation) {
     var joiErrors = validation.error.details || [];
@@ -168,12 +165,18 @@ module.exports = function Bus() {
             var self = this;
             return when.promise(function(resolve, reject) {
                 var pipe;
-                if (typeof self.socket === 'string') {
+                if (self.socket === 'internal'){
+                    resolve();
+                    return;
+                } else if (typeof self.socket === 'string') {
                     pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + self.socket : '/tmp/ut5-' + self.socket + '.sock';
                 } else {
                     pipe = self.socket;
                 }
 
+                var net = require('net');
+                var joi = require('joi');
+                var utRPC = require('ut-rpc');
                 if (self.server) {
                     if (process.platform !== 'win32') {
                         var fs = require('fs');
