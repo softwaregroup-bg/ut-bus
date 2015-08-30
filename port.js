@@ -1,6 +1,7 @@
 var through2 = require('through2');
 var Readable = require('readable-stream/readable');
 var when = require('when');
+var Buffer = require('buffer').Buffer;
 
 var createQueue = function queue() {
     var q = [];

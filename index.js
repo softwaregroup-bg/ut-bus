@@ -147,6 +147,29 @@ module.exports = function Bus() {
         return registerRemoteMethods(remotes, methodNames, adapt);
     }
 
+    function handle$$(obj, fn, args) {
+        return when.promise(function(resolve, reject) {
+            args.push(function(err, res) {
+                if (err) {
+                    if (err.length === 2) {
+                        err[0].$$ = err[1];
+                        reject(err[0]);
+                    } else {
+                        reject(err);
+                    }
+                } else {
+                    if (res.length === 2) {
+                        if (!res[0] && res[1]) {res[0].$$ = res[1];}
+                        resolve(res[0]);
+                    } else {
+                        resolve(res);
+                    }
+                }
+            });
+            fn.apply(obj, args);
+        });
+    }
+
     return {
         //properties
         id: null,
@@ -165,7 +188,7 @@ module.exports = function Bus() {
             var self = this;
             return when.promise(function(resolve, reject) {
                 var pipe;
-                if (self.socket === 'internal'){
+                if (!self.socket){
                     resolve();
                     return;
                 } else if (typeof self.socket === 'string') {
@@ -175,7 +198,6 @@ module.exports = function Bus() {
                 }
 
                 var net = require('net');
-                var joi = require('joi');
                 var utRPC = require('ut-rpc');
                 if (self.server) {
                     if (process.platform !== 'win32') {
@@ -243,26 +265,7 @@ module.exports = function Bus() {
                             return when.reject(new Error('Remote method not found for object "' + id + '"'));
                         }
                         var args = Array.prototype.slice.call(arguments);
-                        return when.promise(function(resolve, reject) {
-                            args.push(function(err, res) {
-                                if (err) {
-                                    if (err.length === 2) {
-                                        err[0].$$ = err[1];
-                                        reject(err[0]);
-                                    } else {
-                                        reject(err);
-                                    }
-                                } else {
-                                    if (res.length === 2) {
-                                        if (!res[0] && res[1]) {res[0].$$ = res[1];}
-                                        resolve(res[0]);
-                                    } else {
-                                        resolve(res);
-                                    }
-                                }
-                            });
-                            fn.apply(undefined, args);
-                        });
+                        return handle$$(undefined, fn, args);
                     };
                 },
                 pub:function subscribe(fn) {
@@ -361,6 +364,7 @@ module.exports = function Bus() {
                     var master;
                     //noinspection JSUnusedAssignment
                     (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
+                    (destination && opcode && (!bus.socket) && (fn = mapLocal[['ports', destination, methodName].join('.')]) && !(local = false)) ||
                     ((type = bus[typeName]) &&  (fn = type['master.' + methodName]) && (local = false));
                 }
                 if (fn) {
@@ -377,10 +381,14 @@ module.exports = function Bus() {
                             delete applyArgs[0].$$;
                         }
                         applyArgs.push($$);
+                        if (!bus.socket){
+                            return handle$$(this, fn, applyArgs);
+                        }
                     }
                     if (local && validate && bus.local[destination] && bus.local[destination][opcode]) {
                         var requestSchema = (validate.request && bus.local[destination][opcode].request) || false;
                         var responseSchema = (validate.response && bus.local[destination][opcode].response) || false;
+                        var joi = (requestSchema || responseSchema) && require('joi');
                         if (requestSchema) {
                             var requestValidation = joi.validate(msg, requestSchema, {abortEarly: false});
                             if (requestValidation.error) {
