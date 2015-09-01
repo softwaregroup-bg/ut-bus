@@ -307,21 +307,20 @@ Port.prototype.pipeReverse = function pipe2(stream, context) {
     var self = this;
     var callStream = through2({objectMode:true}, function(chunk, enc, callback) {
         if (chunk.$$ && (chunk.$$.mtid === 'error' || chunk.$$.mtid === 'response')) {
-            callStream.push(chunk);
-            callback();
-            return;
-        }
-        var cb = chunk && chunk.$$ && chunk.$$.callback;
-        if (cb) {delete chunk.$$.callback;}
-        var push = function(result) {
-            if (cb) {
-                result.$$ || (result.$$ = {});
-                result.$$.callback = cb;
-            }
-            callStream.push(result);
-        };
+            this.push(chunk);
+        } else {
+            var cb = chunk && chunk.$$ && chunk.$$.callback;
+            if (cb) {delete chunk.$$.callback;}
+            var push = function(result) {
+                if (cb) {
+                    result.$$ || (result.$$ = {});
+                    result.$$.callback = cb;
+                }
+                this.push(result);
+            }.bind(this);
 
-        when(self.messageDispatch(chunk)).then(push).catch(push);
+            when(self.messageDispatch(chunk)).then(push).catch(push);
+        }
         callback();
     });
 
