@@ -2,6 +2,17 @@ var through2 = require('through2');
 var Readable = require('readable-stream/readable');
 var when = require('when');
 
+function handleStreamClose(stream, conId) {
+    if (stream) {
+        stream.destroy();
+    }
+    if (conId) {
+        delete this.queues[conId];
+    } else {
+        this.queue = null;
+    }
+}
+
 var createQueue = function queue() {
     var q = [];
     var r = new Readable({objectMode:true});
@@ -258,23 +269,20 @@ Port.prototype.encode = function encode(context) {
 
 Port.prototype.pipe = function pipe(stream, context) {
     var queue;
-    if (context && context.conId) {
+    var conId = context && context.conId && context.conId.toString();
+
+    if (context && conId) {
         queue = createQueue();
-        this.queues[context.conId] = queue;
-        stream.on('end', function() {
-            delete this.queues[context.conId];
-        }.bind(this))
-        .on('error', function(error) {
-            delete this.queues[context.conId];
-        }.bind(this));
+        this.queues[conId] = queue;
+        if (this.socketTimeOut) {
+            stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId));
+        }
+        stream.on('end', handleStreamClose.bind(this, undefined, conId))
+        .on('error', handleStreamClose.bind(this, stream, conId));
     } else {
         queue = this.queue = createQueue();
-        stream.on('end', function() {
-            this.queue = null;
-        }.bind(this))
-        .on('error', function(error) {
-            this.queue = null;
-        }.bind(this));
+        stream.on('end', handleStreamClose.bind(this, undefined))
+        .on('error', handleStreamClose.bind(this, stream));
     }
 
     [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
