@@ -106,7 +106,7 @@ Port.prototype.request = function request(message) {
                 message.$$ = $$;
                 this.queues[$$.conId].add(message);
             } else {
-                var q = Object.keys(this.queues);
+                var q = Object.keys(this.queues).sort(function(a, b){return b-a});
 
                 if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
                     q = this.queues[port.connRouter(this.queues)];
