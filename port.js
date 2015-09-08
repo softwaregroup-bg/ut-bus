@@ -207,10 +207,14 @@ Port.prototype.decode = function decode(context) {
         if (port.framePattern) {
             buffer = Buffer.concat([buffer, packet]);
             var frame = port.framePattern(buffer);
-            while (frame) {
-                buffer = frame.rest;
-                convert(this, frame.data);
-                frame = port.framePattern(buffer);
+            if (frame) {
+                while (frame) {
+                    buffer = frame.rest;
+                    convert(this, frame.data);
+                    frame = port.framePattern(buffer);
+                }
+            } else {
+                push(this, {payload: buffer, $$:{mtid:'notification', opcode:'payload'}});
             }
             callback();
         } else {
