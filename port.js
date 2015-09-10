@@ -85,6 +85,7 @@ Port.prototype.request = function request(message) {
     var port = this;
     var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
     return when.promise(function(resolve, reject) {
+
         if (!message) {
             reject(new Error('Missing message parameter'));
         } else
@@ -111,7 +112,12 @@ Port.prototype.request = function request(message) {
                 if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
                     q = this.queues[port.connRouter(this.queues)];
                 } else if(!(q = q && q.length && this.queues[q[0]])) {
-                    reject(new Error('No connection to ' + this.config.id));
+                    var err = {$$:{mtid: 'error'}};
+                    var error = new Error('No connection to ' + this.config.id);
+                    err.$$.code = 'notConnected';
+                    err.$$.message = 'No connection to ' + this.config.id;
+                    err.$$.stack = error.stack;
+                    return reject(err);
                 }
 
                 message.$$ = $$;
@@ -240,10 +246,11 @@ Port.prototype.traceCallback = function traceCallback(context, message) {
 
 Port.prototype.encode = function encode(context) {
     var port = this;
-
     return through2.obj(function encodePacket(packet, enc, callback) {
+        var fn = (packet.$$ && port.config[[packet.$$.opcode, packet.$$.mtid, 'send'].join('.')]) || port.config.send;
         var msgCallback = (packet.$$ && packet.$$.callback) || function() {};
-        when(port.config.send ? when.lift(port.config.send).call(port, packet, context) : packet)
+
+        when(fn ? when.lift(fn).call(port, packet, context) : packet)
             .then(function(message) {
                 port.log.debug && port.log.debug(message);
                 var buffer;
