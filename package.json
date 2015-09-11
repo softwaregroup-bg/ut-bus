@@ -21,5 +21,10 @@
   "repository": {
     "type": "git",
     "url": "git@git.softwaregroup-bg.com:ut5/ut-bus.git"
+  },
+  "browser":{
+    "fs":"./browser/fs",
+    "joi":"./browser/joi",
+    "net":"./browser/net"
   }
 }
