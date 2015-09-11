@@ -190,7 +190,6 @@ Port.prototype.receive = function(stream, msg, context) {
 }
 
 Port.prototype.decode = function decode(context) {
-    var buffer = new Buffer(0);
     var port = this;
     function push(stream, msg) {
         if (context && context.conId) {
@@ -214,20 +213,38 @@ Port.prototype.decode = function decode(context) {
         }
     }
 
+    function applyPattern(rest){
+        if (port.framePatternSize) {
+            var tmp = port.framePatternSize(rest);
+            if (tmp) {
+                return port.framePattern(tmp.data, {size: tmp.size - port.config.format.sizeAdjust});
+            } else {
+                return false;
+            }
+
+        } else {
+            return port.framePattern(rest);
+        }
+    }
+
     return through2.obj(function decodePacket(packet, enc, callback) {
         port.log.trace && port.log.trace({$$:{opcode:'frameIn', frame:packet}});
 
         if (port.framePattern) {
-            buffer = Buffer.concat([buffer, packet]);
-            var frame = port.framePattern(buffer);
-            if (frame) {
-                while (frame) {
-                    buffer = frame.rest;
-                    convert(this, frame.data);
-                    frame = port.framePattern(buffer);
-                }
+            var frame;
+            frame = applyPattern(packet);
+            if (!frame) {
+                this.unshift(packet);
             } else {
-                push(this, {payload: buffer, $$:{mtid:'error', opcode:'decode'}});
+                var rest;
+                while (frame) {
+                    convert(this, frame.data);
+                    rest = frame.rest;
+                    frame = applyPattern(rest);
+                }
+                if (rest) {
+                    this.unshift(rest);
+                }
             }
             callback();
         } else {
