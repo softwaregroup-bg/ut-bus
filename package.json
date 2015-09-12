@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "description": "UT bus module",
   "dependencies": {
     "ut-rpc": "^5.0.0",
