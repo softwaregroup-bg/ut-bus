@@ -86,6 +86,7 @@ Port.prototype.request = function request(message) {
     var port = this;
     var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
     return when.promise(function(resolve, reject) {
+
         if (!message) {
             reject(new Error('Missing message parameter'));
         } else
@@ -112,7 +113,12 @@ Port.prototype.request = function request(message) {
                 if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
                     q = this.queues[port.connRouter(this.queues)];
                 } else if(!(q = q && q.length && this.queues[q[0]])) {
-                    reject(new Error('No connection to ' + this.config.id));
+                    var err = {$$:{mtid: 'error'}};
+                    var error = new Error('No connection to ' + this.config.id);
+                    err.$$.code = 'notConnected';
+                    err.$$.message = 'No connection to ' + this.config.id;
+                    err.$$.stack = error.stack;
+                    return reject(err);
                 }
 
                 message.$$ = $$;
@@ -159,8 +165,32 @@ Port.prototype.findCallback = function findCallback(context, message) {
     }
 };
 
+Port.prototype.receive = function(stream, msg, context) {
+    var port = this;
+    var fn = (msg.$$ && port.config[[msg.$$.opcode, msg.$$.mtid, 'receive'].join('.')]) || port.config.receive;
+
+    when(fn ? when.lift(fn).call(port, msg, context) : msg)
+        .then(function(result) {
+            port.findCallback(context, result);
+            stream.push(result);
+            port.log.debug && port.log.debug(result);
+        })
+        .catch(function(err) {
+            var $$ = msg.$$ || {};
+            err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};
+            for (var prop in $$) {
+                if ($$.hasOwnProperty(prop)) {
+                    err.$$[prop] = $$[prop];
+                }
+            }
+            err.$$.mtid = 'error';
+            port.findCallback(context, err);
+            stream.push(err);
+        })
+        .done();
+}
+
 Port.prototype.decode = function decode(context) {
-    var buffer = new Buffer(0);
     var port = this;
     function push(stream, msg) {
         if (context && context.conId) {
@@ -170,25 +200,7 @@ Port.prototype.decode = function decode(context) {
                 msg.$$ = {conId:context.conId};
             }
         }
-        var $$ = msg.$$ || {};
-        when(port.config.receive ? when.lift(port.config.receive).call(port, msg, context) : msg)
-            .then(function(result) {
-                port.findCallback(context, result);
-                stream.push(result);
-                port.log.debug && port.log.debug(result);
-            })
-            .catch(function(err) {
-                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};
-                for (var prop in $$) {
-                    if ($$.hasOwnProperty(prop)) {
-                        err.$$[prop] = $$[prop];
-                    }
-                }
-                err.$$.mtid = 'error';
-                port.findCallback(context, err);
-                stream.push(err);
-            })
-            .done();
+        port.receive(stream, msg, context);
     }
 
     function convert(stream, msg) {
@@ -202,16 +214,38 @@ Port.prototype.decode = function decode(context) {
         }
     }
 
+    function applyPattern(rest){
+        if (port.framePatternSize) {
+            var tmp = port.framePatternSize(rest);
+            if (tmp) {
+                return port.framePattern(tmp.data, {size: tmp.size - port.config.format.sizeAdjust});
+            } else {
+                return false;
+            }
+
+        } else {
+            return port.framePattern(rest);
+        }
+    }
+
     return through2.obj(function decodePacket(packet, enc, callback) {
         port.log.trace && port.log.trace({$$:{opcode:'frameIn', frame:packet}});
 
         if (port.framePattern) {
-            buffer = Buffer.concat([buffer, packet]);
-            var frame = port.framePattern(buffer);
-            while (frame) {
-                buffer = frame.rest;
-                convert(this, frame.data);
-                frame = port.framePattern(buffer);
+            var frame;
+            frame = applyPattern(packet);
+            if (!frame) {
+                this.unshift(packet);
+            } else {
+                var rest;
+                while (frame) {
+                    convert(this, frame.data);
+                    rest = frame.rest;
+                    frame = applyPattern(rest);
+                }
+                if (rest) {
+                    this.unshift(rest);
+                }
             }
             callback();
         } else {
@@ -230,10 +264,11 @@ Port.prototype.traceCallback = function traceCallback(context, message) {
 
 Port.prototype.encode = function encode(context) {
     var port = this;
-
     return through2.obj(function encodePacket(packet, enc, callback) {
+        var fn = (packet.$$ && port.config[[packet.$$.opcode, packet.$$.mtid, 'send'].join('.')]) || port.config.send;
         var msgCallback = (packet.$$ && packet.$$.callback) || function() {};
-        when(port.config.send ? when.lift(port.config.send).call(port, packet, context) : packet)
+
+        when(fn ? when.lift(fn).call(port, packet, context) : packet)
             .then(function(message) {
                 port.log.debug && port.log.debug(message);
                 var buffer;
@@ -286,7 +321,9 @@ Port.prototype.pipe = function pipe(stream, context) {
         .on('error', handleStreamClose.bind(this, stream));
     }
 
-    [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
+    var result = [this.encode(context), stream, this.decode(context)];
+
+    result.reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
     //}, queue).on('data', this.messageDispatch.bind(this));
     //todo handle messageDispatch response
@@ -301,7 +338,7 @@ Port.prototype.pipe = function pipe(stream, context) {
         });
     }.bind(this));
 
-    return stream;
+    return result;
 };
 
 Port.prototype.pipeReverse = function pipe2(stream, context) {
