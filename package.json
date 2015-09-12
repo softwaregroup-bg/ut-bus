@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "5.1.2",
+  "version": "5.2.0",
   "dependencies": {
     "ut-rpc": "~5.0.0",
     "readable-stream": "~1.1.13",
