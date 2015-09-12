@@ -3,6 +3,17 @@ var Readable = require('readable-stream/readable');
 var when = require('when');
 var Buffer = require('buffer').Buffer;
 
+function handleStreamClose(stream, conId) {
+    if (stream) {
+        stream.destroy();
+    }
+    if (conId) {
+        delete this.queues[conId];
+    } else {
+        this.queue = null;
+    }
+}
+
 var createQueue = function queue() {
     var q = [];
     var r = new Readable({objectMode:true});
@@ -72,6 +83,7 @@ Port.prototype.stop = function stop() {
 };
 
 Port.prototype.request = function request(message) {
+    var port = this;
     var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
     return when.promise(function(resolve, reject) {
         if (!message) {
@@ -88,11 +100,23 @@ Port.prototype.request = function request(message) {
                 }
                 return true;
             };
-            if (!this.queue) {
-                reject(new Error('No connection to ' + this.config.id));
-            } else {
+            if (this.queue) {
                 message.$$ = $$;
                 this.queue.add(message);
+            } else if ($$ && $$.conId && this.queues[$$.conId]) {
+                message.$$ = $$;
+                this.queues[$$.conId].add(message);
+            } else {
+                var q = Object.keys(this.queues).sort(function(a, b){return b-a});
+
+                if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
+                    q = this.queues[port.connRouter(this.queues)];
+                } else if(!(q = q && q.length && this.queues[q[0]])) {
+                    reject(new Error('No connection to ' + this.config.id));
+                }
+
+                message.$$ = $$;
+                q.add(message);
             }
         }
     }.bind(this));
@@ -246,20 +270,36 @@ Port.prototype.encode = function encode(context) {
 
 Port.prototype.pipe = function pipe(stream, context) {
     var queue;
-    if (context && context.conId) {
+    var conId = context && context.conId && context.conId.toString();
+
+    if (context && conId) {
         queue = createQueue();
-        this.queues[context.conId] = queue;
+        this.queues[conId] = queue;
+        if (this.socketTimeOut) {
+            stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId));
+        }
+        stream.on('end', handleStreamClose.bind(this, undefined, conId))
+        .on('error', handleStreamClose.bind(this, stream, conId));
     } else {
         queue = this.queue = createQueue();
+        stream.on('end', handleStreamClose.bind(this, undefined))
+        .on('error', handleStreamClose.bind(this, stream));
     }
 
     [this.encode(context), stream, this.decode(context)].reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
-    }, queue).on('data', this.messageDispatch.bind(this));
+    //}, queue).on('data', this.messageDispatch.bind(this));
     //todo handle messageDispatch response
-    //}, queue).on('data', function(msg) {
-    //    when(this.messageDispatch(msg)).then(queue.add.bind(queue));
-    //}.bind(this));
+    }, queue).on('data', function(msg) {
+        when(this.messageDispatch(msg)).then(function(result){
+            if (msg && msg.$$ && msg.$$.mtid === 'request') {
+                (result.$$) || (result.$$ = {});
+                (result.$$.mtid) || (result.$$.mtid = 'response');
+                (result.$$.opcode) || (result.$$.opcode = msg.$$.opcode);
+                queue.add(result);
+            }
+        });
+    }.bind(this));
 
     return stream;
 };
@@ -268,21 +308,20 @@ Port.prototype.pipeReverse = function pipe2(stream, context) {
     var self = this;
     var callStream = through2({objectMode:true}, function(chunk, enc, callback) {
         if (chunk.$$ && (chunk.$$.mtid === 'error' || chunk.$$.mtid === 'response')) {
-            callStream.push(chunk);
-            callback();
-            return;
-        }
-        var cb = chunk && chunk.$$ && chunk.$$.callback;
-        if (cb) {delete chunk.$$.callback;}
-        var push = function(result) {
-            if (cb) {
-                result.$$ || (result.$$ = {});
-                result.$$.callback = cb;
-            }
-            callStream.push(result);
-        };
+            this.push(chunk);
+        } else {
+            var cb = chunk && chunk.$$ && chunk.$$.callback;
+            if (cb) {delete chunk.$$.callback;}
+            var push = function(result) {
+                if (cb) {
+                    result.$$ || (result.$$ = {});
+                    result.$$.callback = cb;
+                }
+                this.push(result);
+            }.bind(this);
 
-        when(self.messageDispatch(chunk)).then(push).catch(push);
+            when(self.messageDispatch(chunk)).then(push).catch(push);
+        }
         callback();
     });
 
