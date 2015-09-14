@@ -334,9 +334,6 @@ Port.prototype.pipe = function pipe(stream, context) {
     }, queue).on('data', function(msg) {
         when(this.messageDispatch(msg)).then(function(result){
             if (msg && msg.$$ && msg.$$.mtid === 'request') {
-                if (!result) {
-                    result = {};
-                }
                 (result.$$) || (result.$$ = {});
                 (result.$$.mtid) || (result.$$.mtid = 'response');
                 (result.$$.opcode) || (result.$$.opcode = msg.$$.opcode);
