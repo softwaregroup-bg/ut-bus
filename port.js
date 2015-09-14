@@ -274,8 +274,12 @@ Port.prototype.encode = function encode(context) {
                 var buffer;
                 var size;
                 if (port.codec) {
+                    var sizeAdjust = 0;
                     buffer = port.codec.encode(message, context);
-                    size = buffer && buffer.length;
+                    if (port.framePatternSize) {
+                        sizeAdjust = port.config.format.sizeAdjust;
+                    }
+                    size = buffer && buffer.length + sizeAdjust;
                     port.traceCallback(context, message);
                 } else if (message) {
                     buffer = message;
@@ -283,7 +287,7 @@ Port.prototype.encode = function encode(context) {
                 }
 
                 if (port.frameBuilder) {
-                    buffer = port.frameBuilder({size: size, data: buffer});
+                    buffer = port.frameBuilder({size: size, data: buffer}).slice(0, size);
                 }
 
                 if (buffer) {
@@ -330,6 +334,9 @@ Port.prototype.pipe = function pipe(stream, context) {
     }, queue).on('data', function(msg) {
         when(this.messageDispatch(msg)).then(function(result){
             if (msg && msg.$$ && msg.$$.mtid === 'request') {
+                if (!result) {
+                    result = {};
+                }
                 (result.$$) || (result.$$ = {});
                 (result.$$.mtid) || (result.$$.mtid = 'response');
                 (result.$$.opcode) || (result.$$.opcode = msg.$$.opcode);
