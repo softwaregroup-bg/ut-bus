@@ -109,14 +109,13 @@ Port.prototype.request = function request(message) {
                 this.queues[$$.conId].add(message);
             } else {
                 var q = Object.keys(this.queues).sort(function(a, b){return b-a});
-
                 if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
                     q = this.queues[port.connRouter(this.queues)];
                 } else if(!(q = q && q.length && this.queues[q[0]])) {
                     var err = {$$:{mtid: 'error'}};
                     var error = new Error('No connection to ' + this.config.id);
                     err.$$.code = 'notConnected';
-                    err.$$.message = 'No connection to ' + this.config.id;
+                    err.$$.message = 'No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues));
                     err.$$.stack = error.stack;
                     return reject(err);
                 }
