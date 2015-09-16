@@ -226,25 +226,17 @@ Port.prototype.decode = function decode(context) {
             return port.framePattern(rest);
         }
     }
-
+    var buffer = new Buffer(0);
     return through2.obj(function decodePacket(packet, enc, callback) {
         port.log.trace && port.log.trace({$$:{opcode:'frameIn', frame:packet}});
-
         if (port.framePattern) {
-            var frame;
-            frame = applyPattern(packet);
-            if (!frame) {
-                this.unshift(packet);
-            } else {
-                var rest;
-                while (frame) {
-                    convert(this, frame.data);
-                    rest = frame.rest;
-                    frame = applyPattern(rest);
-                }
-                if (rest && rest.length) {
-                    this.unshift(rest);
-                }
+
+            buffer = Buffer.concat([buffer, packet]);
+            var frame = applyPattern(buffer);
+            while (frame) {
+                buffer = frame.rest;
+                convert(this, frame.data);
+                frame = applyPattern(buffer);
             }
             callback();
         } else {
