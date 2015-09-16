@@ -242,7 +242,7 @@ Port.prototype.decode = function decode(context) {
                     rest = frame.rest;
                     frame = applyPattern(rest);
                 }
-                if (rest) {
+                if (rest && rest.length) {
                     this.unshift(rest);
                 }
             }
