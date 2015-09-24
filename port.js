@@ -265,8 +265,8 @@ Port.prototype.encode = function encode(context) {
                 port.log.debug && port.log.debug(message);
                 var buffer;
                 var size;
+                var sizeAdjust = 0;
                 if (port.codec) {
-                    var sizeAdjust = 0;
                     buffer = port.codec.encode(message, context);
                     if (port.framePatternSize) {
                         sizeAdjust = port.config.format.sizeAdjust;
@@ -279,9 +279,9 @@ Port.prototype.encode = function encode(context) {
                 }
 
                 if (port.frameBuilder) {
-                    buffer = port.frameBuilder({size: size, data: buffer}).slice(0, size);
+                    buffer = port.frameBuilder({size: size, data: buffer});
+                    buffer = buffer.slice(0, buffer.length - sizeAdjust);
                 }
-
                 if (buffer) {
                     port.log.trace && port.log.trace({$$: {opcode: 'frameOut', frame: buffer}});
                     callback(null, buffer);
