@@ -108,10 +108,10 @@ Port.prototype.request = function request(message) {
                 message.$$ = $$;
                 this.queues[$$.conId].add(message);
             } else {
-                var q = Object.keys(this.queues).sort(function(a, b){return b-a});
+                var q = Object.keys(this.queues).sort(function(a, b) {return b - a;});
                 if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
                     q = this.queues[port.connRouter(this.queues)];
-                } else if(!(q = q && q.length && this.queues[q[0]])) {
+                } else if (!(q = q && q.length && this.queues[q[0]])) {
                     var err = {$$:{mtid: 'error'}};
                     var error = new Error('No connection to ' + this.config.id);
                     err.$$.code = 'notConnected';
@@ -187,7 +187,7 @@ Port.prototype.receive = function(stream, msg, context) {
             stream.push(err);
         })
         .done();
-}
+};
 
 Port.prototype.decode = function decode(context) {
     var port = this;
@@ -215,7 +215,7 @@ Port.prototype.decode = function decode(context) {
         }
     }
 
-    function applyPattern(rest){
+    function applyPattern(rest) {
         if (port.framePatternSize) {
             var tmp = port.framePatternSize(rest);
             if (tmp) {
@@ -324,7 +324,7 @@ Port.prototype.pipe = function pipe(stream, context) {
     //}, queue).on('data', this.messageDispatch.bind(this));
     //todo handle messageDispatch response
     }, queue).on('data', function(msg) {
-        when(this.messageDispatch(msg)).then(function(result){
+        when(this.messageDispatch(msg)).then(function(result) {
             if (msg && msg.$$ && msg.$$.mtid === 'request') {
                 (result.$$) || (result.$$ = {});
                 (result.$$.mtid) || (result.$$.mtid = 'response');

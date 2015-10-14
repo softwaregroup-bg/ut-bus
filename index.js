@@ -188,7 +188,7 @@ module.exports = function Bus() {
             var self = this;
             return when.promise(function(resolve, reject) {
                 var pipe;
-                if (!self.socket){
+                if (!self.socket) {
                     resolve();
                     return;
                 } else if (typeof self.socket === 'string') {
@@ -297,7 +297,7 @@ module.exports = function Bus() {
          * @param {string} [namespace] to use when registering
          * @returns {promise}
          */
-         register: function(methods, namespace) {
+        register: function(methods, namespace) {
             function adapt(self, f) {
                 return function() {
                     var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
@@ -316,7 +316,7 @@ module.exports = function Bus() {
                 };
             }
 
-            return serverRegister(methods, namespace ? namespace : this.id, adapt);
+            return serverRegister(methods, namespace ? namespace : this.id, this.socket ? adapt : false);
         },
 
         /**
@@ -381,7 +381,7 @@ module.exports = function Bus() {
                             delete applyArgs[0].$$;
                         }
                         applyArgs.push($$);
-                        if (!bus.socket){
+                        if (!bus.socket) {
                             return handle$$(this, fn, applyArgs);
                         }
                     }
@@ -440,7 +440,19 @@ module.exports = function Bus() {
                 var tokens = methodName.split('.');
                 var opcode = tokens.pop() || 'request';
                 var destination = tokens.join('.') || 'ut';
-                var method = self.getMethod('req', 'request', destination, opcode, validate);
+                var method;
+                if (self.socket) {
+                    method = self.getMethod('req', 'request', destination, opcode, validate);
+                } else {
+                    method = function(msg) {
+                        var fn = local[destination] && local[destination][opcode];
+                        if (fn) {
+                            return fn.apply(this, arguments);
+                        }
+                        fn = mapLocal[['ports', destination, 'request'].join('.')];
+                        return fn(msg, {destination:destination, opcode:opcode, method: methodName});
+                    };
+                }
                 target[methodName] = binding ? _.assign(method.bind(binding),method) : method;
                 if (target !== cache) {
                     cache[methodName] = target[methodName];
@@ -475,10 +487,20 @@ module.exports = function Bus() {
             var mtid;
             if ($$) {
                 mtid = $$.mtid;
-                if (mtid === 'request') {
-                    return this.masterRequest(msg);
+                if (this.socket) {
+                    if (mtid === 'request') {
+                        return this.masterRequest(msg);
+                    } else {
+                        return this.masterPublish(msg);
+                    }
                 } else {
-                    return this.masterPublish(msg);
+                    if ($$ && typeof $$.callback === 'function') {
+                        var cb = $$.callback;
+                        delete $$.callback;
+                        return cb.apply(this, arguments);
+                    }
+                    var f = $$.destination && mapLocal[['ports', $$.destination, mtid].join('.')];
+                    return f ? f(msg, $$) : false;
                 }
             } else {
                 return false;
