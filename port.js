@@ -62,10 +62,10 @@ Port.prototype.init = function init() {
     return this.bus && when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
 };
 
-Port.prototype.messageDispatch = function(msg) {
-    var result = this.bus && this.bus.dispatch(msg);
+Port.prototype.messageDispatch = function() {
+    var result = this.bus && this.bus.dispatch.apply(this.bus, Array.prototype.slice.call(arguments));
     if (!result) {
-        this.log && this.log.error && this.log.error('Cannot dispatch message to bus', {message:msg});
+        this.log && this.log.error && this.log.error('Cannot dispatch message to bus', {message:Array.prototype.slice.call(arguments)});
     }
     return result;
 };
@@ -82,136 +82,132 @@ Port.prototype.stop = function stop() {
     return true;
 };
 
-Port.prototype.request = function request(message) {
+Port.prototype.request = function request() {
     var port = this;
-    var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
+    var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
+    var args = Array.prototype.slice.call(arguments);
     return when.promise(function(resolve, reject) {
-
-        if (!message) {
-            reject(new Error('Missing message parameter'));
+        if (!args.length) {
+            reject(new Error('Missing parameters'));
         } else
-        if (!$$) {
-            reject(new Error('Missing message type'));
+        if (!$meta) {
+            reject(new Error('Missing metadata'));
         } else {
-            $$.callback = function(msg) {
-                if (msg.$$ && msg.$$.mtid && msg.$$.mtid !== 'error') {
-                    resolve(msg);
+            $meta.callback = function(msg) {
+                if ($meta && $meta.mtid !== 'error') {
+                    resolve(Array.prototype.slice.call(arguments));
                 }else {
-                    reject(msg);
+                    reject(Array.prototype.slice.call(arguments));
                 }
                 return true;
             };
             if (this.queue) {
-                message.$$ = $$;
-                this.queue.add(message);
-            } else if ($$ && $$.conId && this.queues[$$.conId]) {
-                message.$$ = $$;
-                this.queues[$$.conId].add(message);
+                this.queue.add(args);
+            } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
+                this.queues[$meta.conId].add(args);
             } else {
-                var q = Object.keys(this.queues).sort(function(a, b) {return b - a;});
-                if (q.length && port.connRouter && typeof(port.connRouter) === 'function') {
-                    q = this.queues[port.connRouter(this.queues)];
-                } else if (!(q = q && q.length && this.queues[q[0]])) {
-                    var err = {$$:{mtid: 'error'}};
-                    var error = new Error('No connection to ' + this.config.id);
-                    err.$$.code = 'notConnected';
-                    err.$$.message = 'No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues));
-                    err.$$.stack = error.stack;
-                    return reject(err);
+                var keys = Object.keys(this.queues).sort(function(a, b) {return b - a;});
+                var queue;
+                if (keys.length && port.connRouter && typeof(port.connRouter) === 'function') {
+                    queue = this.queues[port.connRouter(this.queues)];
+                } else if (!(queue = keys && keys.length && this.queues[keys[0]])) {
+                    var error = new Error('No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues)));
+                    error.code = 'notConnected';
+                    reject(error);
                 }
-
-                message.$$ = $$;
-                q.add(message);
+                queue.add(args);
             }
         }
     }.bind(this));
 };
 
-Port.prototype.publish = function publish(msg, $$) {
-    var conId;
+Port.prototype.publish = function publish() {
+    var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
     var queue;
-    if (this.queue) {
+    if (!arguments.length) {
+        return when.reject(new Error('Missing parameters'));
+    } else if (!$meta) {
+        return when.reject(new Error('Missing metadata'));
+    } else if (this.queue) {
         queue = this.queue;
+    } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
+        queue = this.queues[$meta.conId];
     } else {
-        conId = ($$ && $$.conId);
-        if (conId) {
-            queue = this.queues[conId];
-        } else {
-            queue = this.queue;
+        var keys = Object.keys(this.queues).sort(function(a, b) {return b - a;});
+        if (keys.length && this.connRouter && typeof(this.connRouter) === 'function') {
+            queue = this.queues[this.connRouter(this.queues)];
+        } else if (!(queue = keys && keys.length && this.queues[keys[0]])) {
+            var error = new Error('No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues)));
+            error.code = 'notConnected';
+            return when.reject(error);
         }
     }
     if (queue) {
-        msg.$$ = $$;
-        queue.add(msg);
+        queue.add(Array.prototype.slice.call(arguments));
         return true;
     } else {
-        this.log.error && this.log.error('Queue not found', {message:msg});
+        this.log.error && this.log.error('Queue not found', {arguments:Array.prototype.slice.call(arguments)});
         return false;
     }
 };
 
-Port.prototype.findCallback = function findCallback(context, message) {
-    var $$ = message.$$;
-    if ($$.trace && ($$.mtid === 'response' || $$.mtid === 'error')) {
-        var x = context[$$.trace];
+Port.prototype.findCallback = function findCallback($meta) {
+    if ($meta.trace && ($meta.mtid === 'response' || $meta.mtid === 'error')) {
+        var x = $meta.context[$meta.trace];
         if (x) {
-            delete context[$$.trace];
-            $$.callback = x.callback;
+            delete $meta.context[$meta.trace];
+            $meta.callback = x.callback;
             if (x.startTime) {
-                $$.timeTaken = Date.now() - x.startTime;
+                $meta.timeTaken = Date.now() - x.startTime;
             }
         }
     }
 };
 
-Port.prototype.receive = function(stream, msg, context) {
+Port.prototype.receive = function(stream, packet) {
     var port = this;
-    var fn = (msg.$$ && port.config[[msg.$$.opcode, msg.$$.mtid, 'receive'].join('.')]) || port.config.receive;
+    var $meta = packet.length && packet[packet.length - 1];
+    var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) || port.config.receive;
 
-    when(fn ? when.lift(fn).call(port, msg, context) : msg)
-        .then(function(result) {
-            port.findCallback(context, result);
-            stream.push(result);
-            port.log.debug && port.log.debug(result);
-        })
-        .catch(function(err) {
-            var $$ = msg.$$ || {};
-            err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};
-            for (var prop in $$) {
-                if ($$.hasOwnProperty(prop)) {
-                    err.$$[prop] = $$[prop];
-                }
-            }
-            err.$$.mtid = 'error';
-            port.findCallback(context, err);
-            stream.push(err);
-        })
-        .done();
+    //packet.length && (packet[0].$$ = $meta);//todo remove this, because it was added for backwards compatibility
+
+    if (!fn) {
+        stream.push(packet);
+    } else {
+        when(when.lift(fn).apply(port, packet))
+            .then(function(result) {
+                port.findCallback($meta);
+                stream.push([result, $meta]);
+                port.log.debug && port.log.debug(result);
+            })
+            .catch(function(err) {
+                $meta.mtid = 'error';
+                $meta.errorCode = err && err.code;
+                $meta.errorMessage = err && err.message;
+                port.findCallback($meta);
+                stream.push([err, $meta]);
+            })
+            .done();
+    }
 };
 
 Port.prototype.decode = function decode(context) {
     var port = this;
     var buffer = new Buffer(0);
 
-    function push(stream, msg) {
-        if (context && context.conId) {
-            if (msg.$$) {
-                msg.$$.conId = context.conId;
-            } else {
-                msg.$$ = {conId:context.conId};
-            }
-        }
-        port.receive(stream, msg, context);
-    }
-
     function convert(stream, msg) {
+        var $meta;
         if (port.codec) {
-            var message = port.codec.decode(msg, context);
-            push(stream, message);
+            $meta = {context:context, conId:context && context.conId};
+            var message = port.codec.decode(msg, $meta);
+            port.receive(stream, [message, $meta]);
         } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
-            push(stream, {payload: msg, $$:{mtid:'notification', opcode:'payload'}});
+            port.receive(stream, [{payload: msg}, {mtid:'notification', opcode:'payload', conId:context && context.conId, context:context}]);
         } else {
-            push(stream, msg);
+            $meta = msg.length && msg[msg.length - 1];
+            $meta && ($meta.context = context);
+            $meta && context && context.conId && ($meta.conId = context.conId);
+            port.receive(stream, msg);
         }
     }
 
@@ -247,32 +243,45 @@ Port.prototype.decode = function decode(context) {
     });
 };
 
-Port.prototype.traceCallback = function traceCallback(context, message) {
-    var $$ = message.$$;
-    if ($$ && $$.trace && $$.callback && $$.mtid === 'request') {
-        context[$$.trace] = {callback : $$.callback, expire : Date.now() + 60000, startTime: Date.now()};
+Port.prototype.traceCallback = function traceCallback($meta) {
+    if ($meta && $meta.trace && $meta.callback && $meta.mtid === 'request') {
+        $meta.context[$meta.trace] = {callback : $meta.callback, expire : Date.now() + 60000, startTime: Date.now()};
     }
 };
 
 Port.prototype.encode = function encode(context) {
     var port = this;
     return through2.obj(function encodePacket(packet, enc, callback) {
-        var fn = (packet.$$ && port.config[[packet.$$.opcode, packet.$$.mtid, 'send'].join('.')]) || port.config.send;
-        var msgCallback = (packet.$$ && packet.$$.callback) || function() {};
+        var $meta = packet.length && packet[packet.length - 1];
+        var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) || port.config.send;
+        var msgCallback = ($meta && $meta.callback) || function() {};
+        $meta && context && ($meta.context = context);
 
-        when(fn ? when.lift(fn).call(port, packet, context) : packet)
+        //packet[0].$$ = $meta;//todo remove this, because it was added for backwards compatibility
+
+        if (fn) {
+            packet = when.lift(fn).apply(port, packet)
+                .then(function(result) {
+                    return [result, $meta];
+                })
+                .catch(function(error) {
+                    return [error, $meta];
+                });
+        }
+
+        when(packet)
             .then(function(message) {
                 port.log.debug && port.log.debug(message);
                 var buffer;
                 var size;
                 var sizeAdjust = 0;
                 if (port.codec) {
-                    buffer = port.codec.encode(message, context);
+                    buffer = port.codec.encode(message, $meta);
                     if (port.framePatternSize) {
                         sizeAdjust = port.config.format.sizeAdjust;
                     }
                     size = buffer && buffer.length + sizeAdjust;
-                    port.traceCallback(context, message);
+                    port.traceCallback($meta);
                 } else if (message) {
                     buffer = message;
                     size = buffer && buffer.length;
@@ -290,9 +299,10 @@ Port.prototype.encode = function encode(context) {
                 }
             })
             .catch(function(err) {
-                err = err.$$ ? err : {$$ : {errorCode: err.code, errorMessage: err.message, stack: err.stack}};
-                err.$$.mtid = 'error';
-                msgCallback(err);
+                $meta.mtid = 'error';
+                $meta.errorCode = err && err.code;
+                $meta.errorMessage = err && err.message;
+                msgCallback(err, $meta);
                 callback();
             })
             .done();
@@ -321,15 +331,15 @@ Port.prototype.pipe = function pipe(stream, context) {
 
     result.reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
-    //}, queue).on('data', this.messageDispatch.bind(this));
-    //todo handle messageDispatch response
-    }, queue).on('data', function(msg) {
-        when(this.messageDispatch(msg)).then(function(result) {
-            if (msg && msg.$$ && msg.$$.mtid === 'request') {
-                (result.$$) || (result.$$ = {});
-                (result.$$.mtid) || (result.$$.mtid = 'response');
-                (result.$$.opcode) || (result.$$.opcode = msg.$$.opcode);
-                queue.add(result);
+    }, queue).on('data', function(packet) {
+        var $meta = (packet.length > 1) && packet[packet.length - 1];
+        var mtid = $meta.mtid;
+        var opcode = $meta.opcode;
+        when(this.messageDispatch.apply(this, packet)).then(function(result) {
+            if (mtid === 'request' && $meta.mtid !== 'discard') {
+                ($meta.mtid) || ($meta.mtid = 'response');
+                ($meta.opcode) || ($meta.opcode = opcode);
+                queue.add([result, $meta]);
             }
         });
     }.bind(this));
@@ -337,30 +347,31 @@ Port.prototype.pipe = function pipe(stream, context) {
     return result;
 };
 
-Port.prototype.pipeReverse = function pipe2(stream, context) {
+Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     var self = this;
-    var callStream = through2({objectMode:true}, function(chunk, enc, callback) {
-        if (chunk.$$ && (chunk.$$.mtid === 'error' || chunk.$$.mtid === 'response')) {
-            this.push(chunk);
+    var callStream = through2({objectMode:true}, function(packet, enc, callback) {
+        var $meta = packet.length && packet[packet.length - 1];
+        if ($meta && ($meta.mtid === 'error' || $meta.mtid === 'response')) {
+            this.push(packet);
         } else {
-            var cb = chunk && chunk.$$ && chunk.$$.callback;
-            if (cb) {delete chunk.$$.callback;}
+            //todo maybe this cb preserving logic is not needed
+            var cb = $meta && $meta.callback;
+            if (cb) {delete $meta.callback;}
             var push = function(result) {
-                if (cb) {
-                    result.$$ || (result.$$ = {});
-                    result.$$.callback = cb;
-                }
-                this.push(result);
+                cb && ($meta.callback = cb);
+                this.push([result, $meta || {}]);
             }.bind(this);
 
-            when(self.messageDispatch(chunk)).then(push).catch(push);
+            when(self.messageDispatch.apply(self, packet)).then(push).catch(push);
         }
         callback();
     });
 
     [this.decode(context), callStream, this.encode(context)].reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
-    }, stream).on('data', this.messageDispatch.bind(this));
+    }, stream).on('data', function(packet) {
+        this.messageDispatch.apply(this, packet);
+    }.bind(this));
 
     return stream;
 };
@@ -368,40 +379,25 @@ Port.prototype.pipeReverse = function pipe2(stream, context) {
 Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var countActive = 0;
     concurrency = concurrency || 10;
-    var self = this;
     var stream = through2({objectMode:true}, function(chunk, enc, callback) {
+        var $meta = chunk.length > 1 && chunk[chunk.length - 1];
         countActive += 1;
-        try {
-            var startTime = Date.now();
-            self.exec(chunk, function(err, result) {
+        var startTime = Date.now();
+        $meta && ($meta.mtid === 'request') && ($meta.mtid = 'response');
+        when(exec.apply(this, chunk))
+            .then(function(result) {
+                $meta && ($meta.timeTaken = Date.now() - startTime);
+                stream.push([result, $meta]);
+            })
+            .catch(function(error) {
+                $meta && ($meta.mtid = 'error') && ($meta.timeTaken = Date.now() - startTime);
+                stream.push([error, $meta]);
+            })
+            .finally(function() {
                 countActive -= 1;
-                if (err) {
-                    err.$$ || (err.$$ = {});
-                    err.$$.mtid = 'error';
-                }
-                var chunkOut = err ? err : result;
-                if (chunkOut && chunk && chunk.$$ && chunk.$$.callback) {
-                    (chunkOut.$$) || (chunkOut.$$ = {});
-                    chunkOut.$$.callback = chunk.$$.callback;
-                    chunkOut.$$.timeTaken = (Date.now() - startTime);
-                }
-                stream.push(chunkOut);
-                if (countActive + 1 === concurrency) {
-                    callback();
-                }
-            });
-        } catch (e) {
-            countActive -= 1;
-            (chunk.$$) || (chunk.$$ = {});
-            chunk.$$.mtid = 'error';
-            chunk.error = e;
-            this.push(chunk);
-            if (countActive + 1 >= concurrency) {
-                callback();
-            }
-            return;
-        }
-
+                (countActive + 1 === concurrency) && callback();
+            })
+            .done();
         if (countActive < concurrency) {
             callback();
         }

@@ -1,5 +1,7 @@
 var when = require('when');
-var _ = require('lodash');
+var assign = require('lodash/object/assign');
+var capitalize = require('lodash/string/capitalize');
+var errors = require('./errors');
 
 function createFieldError(errType, module, validation) {
     var joiErrors = validation.error.details || [];
@@ -7,14 +9,14 @@ function createFieldError(errType, module, validation) {
     var fieldErrorType = '';
     var fieldErrorTypePieces = [];
     module = module.split('.');
-    var errorCode = _.capitalize(module[0]) + errType;
-    var error = new Error(errorCode);
+    var errorCode = capitalize(module[0]) + errType;
+    var error = errors.busError(errorCode);
     error.code = errorCode;
     joiErrors.forEach(function(err) {
         fieldErrorType = 'Joi';
         fieldErrorTypePieces = err.type.split('.');
         fieldErrorTypePieces.forEach(function(errorPiece) {
-            fieldErrorType += _.capitalize(errorPiece);
+            fieldErrorType += capitalize(errorPiece);
         });
         fieldErrors[err.path] = {
             code: fieldErrorType,
@@ -46,13 +48,13 @@ module.exports = function Bus() {
         var pub = {};
         function publish() {
             var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
-            var $$ = (args.length && args[args.length - 1]) || {};
-            var d = $$.destination;
+            var $meta = (args.length && args[args.length - 1]) || {};
+            var d = $meta.destination;
             if (d) {
                 var fn;
                 //noinspection JSUnusedAssignment
                 if ((fn = thisPub[d]) || (pub[d] = fn = thisPub['ports.' + d + '.publish'])) {
-                    delete $$.destination;
+                    delete $meta.destination;
                     return fn.apply(undefined, args);
                 }
             }
@@ -69,14 +71,20 @@ module.exports = function Bus() {
     function _request(thisRPC) {
         var RPC = {};
         function request() {
-            var $$ = (arguments.length && arguments[arguments.length - 1]) || {};
-            var d = $$.destination;
+            var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
+            var d = $meta.destination;
             if (d) {
                 var fn;
                 //noinspection JSUnusedAssignment
-                if ((fn = RPC[d]) || (RPC[d] = fn = thisRPC['ports.' + d + '.request']) || (RPC[d] = fn = thisRPC[d + '.' + $$.opcode])) {
-                    delete $$.destination;
-                    return fn.apply(undefined, arguments);
+                if ((fn = RPC[d]) || (RPC[d] = fn = thisRPC['ports.' + d + '.request']) || (RPC[d] = fn = thisRPC[d + '.' + $meta.opcode])) {
+                    delete $meta.destination;
+                    return fn.apply(undefined, Array.prototype.slice.call(arguments))
+                        .then(function(result) {
+                            return [result, $meta];
+                        })
+                        .catch(function(error) {
+                            return [error, $meta];
+                        });
                 }
             }
         }
@@ -147,19 +155,20 @@ module.exports = function Bus() {
         return registerRemoteMethods(remotes, methodNames, adapt);
     }
 
-    function handle$$(obj, fn, args) {
+    function handleMeta(obj, fn, args) {
+        var $meta = (args.length && args[args.length - 1]);
         return when.promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
-                    if (err.length === 2) {
-                        err[0].$$ = err[1];
+                    if (err.length > 1) {
+                        assign($meta, err[err.length - 1]);
                         reject(err[0]);
                     } else {
                         reject(err);
                     }
                 } else {
-                    if (res.length === 2) {
-                        if (!res[0] && res[1]) {res[0].$$ = res[1];}
+                    if (res.length > 1) {
+                        assign($meta, res[res.length - 1]);
                         resolve(res[0]);
                     } else {
                         resolve(res);
@@ -262,15 +271,15 @@ module.exports = function Bus() {
             var adapt = {req: function req(fn) {
                     return function() {
                         if (!fn) {
-                            return when.reject(new Error('Remote method not found for object "' + id + '"'));
+                            return when.reject(errors.busError('Remote method not found for object "' + id + '"'));
                         }
                         var args = Array.prototype.slice.call(arguments);
-                        return handle$$(undefined, fn, args);
+                        return handleMeta(undefined, fn, args);
                     };
                 },
                 pub:function subscribe(fn) {
                     return function() {
-                        fn.apply(undefined, arguments);
+                        fn.apply(undefined, Array.prototype.slice.call(arguments));
                         return true;
                     };
                 }
@@ -304,14 +313,10 @@ module.exports = function Bus() {
                     var callback = arguments[arguments.length - 1];
                     when(f.apply(self, args))
                         .then(function(result) {
-                            var $$ = result && result.$$;
-                            result && delete result.$$;
-                            callback(undefined, [result, $$]);
+                            callback(undefined, result);
                         })
                         .catch(function(error) {
-                            var $$ = error && error.$$;
-                            error && delete error.$$;
-                            callback([error, $$]);
+                            callback(error);
                         });
                 };
             }
@@ -352,13 +357,12 @@ module.exports = function Bus() {
             var fn = null;
             var local;
             function busMethod() {
-                var msg = (arguments.length) ? arguments[0] : {};
-                var $$ = (msg && msg.$$);
-                var applyArgs = arguments;
-                if (!destination && $$ && typeof $$.callback === 'function') {
-                    var cb = $$.callback;
-                    delete $$.callback;
-                    return cb.apply(this, arguments);
+                var $meta = (arguments.length && arguments[arguments.length - 1]);
+                var applyArgs = Array.prototype.slice.call(arguments);
+                if (!destination && $meta && typeof $meta.callback === 'function') {
+                    var cb = $meta.callback;
+                    delete $meta.callback;
+                    return cb.apply(this, applyArgs);
                 } else if (!fn) {
                     var type;
                     var master;
@@ -370,19 +374,15 @@ module.exports = function Bus() {
                 if (fn) {
                     if (!local) {
                         if (destination && opcode) {
-                            $$ = $$ || {};
-                            $$.destination = destination;
-                            $$.opcode = opcode;
-                            $$.method = destination + '.' + opcode;
+                            applyArgs.push({
+                                destination : destination,
+                                opcode : opcode,
+                                method : destination + '.' + opcode
+                            });
                         }
-                        applyArgs = Array.prototype.slice.call(arguments);
-                        if (applyArgs.length && applyArgs[0] && applyArgs[0].$$) {
-                            applyArgs[0] = (msg instanceof Array) ? _.assign([], msg) : _.assign({}, msg);
-                            delete applyArgs[0].$$;
-                        }
-                        applyArgs.push($$);
+                        //else {applyArgs.push({});}
                         if (!bus.socket) {
-                            return handle$$(this, fn, applyArgs);
+                            return handleMeta(this, fn, applyArgs);
                         }
                     }
                     if (local && validate && bus.local[destination] && bus.local[destination][opcode]) {
@@ -390,7 +390,7 @@ module.exports = function Bus() {
                         var responseSchema = (validate.response && bus.local[destination][opcode].response) || false;
                         var joi = (requestSchema || responseSchema) && require('joi');
                         if (requestSchema) {
-                            var requestValidation = joi.validate(msg, requestSchema, {abortEarly: false});
+                            var requestValidation = joi.validate(applyArgs[0], {abortEarly: false});
                             if (requestValidation.error) {
                                 return createFieldError('RequestFieldError', destination, requestValidation);
                             }
@@ -410,18 +410,11 @@ module.exports = function Bus() {
                     }
                     return fn.apply(this, applyArgs);
                 } else {
-                    //todo return some error
-                    return {
-                        $$:{
-                            mtid:'error',
-                            errorCode:'111',
-                            errorMessage:'Method binding failed for ' + typeName + ' ' + methodName + ' ' + destination + ' ' + opcode
-                        }
-                    };
+                    return when.reject(errors.busError('Method binding failed for ' + typeName + ' ' + methodName + ' ' + destination + ' ' + opcode));
                 }
             }
             if (bus.local[destination]) {
-                _.assign(busMethod, bus.local[destination][opcode]);
+                assign(busMethod, bus.local[destination][opcode]);
             }
             return busMethod;
         },
@@ -447,13 +440,19 @@ module.exports = function Bus() {
                     method = function(msg) {
                         var fn = local[destination] && local[destination][opcode];
                         if (fn) {
-                            return fn.apply(this, arguments);
+                            return fn.apply(this, Array.prototype.slice.call(arguments));
                         }
                         fn = mapLocal[['ports', destination, 'request'].join('.')];
-                        return fn(msg, {destination:destination, opcode:opcode, method: methodName});
+                        return fn(msg, {destination:destination, opcode:opcode, method: methodName})
+                            .then(function(result) {
+                                return result[0];
+                            })
+                            .catch(function(error) {
+                                return error[0];
+                            });
                     };
                 }
-                target[methodName] = binding ? _.assign(method.bind(binding),method) : method;
+                target[methodName] = binding ? assign(method.bind(binding),method) : method;
                 if (target !== cache) {
                     cache[methodName] = target[methodName];
                 }
@@ -482,25 +481,25 @@ module.exports = function Bus() {
             return result;
         },
 
-        dispatch: function(msg) {
-            var $$ = msg && msg.$$;
+        dispatch: function() {
+            var $meta = (arguments.length && arguments[arguments.length - 1]);
             var mtid;
-            if ($$) {
-                mtid = $$.mtid;
+            if ($meta) {
+                mtid = $meta.mtid;
                 if (this.socket) {
                     if (mtid === 'request') {
-                        return this.masterRequest(msg);
+                        return this.masterRequest.apply(this, Array.prototype.slice.call(arguments));
                     } else {
-                        return this.masterPublish(msg);
+                        return this.masterPublish.apply(this, Array.prototype.slice.call(arguments));
                     }
                 } else {
-                    if ($$ && typeof $$.callback === 'function') {
-                        var cb = $$.callback;
-                        delete $$.callback;
-                        return cb.apply(this, arguments);
+                    if ($meta && typeof $meta.callback === 'function') {
+                        var cb = $meta.callback;
+                        delete $meta.callback;
+                        return cb.apply(this, Array.prototype.slice.call(arguments));
                     }
-                    var f = $$.destination && mapLocal[['ports', $$.destination, mtid].join('.')];
-                    return f ? f(msg, $$) : false;
+                    var f = $meta.destination && mapLocal[['ports', $meta.destination, mtid].join('.')];
+                    return f ? f.apply(undefined, Array.prototype.slice.call(arguments)) : false;
                 }
             } else {
                 return false;
