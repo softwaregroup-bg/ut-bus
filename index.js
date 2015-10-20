@@ -46,6 +46,7 @@ module.exports = function Bus() {
      */
     function _publish(thisPub) {
         var pub = {};
+
         function publish() {
             var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
             var $meta = (args.length && args[args.length - 1]) || {};
@@ -59,6 +60,7 @@ module.exports = function Bus() {
                 }
             }
         }
+
         return publish;
     }
 
@@ -70,6 +72,7 @@ module.exports = function Bus() {
      */
     function _request(thisRPC) {
         var RPC = {};
+
         function request() {
             var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
             var d = $meta.destination;
@@ -88,6 +91,7 @@ module.exports = function Bus() {
                 }
             }
         }
+
         return request;
     }
 
@@ -187,7 +191,7 @@ module.exports = function Bus() {
         req: {},
         pub: {},
         local: {},
-        logLevel : 'warn',
+        logLevel: 'warn',
         logFactory: null,
 
         init: function() {
@@ -217,7 +221,7 @@ module.exports = function Bus() {
                     }
                     net.createServer(function(socket) {
                         socket.on('data', function(msg) {
-                            log.trace && log.trace({$$: {opcode: 'frameIn', frame: msg}});
+                            log.trace && log.trace({$meta: {opcode: 'frameIn'}, message: msg});
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
@@ -236,7 +240,7 @@ module.exports = function Bus() {
                 } else {
                     var connection = net.createConnection(pipe, function() {
                         connection.on('data', function(msg) {
-                            log.trace && log.trace({$$: {opcode: 'frameIn', frame: msg}});
+                            log.trace && log.trace({$meta: {opcode: 'frameIn'}, message: msg});
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
@@ -268,7 +272,8 @@ module.exports = function Bus() {
 
         registerRemote: function(index, type, methods, cb) {
             var id = this.id;
-            var adapt = {req: function req(fn) {
+            var adapt = {
+                req: function req(fn) {
                     return function() {
                         if (!fn) {
                             return when.reject(errors.busError('Remote method not found for object "' + id + '"'));
@@ -277,7 +282,7 @@ module.exports = function Bus() {
                         return handleMeta(undefined, fn, args);
                     };
                 },
-                pub:function subscribe(fn) {
+                pub: function subscribe(fn) {
                     return function() {
                         fn.apply(undefined, Array.prototype.slice.call(arguments));
                         return true;
@@ -356,6 +361,7 @@ module.exports = function Bus() {
             var bus = this;
             var fn = null;
             var local;
+
             function busMethod() {
                 var $meta = (arguments.length && arguments[arguments.length - 1]);
                 var applyArgs = Array.prototype.slice.call(arguments);
@@ -369,21 +375,22 @@ module.exports = function Bus() {
                     //noinspection JSUnusedAssignment
                     (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
                     (destination && opcode && (!bus.socket) && (fn = mapLocal[['ports', destination, methodName].join('.')]) && !(local = false)) ||
-                    ((type = bus[typeName]) &&  (fn = type['master.' + methodName]) && (local = false));
+                    ((type = bus[typeName]) && (fn = type['master.' + methodName]) && (local = false));
                 }
                 if (fn) {
                     if (!local) {
+                        if (!bus.socket) {
+                            throw errors.busError('Invalid use of getMethod when not using socket');
+                        }
+
                         if (destination && opcode) {
                             applyArgs.push({
-                                destination : destination,
-                                opcode : opcode,
-                                method : destination + '.' + opcode
+                                destination: destination,
+                                opcode: opcode,
+                                method: destination + '.' + opcode
                             });
                         }
                         //else {applyArgs.push({});}
-                        if (!bus.socket) {
-                            return handleMeta(this, fn, applyArgs);
-                        }
                     }
                     if (local && validate && bus.local[destination] && bus.local[destination][opcode]) {
                         var requestSchema = (validate.request && bus.local[destination][opcode].request) || false;
@@ -413,6 +420,7 @@ module.exports = function Bus() {
                     return when.reject(errors.busError('Method binding failed for ' + typeName + ' ' + methodName + ' ' + destination + ' ' + opcode));
                 }
             }
+
             if (bus.local[destination]) {
                 assign(busMethod, bus.local[destination][opcode]);
             }
@@ -443,7 +451,7 @@ module.exports = function Bus() {
                             return fn.apply(this, Array.prototype.slice.call(arguments));
                         }
                         fn = mapLocal[['ports', destination, 'request'].join('.')];
-                        return fn(msg, {destination:destination, opcode:opcode, method: methodName})
+                        return fn(msg, {destination: destination, opcode: opcode, method: methodName})
                             .then(function(result) {
                                 return result[0];
                             })
@@ -452,7 +460,7 @@ module.exports = function Bus() {
                             });
                     };
                 }
-                target[methodName] = binding ? assign(method.bind(binding),method) : method;
+                target[methodName] = binding ? assign(method.bind(binding), method) : method;
                 if (target !== cache) {
                     cache[methodName] = target[methodName];
                 }
@@ -499,7 +507,13 @@ module.exports = function Bus() {
                         return cb.apply(this, Array.prototype.slice.call(arguments));
                     }
                     var f = $meta.destination && mapLocal[['ports', $meta.destination, mtid].join('.')];
-                    return f ? f.apply(undefined, Array.prototype.slice.call(arguments)) : false;
+                    return f && f.apply(undefined, Array.prototype.slice.call(arguments))
+                            .then(function(result) {
+                                return result[0];
+                            })
+                            .catch(function(error) {
+                                return error[0];
+                            });
                 }
             } else {
                 return false;
