@@ -86,7 +86,8 @@ module.exports = function Bus() {
                             return [result, $meta];
                         })
                         .catch(function(error) {
-                            return [error, $meta];
+                            $meta.mtid = 'error';
+                            return when.reject([error, $meta]);
                         });
                 }
             }
@@ -164,6 +165,7 @@ module.exports = function Bus() {
         return when.promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
+                    console.error('handleMeta', err);
                     if (err.length > 1) {
                         assign($meta, err[err.length - 1]);
                         reject(err[0]);

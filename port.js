@@ -398,6 +398,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
             })
             .catch(function(error) {
                 $meta && ($meta.timeTaken = Date.now() - startTime);
+                $meta.mtid = 'error';
                 stream.push([error, $meta]);
             })
             .finally(function() {
