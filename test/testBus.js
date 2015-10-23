@@ -2,21 +2,6 @@ var wire = require('wire');
 var when = require('when');
 
 var m = wire({
-    log : {
-        create : {
-            module  : 'ut-log',
-            args    : {
-                type : 'bunyan',
-                name : 'bunyan_test',
-                streams :  [
-                    {
-                        level: 'trace',
-                        stream: 'process.stdout'
-                    }
-                ]
-            }
-        }
-    },
     master:{
         create:'../',
         init:'init',
@@ -26,7 +11,7 @@ var m = wire({
             server:true,
             socket:'test',
             id:'master',
-            logFactory:{$ref:'log'},
+            logFactory:null,
             logLevel: 'trace'
         }
     },
@@ -38,7 +23,7 @@ var m = wire({
             server:false,
             socket:'test',
             id:'worker1',
-            logFactory:{$ref:'log'},
+            logFactory:null,
             logLevel: 'trace'
         }
     },
@@ -50,7 +35,7 @@ var m = wire({
             server:false,
             socket:'test',
             id:'worker2',
-            logFactory:{$ref:'log'},
+            logFactory:null,
             logLevel: 'trace'
         }
     }

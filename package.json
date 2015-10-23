@@ -10,12 +10,10 @@
     "reconnect-core": "^1.0.0",
     "through2": "~1.1.1",
     "ut-rpc": "~5.0.1",
-    "when": "~3.7.2",
-    "wire": "~0.10.10"
+    "when": "~3.7.2"
   },
   "devDependencies": {
-    "wire": "~0.10.10",
-    "ut-log": "^5.0.0"
+    "wire": "~0.10.10"
   },
   "publishConfig": {
     "registry": "http://npm.softwaregroup-bg.com:5001"
