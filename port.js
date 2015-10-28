@@ -297,7 +297,7 @@ Port.prototype.encode = function encode(context) {
                 var size;
                 var sizeAdjust = 0;
                 if (port.codec) {
-                    buffer = port.codec.encode(message, $meta);
+                    buffer = port.codec.encode(message[0], message[1]);
                     if (port.framePatternSize) {
                         sizeAdjust = port.config.format.sizeAdjust;
                     }
