@@ -14,10 +14,24 @@ function handleStreamClose(stream, conId) {
     }
 }
 
-var createQueue = function queue() {
+var createQueue = function queue(config, callback) {
     var q = [];
-    var r = new Readable({objectMode:true});
+    var r = new Readable({objectMode: true});
     var forQueue = false;
+    var empty = config && config.empty;
+    var t = false;
+
+    function emitEmpty() {
+        t = setTimeout(emitEmpty, empty);
+        callback('empty');
+    }
+
+    function clear() {
+        if (t) {
+            clearTimeout(t);
+            t = false;
+        }
+    }
 
     r._read = function readQueue() {
         if (q.length) {
@@ -25,9 +39,11 @@ var createQueue = function queue() {
         } else {
             forQueue = false;
         }
+        empty && callback && !q.length && emitEmpty();
     };
 
     r.add = function add(msg) {
+        clear();
         if (forQueue) {
             q.push(msg);
         } else {
@@ -302,9 +318,16 @@ Port.prototype.encode = function encode(context) {
 Port.prototype.pipe = function pipe(stream, context) {
     var queue;
     var conId = context && context.conId && context.conId.toString();
+    var encode = this.encode(context);
+    var decode = this.decode(context);
+    var result = [encode, stream, decode];
+
+    function queueEvent(name) {
+        this.receive(decode, {$$:{mtid:'notification', opcode:name}}, context);
+    }
 
     if (context && conId) {
-        queue = createQueue();
+        queue = createQueue(this.config.queue, queueEvent.bind(this));
         this.queues[conId] = queue;
         if (this.socketTimeOut) {
             stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId));
@@ -312,12 +335,10 @@ Port.prototype.pipe = function pipe(stream, context) {
         stream.on('end', handleStreamClose.bind(this, undefined, conId))
         .on('error', handleStreamClose.bind(this, stream, conId));
     } else {
-        queue = this.queue = createQueue();
+        queue = this.queue = createQueue(this.config.queue, queueEvent.bind(this));
         stream.on('end', handleStreamClose.bind(this, undefined))
         .on('error', handleStreamClose.bind(this, stream));
     }
-
-    var result = [this.encode(context), stream, this.decode(context)];
 
     result.reduce(function(prev, next) {
         return next ? prev.pipe(next) : prev;
