@@ -274,8 +274,7 @@ Port.prototype.encode = function encode(context) {
     return through2.obj(function encodePacket(packet, enc, callback) {
         var $meta = packet.length && packet[packet.length - 1];
         var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) || port.config.send;
-        var msgCallback = ($meta && $meta.callback) || function() {
-            };
+        var msgCallback = ($meta && $meta.callback) || function() {};
         $meta && context && ($meta.context = context);
 
         //packet[0].$$ = $meta;//todo remove this, because it was added for backwards compatibility
