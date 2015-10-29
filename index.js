@@ -89,6 +89,10 @@ module.exports = function Bus() {
                             $meta.mtid = 'error';
                             return when.reject([error, $meta]);
                         });
+                } else {
+                    $meta.mtid = 'error';
+                    $meta.errorMessage = 'Destination not found';
+                    return when.reject([{}, $meta]);
                 }
             }
         }
