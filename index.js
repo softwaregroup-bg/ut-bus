@@ -369,7 +369,7 @@ module.exports = function Bus() {
             var local;
 
             function busMethod() {
-                var $meta = (arguments.length && arguments[arguments.length - 1]);
+                var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
                 var applyArgs = Array.prototype.slice.call(arguments);
                 if (!destination && $meta && typeof $meta.callback === 'function') {
                     var cb = $meta.callback;
@@ -390,11 +390,19 @@ module.exports = function Bus() {
                         }
 
                         if (destination && opcode) {
-                            applyArgs.push({
-                                destination: destination,
-                                opcode: opcode,
-                                method: destination + '.' + opcode
-                            });
+                            if (!$meta) {
+                                applyArgs.push({
+                                    destination: destination,
+                                    opcode: opcode,
+                                    mtid: 'request',
+                                    method: destination + '.' + opcode
+                                });
+                            } else {
+                                $meta.destination = destination;
+                                $meta.opcode = opcode;
+                                $meta.mtid = 'request';
+                                $meta.method = destination + '.' + opcode;
+                            }
                         }
                         //else {applyArgs.push({});}
                     }

@@ -62,10 +62,21 @@ function Port() {
     this.bus = null;
     this.queue = null;
     this.queues = {};
+    this.bytesSent = null;
+    this.bytesReceived = null;
+    this.msgSent = null;
+    this.msgReceived = null;
 }
 
 Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name: this.config.id, context: this.config.type + ' port'}));
+
+    if (this.config.metrics && this.bus.config.implementation && this.bus.performance) {
+        this.bytesSent = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'bs', 'Bytes sent');
+        this.bytesReceived = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'br', 'Bytes received');
+        this.msgSent = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'ms', 'Messages sent');
+        this.msgReceived = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'mr', 'Messages received');
+    }
 
     var methods = {req: {}, pub: {}};
     methods.req[this.config.id + '.start'] = this.start;
@@ -217,6 +228,7 @@ Port.prototype.decode = function decode(context) {
 
     function convert(stream, msg) {
         var $meta;
+        port.msgReceived && port.msgReceived(1);
         if (port.codec) {
             $meta = {context: context, conId: context && context.conId};
             var message = port.codec.decode(msg, $meta);
@@ -248,6 +260,7 @@ Port.prototype.decode = function decode(context) {
     return through2.obj(function decodePacket(packet, enc, callback) {
         port.log.trace && port.log.trace({$meta: {opcode: 'frameIn'}, message: packet});
         if (port.framePattern) {
+            port.bytesReceived && port.bytesReceived(packet.length);
             buffer = Buffer.concat([buffer, packet]);
             var frame = applyPattern(buffer);
 
@@ -310,8 +323,10 @@ Port.prototype.encode = function encode(context) {
                 if (port.frameBuilder) {
                     buffer = port.frameBuilder({size: size, data: buffer});
                     buffer = buffer.slice(0, buffer.length - sizeAdjust);
+                    port.bytesSent && port.bytesSent(buffer.length);
                 }
                 if (buffer) {
+                    port.msgSent && port.msgSent(1);
                     port.log.trace && port.log.trace({$meta: {opcode: 'frameOut'}, message: buffer});
                     callback(null, buffer);
                 } else {
