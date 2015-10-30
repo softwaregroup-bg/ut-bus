@@ -66,16 +66,19 @@ function Port() {
     this.bytesReceived = null;
     this.msgSent = null;
     this.msgReceived = null;
+    this.latency = null;
+    this.counter = null;
 }
 
 Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name: this.config.id, context: this.config.type + ' port'}));
 
-    if (this.config.metrics && this.bus.config.implementation && this.bus.performance) {
-        this.bytesSent = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'bs', 'Bytes sent');
-        this.bytesReceived = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'br', 'Bytes received');
-        this.msgSent = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'ms', 'Messages sent');
-        this.msgReceived = this.bus.performance.register('counter', this.bus.config.implementation + '_' + this.config.metrics, 'mr', 'Messages received');
+    if (this.config.metrics !== false && this.bus && this.bus.config.implementation && this.bus.performance) {
+        this.counter = function(type, code, name) {
+            return this.bus.performance.register((this.bus.performance.config.id || this.bus.config.implementation) + '_' + (this.config.metrics || this.config.id), type, code, name);
+        }.bind(this);
+        this.msgSent = this.counter('counter', 'ms', 'Messages sent');
+        this.msgReceived = this.counter('counter', 'mr', 'Messages received');
     }
 
     var methods = {req: {}, pub: {}};
@@ -420,19 +423,26 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
 
 Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var countActive = 0;
+    var latency = this.latency;
     concurrency = concurrency || 10;
     var stream = through2({objectMode: true}, function(chunk, enc, callback) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
         countActive += 1;
-        var startTime = Date.now();
+        var startTime = process.hrtime();
         $meta && ($meta.mtid === 'request') && ($meta.mtid = 'response');
         when(exec.apply(this, chunk))
             .then(function(result) {
-                $meta && ($meta.timeTaken = Date.now() - startTime);
+                var diff = process.hrtime(startTime);
+                diff = diff[0] * 1000 + diff[1] / 1000000;
+                $meta && ($meta.timeTaken = diff);
+                latency && latency(diff, 1);
                 stream.push([result, $meta]);
             })
             .catch(function(error) {
-                $meta && ($meta.timeTaken = Date.now() - startTime);
+                var diff = process.hrtime(startTime);
+                diff = diff[0] * 1000 + diff[1] / 1000000;
+                $meta && ($meta.timeTaken = diff);
+                latency && latency(diff, 1);
                 $meta.mtid = 'error';
                 stream.push([error, $meta]);
             })
