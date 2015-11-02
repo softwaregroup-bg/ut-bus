@@ -9,7 +9,7 @@
     "readable-stream": "~1.1.13",
     "reconnect-core": "^1.0.0",
     "through2": "~1.1.1",
-    "ut-rpc": "~5.0.1",
+    "ut-rpc": "~5.0.2",
     "when": "~3.7.2"
   },
   "devDependencies": {
