@@ -48,7 +48,7 @@ module.exports = function Bus() {
         var pub = {};
 
         function publish() {
-            var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+            var args = Array.prototype.slice.call(arguments);
             var $meta = (args.length && args[args.length - 1]) || {};
             var d = $meta.destination;
             if (d) {
@@ -94,6 +94,10 @@ module.exports = function Bus() {
                     $meta.errorMessage = 'Destination not found';
                     return when.reject([{}, $meta]);
                 }
+            } else {
+                $meta.mtid = 'error';
+                $meta.errorMessage = 'Missing destination';
+                return when.reject([{}, $meta]);
             }
         }
 
