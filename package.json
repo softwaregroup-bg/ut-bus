@@ -1,7 +1,7 @@
 {
   "name": "ut-bus",
-  "version": "5.2.1",
-  "description": "UT bus module. ",
+  "version": "5.2.2",
+  "description": "UT bus module",
   "dependencies": {
     "ut-rpc": "^5.0.0",
     "readable-stream": "~1.1.13",
@@ -19,14 +19,13 @@
   "publishConfig": {
     "registry": "http://npm.softwaregroup-bg.com:5001"
   },
-  "description": "UT bus module",
   "repository": {
     "type": "git",
     "url": "git@git.softwaregroup-bg.com:ut5/ut-bus.git"
   },
-  "browser":{
-    "fs":"./browser/fs",
-    "joi":"./browser/joi",
-    "net":"./browser/net"
+  "browser": {
+    "fs": "./browser/fs",
+    "joi": "./browser/joi",
+    "net": "./browser/net"
   }
 }
