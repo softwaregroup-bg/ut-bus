@@ -299,9 +299,6 @@ Port.prototype.encode = function encode(context) {
             packet = when.lift(fn).apply(port, packet)
                 .then(function(result) {
                     return [result, $meta];
-                })
-                .catch(function(error) {
-                    return [error, $meta];
                 });
         }
 
