@@ -186,10 +186,10 @@ Port.prototype.publish = function publish() {
 };
 
 Port.prototype.findCallback = function findCallback($meta) {
-    if ($meta.trace && ($meta.mtid === 'response' || $meta.mtid === 'error')) {
-        var x = $meta.context[$meta.trace];
+    if ($meta.context && $meta.context.trace && ($meta.mtid === 'response' || $meta.mtid === 'error')) {
+        var x = $meta.context[$meta.context.trace];
         if (x) {
-            delete $meta.context[$meta.trace];
+            delete $meta.context[$meta.context.trace];
             $meta.callback = x.callback;
             if (x.startTime) {
                 $meta.timeTaken = Date.now() - x.startTime;
@@ -280,8 +280,8 @@ Port.prototype.decode = function decode(context) {
 };
 
 Port.prototype.traceCallback = function traceCallback($meta) {
-    if ($meta && $meta.trace && $meta.callback && $meta.mtid === 'request') {
-        $meta.context[$meta.trace] = {callback: $meta.callback, expire: Date.now() + 60000, startTime: Date.now()};
+    if ($meta && $meta.context && $meta.context.trace && $meta.callback && $meta.mtid === 'request') {
+        $meta.context[$meta.context.trace] = {callback: $meta.callback, expire: Date.now() + 60000, startTime: Date.now()};
     }
 };
 
