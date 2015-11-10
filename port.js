@@ -3,6 +3,7 @@ var Readable = require('readable-stream/readable');
 var when = require('when');
 var Buffer = require('buffer').Buffer;
 var bufferCreate = Buffer;
+var assign = require('lodash/object/assign');
 
 function handleStreamClose(stream, conId) {
     if (stream) {
@@ -127,7 +128,7 @@ Port.prototype.request = function request() {
                 if ($meta && $meta.mtid !== 'error') {
                     resolve(Array.prototype.slice.call(arguments));
                 } else {
-                    reject(Array.prototype.slice.call(arguments));
+                    reject(msg);
                 }
                 return true;
             };
@@ -185,40 +186,43 @@ Port.prototype.publish = function publish() {
     }
 };
 
-Port.prototype.findCallback = function findCallback($meta) {
-    if ($meta.context && $meta.context.trace && ($meta.mtid === 'response' || $meta.mtid === 'error')) {
-        var x = $meta.context[$meta.context.trace];
+Port.prototype.findMeta = function findMeta($meta, context) {
+    if (this.codec && $meta.trace && ($meta.mtid === 'response' || $meta.mtid === 'error')) {
+        var x = context.callbacks[$meta.trace];
         if (x) {
-            delete $meta.context[$meta.context.trace];
-            $meta.callback = x.callback;
+            delete context[$meta.trace];
             if (x.startTime) {
                 $meta.timeTaken = Date.now() - x.startTime;
             }
+            return assign(x.$meta, $meta);
+        } else {
+            return $meta;
         }
+    } else {
+        return $meta;
     }
 };
 
-Port.prototype.receive = function(stream, packet) {
+Port.prototype.receive = function(stream, packet, context) {
     var port = this;
     var $meta = packet.length && packet[packet.length - 1];
     var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) || port.config.receive;
 
-    //packet.length && (packet[0].$$ = $meta);//todo remove this, because it was added for backwards compatibility
-
     if (!fn) {
+        $meta && (packet[packet.length - 1] = port.findMeta($meta, context));
         stream.push(packet);
     } else {
         when(when.lift(fn).apply(port, packet))
             .then(function(result) {
-                port.findCallback($meta);
+                $meta = port.findMeta($meta, context);
                 stream.push([result, $meta]);
                 port.log.debug && port.log.debug({message: result, $meta: $meta});
             })
             .catch(function(err) {
+                $meta = port.findMeta($meta, context);
                 $meta.mtid = 'error';
                 $meta.errorCode = err && err.code;
                 $meta.errorMessage = err && err.message;
-                port.findCallback($meta);
                 stream.push([err, $meta]);
             })
             .done();
@@ -233,16 +237,15 @@ Port.prototype.decode = function decode(context) {
         var $meta;
         port.msgReceived && port.msgReceived(1);
         if (port.codec) {
-            $meta = {context: context, conId: context && context.conId};
-            var message = port.codec.decode(msg, $meta);
-            port.receive(stream, [message, $meta]);
+            $meta = {conId: context && context.conId};
+            var message = port.codec.decode(msg, $meta, context);
+            port.receive(stream, [message, $meta], context);
         } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
-            port.receive(stream, [{payload: msg}, {mtid: 'notification', opcode: 'payload', conId: context && context.conId, context: context}]);
+            port.receive(stream, [{payload: msg}, {mtid: 'notification', opcode: 'payload', conId: context && context.conId}], context);
         } else {
             $meta = msg.length && msg[msg.length - 1];
-            $meta && ($meta.context = context);
             $meta && context && context.conId && ($meta.conId = context.conId);
-            port.receive(stream, msg);
+            port.receive(stream, msg, context);
         }
     }
 
@@ -279,9 +282,9 @@ Port.prototype.decode = function decode(context) {
     });
 };
 
-Port.prototype.traceCallback = function traceCallback($meta) {
-    if ($meta && $meta.context && $meta.context.trace && $meta.callback && $meta.mtid === 'request') {
-        $meta.context[$meta.context.trace] = {callback: $meta.callback, expire: Date.now() + 60000, startTime: Date.now()};
+Port.prototype.traceMeta = function traceMeta($meta, context) {
+    if ($meta && $meta.trace && $meta.callback && $meta.mtid === 'request') {
+        context.callbacks[$meta.trace] = {$meta: $meta, expire: Date.now() + 60000, startTime: Date.now()};
     }
 };
 
@@ -291,9 +294,6 @@ Port.prototype.encode = function encode(context) {
         var $meta = packet.length && packet[packet.length - 1];
         var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) || port.config.send;
         var msgCallback = ($meta && $meta.callback) || function() {};
-        $meta && context && ($meta.context = context);
-
-        //packet[0].$$ = $meta;//todo remove this, because it was added for backwards compatibility
 
         if (fn) {
             packet = when.lift(fn).apply(port, packet)
@@ -309,12 +309,12 @@ Port.prototype.encode = function encode(context) {
                 var size;
                 var sizeAdjust = 0;
                 if (port.codec) {
-                    buffer = port.codec.encode(message[0], message[1]);
+                    buffer = port.codec.encode(message[0], message[1], context);
                     if (port.framePatternSize) {
                         sizeAdjust = port.config.format.sizeAdjust;
                     }
                     size = buffer && buffer.length + sizeAdjust;
-                    port.traceCallback($meta);
+                    port.traceMeta($meta, context);
                 } else if (message) {
                     buffer = message;
                     size = buffer && buffer.length;
@@ -352,7 +352,7 @@ Port.prototype.pipe = function pipe(stream, context) {
     var result = [encode, stream, decode];
 
     function queueEvent(name) {
-        this.receive(decode, [{},{mtid:'notification', opcode:name}]);
+        this.receive(decode, [{},{mtid:'notification', opcode:name}], context);
     }
 
     if (context && conId) {

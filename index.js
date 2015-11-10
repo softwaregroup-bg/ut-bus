@@ -87,17 +87,17 @@ module.exports = function Bus() {
                         })
                         .catch(function(error) {
                             $meta.mtid = 'error';
-                            return when.reject([error, $meta]);
+                            throw error;
                         });
                 } else {
                     $meta.mtid = 'error';
                     $meta.errorMessage = 'Destination not found';
-                    return when.reject([{}, $meta]);
+                    return when.reject($meta);
                 }
             } else {
                 $meta.mtid = 'error';
                 $meta.errorMessage = 'Missing destination';
-                return when.reject([{}, $meta]);
+                return when.reject($meta);
             }
         }
 
@@ -168,17 +168,24 @@ module.exports = function Bus() {
         return registerRemoteMethods(remotes, methodNames, adapt);
     }
 
-    function handleMeta(obj, fn, args) {
+    function objectToError(obj) {
+        var e = new Error(obj.message);
+        e.type = obj.type;
+        e.code = obj.code;
+        return e;
+    }
+
+    function handleRPCResponse(obj, fn, args) {
         var $meta = (args.length && args[args.length - 1]);
         return when.promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
-                    console.error('handleMeta', err);
                     if (err.length > 1) {
-                        assign($meta, err[err.length - 1]);
-                        reject(err[0]);
+                        $meta.mtid = 'error';
+                        reject(objectToError(err[0]));
                     } else {
-                        reject(err);
+                        $meta.mtid = 'error';
+                        reject(objectToError(err));
                     }
                 } else {
                     if (res.length > 1) {
@@ -289,7 +296,7 @@ module.exports = function Bus() {
                             return when.reject(errors.busError('Remote method not found for object "' + id + '"'));
                         }
                         var args = Array.prototype.slice.call(arguments);
-                        return handleMeta(undefined, fn, args);
+                        return handleRPCResponse(undefined, fn, args);
                     };
                 },
                 pub: function subscribe(fn) {
