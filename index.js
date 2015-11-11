@@ -170,8 +170,11 @@ module.exports = function Bus() {
 
     function objectToError(obj) {
         var e = new Error(obj.message);
+        e.opcode = obj.opcode;
         e.type = obj.type;
         e.code = obj.code;
+        e.print = obj.print;
+        e.fields = obj.fields;
         return e;
     }
 
