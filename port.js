@@ -76,7 +76,8 @@ Port.prototype.init = function init() {
 
     if (this.config.metrics !== false && this.bus && this.bus.config.implementation && this.bus.performance) {
         this.counter = function(type, code, name) {
-            return this.bus.performance.register((this.bus.performance.config.id || this.bus.config.implementation) + '_' + (this.config.metrics || this.config.id), type, code, name);
+            return this.bus.performance.register((this.bus.performance.config.id || this.bus.config.implementation) + '_' +
+                (this.config.metrics || this.config.id), type, code, name);
         }.bind(this);
         this.msgSent = this.counter('counter', 'ms', 'Messages sent');
         this.msgReceived = this.counter('counter', 'mr', 'Messages received');
@@ -244,8 +245,11 @@ Port.prototype.decode = function decode(context) {
         port.msgReceived && port.msgReceived(1);
         if (port.codec) {
             $meta = {conId: context && context.conId};
-            var message = port.codec.decode(msg, $meta, context);
-            port.receive(stream, [message, $meta], context);
+            when(port.codec.decode(msg, $meta, context))
+                .then(function(message) {
+                    port.receive(stream, [message, $meta], context);
+                })
+                .done();
         } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
             port.receive(stream, [{payload: msg}, {mtid: 'notification', opcode: 'payload', conId: context && context.conId}], context);
         } else {
@@ -271,20 +275,26 @@ Port.prototype.decode = function decode(context) {
 
     return through2.obj(function decodePacket(packet, enc, callback) {
         port.log.trace && port.log.trace({$meta: {opcode: 'frameIn'}, message: packet});
-        if (port.framePattern) {
-            port.bytesReceived && port.bytesReceived(packet.length);
-            buffer = Buffer.concat([buffer, packet]);
-            var frame = applyPattern(buffer);
+        try {
+            if (port.framePattern) {
+                port.bytesReceived && port.bytesReceived(packet.length);
+                buffer = Buffer.concat([buffer, packet]);
+                var frame = applyPattern(buffer);
 
-            while (frame) {
-                buffer = frame.rest;
-                convert(this, frame.data);
-                frame = applyPattern(buffer);
+                while (frame) {
+                    buffer = frame.rest;
+                    convert(this, frame.data);
+                    frame = applyPattern(buffer);
+                }
+            } else {
+                convert(this, packet);
             }
-        } else {
-            convert(this, packet);
+            callback();
+        } catch (error) {
+            port.error(error);
+            callback(null, null); //close the stream on error
+            //todo recreate the stream
         }
-        callback();
     });
 };
 
@@ -311,21 +321,20 @@ Port.prototype.encode = function encode(context) {
         when(packet)
             .then(function(message) {
                 port.log.debug && port.log.debug({message: message[0], $meta: message[1]});
-                var buffer;
+                return port.codec ? port.codec.encode(message[0], message[1], context) : message;
+            })
+            .then(function(buffer) {
                 var size;
                 var sizeAdjust = 0;
                 if (port.codec) {
-                    buffer = port.codec.encode(message[0], message[1], context);
+                    port.traceMeta($meta, context);
                     if (port.framePatternSize) {
                         sizeAdjust = port.config.format.sizeAdjust;
                     }
                     size = buffer && buffer.length + sizeAdjust;
-                    port.traceMeta($meta, context);
-                } else if (message) {
-                    buffer = message;
+                } else {
                     size = buffer && buffer.length;
                 }
-
                 if (port.frameBuilder) {
                     buffer = port.frameBuilder({size: size, data: buffer});
                     buffer = buffer.slice(0, buffer.length - sizeAdjust);
@@ -338,6 +347,7 @@ Port.prototype.encode = function encode(context) {
                 } else {
                     callback();
                 }
+
             })
             .catch(function(err) {
                 port.error(err);
@@ -346,6 +356,7 @@ Port.prototype.encode = function encode(context) {
                 $meta.errorMessage = err && err.message;
                 msgCallback(err, $meta);
                 callback();
+                //todo close and recreate stream on error
             })
             .done();
     });
@@ -359,7 +370,7 @@ Port.prototype.pipe = function pipe(stream, context) {
     var result = [encode, stream, decode];
 
     function queueEvent(name) {
-        this.receive(decode, [{},{mtid:'notification', opcode:name}], context);
+        this.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
     }
 
     if (context && conId) {
