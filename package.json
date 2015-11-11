@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "5.3.8",
+  "version": "5.3.9",
   "description": "UT bus module",
   "dependencies": {
     "errno": "^0.1.4",
