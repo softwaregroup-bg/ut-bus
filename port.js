@@ -203,6 +203,11 @@ Port.prototype.findMeta = function findMeta($meta, context) {
     }
 };
 
+Port.prototype.error = function(error) {
+    this.log && this.log.error && this.log.error(error);
+
+};
+
 Port.prototype.receive = function(stream, packet, context) {
     var port = this;
     var $meta = packet.length && packet[packet.length - 1];
@@ -219,6 +224,7 @@ Port.prototype.receive = function(stream, packet, context) {
                 port.log.debug && port.log.debug({message: result, $meta: $meta});
             })
             .catch(function(err) {
+                port.error(err);
                 $meta = port.findMeta($meta, context);
                 $meta.mtid = 'error';
                 $meta.errorCode = err && err.code;
@@ -334,6 +340,7 @@ Port.prototype.encode = function encode(context) {
                 }
             })
             .catch(function(err) {
+                port.error(err);
                 $meta.mtid = 'error';
                 $meta.errorCode = err && err.code;
                 $meta.errorMessage = err && err.message;
@@ -421,6 +428,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
 Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var countActive = 0;
     var latency = this.latency;
+    var port = this;
     concurrency = concurrency || 10;
     var stream = through2({objectMode: true}, function(chunk, enc, callback) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
@@ -436,6 +444,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
                 stream.push([result, $meta]);
             })
             .catch(function(error) {
+                port.error(error);
                 var diff = process.hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
                 $meta && ($meta.timeTaken = diff);
