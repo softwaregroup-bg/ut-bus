@@ -479,12 +479,9 @@ module.exports = function Bus() {
                             return fn.apply(this, Array.prototype.slice.call(arguments));
                         }
                         fn = mapLocal[['ports', destination, 'request'].join('.')];
-                        return fn(msg, {destination: destination, opcode: opcode, method: methodName})
+                        return fn(msg, {mtid:'request', destination: destination, opcode: opcode, method: methodName})
                             .then(function(result) {
                                 return result[0];
-                            })
-                            .catch(function(error) {
-                                return error[0];
                             });
                     };
                 }
@@ -538,9 +535,6 @@ module.exports = function Bus() {
                     return f && f.apply(undefined, Array.prototype.slice.call(arguments))
                             .then(function(result) {
                                 return result[0];
-                            })
-                            .catch(function(error) {
-                                return error[0];
                             });
                 }
             } else {
