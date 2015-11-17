@@ -4,6 +4,7 @@ var when = require('when');
 var Buffer = require('buffer').Buffer;
 var bufferCreate = Buffer;
 var assign = require('lodash/object/assign');
+var hrtime = require('browser-process-hrtime');
 
 function handleStreamClose(stream, conId) {
     if (stream) {
@@ -444,11 +445,11 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
     var stream = through2({objectMode: true}, function(chunk, enc, callback) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
         countActive += 1;
-        var startTime = process.hrtime();
+        var startTime = hrtime();
         $meta && ($meta.mtid === 'request') && ($meta.mtid = 'response');
         when(exec.apply(this, chunk))
             .then(function(result) {
-                var diff = process.hrtime(startTime);
+                var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
                 $meta && ($meta.timeTaken = diff);
                 latency && latency(diff, 1);
@@ -456,7 +457,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
             })
             .catch(function(error) {
                 port.error(error);
-                var diff = process.hrtime(startTime);
+                var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
                 $meta && ($meta.timeTaken = diff);
                 latency && latency(diff, 1);
