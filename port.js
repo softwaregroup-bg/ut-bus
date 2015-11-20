@@ -106,8 +106,13 @@ Port.prototype.messageDispatch = function() {
 
 Port.prototype.start = function start() {
     this.log.info && this.log.info({$meta: {opcode: 'port.start'}, id: this.config.id, config: this.config});
-    this.config.start && this.config.start.call(this);
-    return true;
+    var startList =  this.config.start ? [this.config.start] : [];
+    this.config.imports && this.config.imports.forEach(function(imp) {
+        this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
+    }.bind(this));
+    return when.reduce(startList, function(prev, start) {
+        return start.call(this);
+    }.bind(this), []);
 };
 
 Port.prototype.stop = function stop() {

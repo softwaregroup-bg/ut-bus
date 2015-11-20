@@ -1,5 +1,6 @@
 var when = require('when');
 var assign = require('lodash/object/assign');
+var merge = require('lodash/object/merge');
 var capitalize = require('lodash/string/capitalize');
 var errors = require('./errors');
 
@@ -497,7 +498,17 @@ module.exports = function Bus() {
                         importMethod(methodOrModuleName);
                     } else {
                         Object.keys(local[methodOrModuleName]).forEach(function(methodName) {
-                            importMethod(methodOrModuleName + '.' + methodName);
+                            if (typeof local[methodOrModuleName][methodName] === 'function') {
+                                importMethod(methodOrModuleName + '.' + methodName);
+                            } else {
+                                var value = {};
+                                value[methodName] = local[methodOrModuleName][methodName];
+                                merge(target,value, function(a, b) {
+                                    if (Array.isArray(a)) {
+                                        return a.concat(b);
+                                    }
+                                });
+                            }
                         });
                     }
                 });
