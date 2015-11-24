@@ -463,7 +463,7 @@ module.exports = function Bus() {
             function importMethod(methodName) {
                 if (cache[methodName]) {
                     if (target !== cache) {
-                        target[methodName] = cache[methodName];
+                        target[methodName] = binding ? cache[methodName].bind(binding) : cache[methodName];
                     }
                     return;
                 }
@@ -488,7 +488,7 @@ module.exports = function Bus() {
                 }
                 target[methodName] = binding ? assign(method.bind(binding), method) : method;
                 if (target !== cache) {
-                    cache[methodName] = target[methodName];
+                    cache[methodName] = method;
                 }
             }
 

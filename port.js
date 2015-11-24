@@ -108,6 +108,7 @@ Port.prototype.start = function start() {
     this.log.info && this.log.info({$meta: {opcode: 'port.start'}, id: this.config.id, config: this.config});
     var startList =  this.config.start ? [this.config.start] : [];
     this.config.imports && this.config.imports.forEach(function(imp) {
+        imp.match(/\.start$/) && startList.push(this.config[imp]);
         this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
     }.bind(this));
     return when.reduce(startList, function(prev, start) {
