@@ -34,7 +34,8 @@ module.exports = function Bus() {
     var remotes = [];
     var locals = [];
     var log = {};
-    var cache = {};
+    var cacheNotBound = {};
+    var cacheBound = {};
     var listReq = [];
     var listPub = [];
     var mapLocal = {};
@@ -459,6 +460,7 @@ module.exports = function Bus() {
         importMethods: function(target, methods, validate, binding) {
             var local = this.local;
             var self = this;
+            var cache = binding ? cacheNotBound : cacheBound;
 
             function importMethod(methodName) {
                 if (cache[methodName]) {
@@ -487,8 +489,9 @@ module.exports = function Bus() {
                     };
                 }
                 target[methodName] = binding ? assign(method.bind(binding), method) : method;
-                if (target !== cache) {
-                    cache[methodName] = method;
+                if (target !== cacheBound) {
+                    cacheBound[methodName] = target[methodName];
+                    cacheNotBound[methodName] = method;
                 }
             }
 
@@ -516,10 +519,10 @@ module.exports = function Bus() {
         },
 
         importMethod: function(methodName, validate) {
-            var result = cache[methodName];
+            var result = cacheBound[methodName];
             if (!result) {
-                this.importMethods(cache, [methodName], validate);
-                result = cache[methodName];
+                this.importMethods(cacheBound, [methodName], validate);
+                result = cacheBound[methodName];
             }
 
             return result;
