@@ -30,7 +30,7 @@ function createFieldError(errType, module, validation) {
 }
 
 module.exports = function Bus() {
-    //private fields
+    // private fields
     var remotes = [];
     var locals = [];
     var log = {};
@@ -43,7 +43,7 @@ module.exports = function Bus() {
     /**
      * Get publishing method
      *
-     * @returns {function} publish(msg) that publishes message
+     * @returns {function()} publish(msg) that publishes message
      *
      */
     function _publish(thisPub) {
@@ -55,7 +55,7 @@ module.exports = function Bus() {
             var d = $meta.destination;
             if (d) {
                 var fn;
-                //noinspection JSUnusedAssignment
+                // noinspection JSUnusedAssignment
                 if ((fn = thisPub[d]) || (pub[d] = fn = thisPub['ports.' + d + '.publish'])) {
                     delete $meta.destination;
                     return fn.apply(undefined, args);
@@ -69,7 +69,7 @@ module.exports = function Bus() {
     /**
      * Get rpc method
      *
-     * @returns {function} request(msg) that executes remote procedure
+     * @returns {function()} request(msg) that executes remote procedure
      *
      */
     function _request(thisRPC) {
@@ -80,7 +80,7 @@ module.exports = function Bus() {
             var d = $meta.destination;
             if (d) {
                 var fn;
-                //noinspection JSUnusedAssignment
+                // noinspection JSUnusedAssignment
                 if ((fn = RPC[d]) || (RPC[d] = fn = thisRPC['ports.' + d + '.request']) || (RPC[d] = fn = thisRPC[d + '.' + $meta.opcode])) {
                     delete $meta.destination;
                     return fn.apply(undefined, Array.prototype.slice.call(arguments))
@@ -141,7 +141,7 @@ module.exports = function Bus() {
      *
      * @param {object} methods object containing methods to be registered
      * @param {string} namespace to use when registering
-     * @param {function} [adapt] function to adapt a promise method to callback suitable for RPC
+     * @param {function()} [adapt] function to adapt a promise method to callback suitable for RPC
      * @returns {promise|object}
      */
     function serverRegister(methods, namespace, adapt) {
@@ -152,14 +152,14 @@ module.exports = function Bus() {
                     methodNames.push(namespace + '.' + fn.name);
                     localRegister(namespace, fn.name, adapt ? adapt(null, fn) : fn, adapt);
                 }
-            }.bind(this));
+            });
         } else {
             Object.keys(methods).forEach(function(key) {
                 if (methods[key] instanceof Function) {
                     methodNames.push(namespace + '.' + key);
                     localRegister(namespace, key, adapt ? adapt(methods, methods[key]) : methods[key].bind(methods), adapt);
                 }
-            }.bind(this));
+            });
         }
 
         if (!methodNames.length) {
@@ -206,7 +206,7 @@ module.exports = function Bus() {
     }
 
     return {
-        //properties
+        // properties
         id: null,
         socket: 'bus',
         server: false,
@@ -280,15 +280,14 @@ module.exports = function Bus() {
                     });
                 }
 
-                //todo handle out frames
-                //log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
-
-            }.bind(this));
+                // todo handle out frames
+                // log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
+            });
         },
 
         destroy: function() {
             remotes.forEach(function(remote) {
-                //todo destroy connection
+                // todo destroy connection
             });
         },
 
@@ -348,7 +347,7 @@ module.exports = function Bus() {
                 };
             }
 
-            return serverRegister(methods, namespace ? namespace : this.id, this.socket ? adapt : false);
+            return serverRegister(methods, namespace || this.id, this.socket ? adapt : false);
         },
 
         /**
@@ -359,7 +358,7 @@ module.exports = function Bus() {
          * @returns {promise}
          */
         subscribe: function(methods, namespace) {
-            return serverRegister(methods, namespace ? namespace : this.id);
+            return serverRegister(methods, namespace || this.id);
         },
 
         registerLocal: function(methods, namespace) {
@@ -394,7 +393,7 @@ module.exports = function Bus() {
                 } else if (!fn) {
                     var type;
                     var master;
-                    //noinspection JSUnusedAssignment
+                    // noinspection JSUnusedAssignment
                     (destination && opcode && (type = bus.local) && (master = type[destination]) && (fn = master[opcode]) && (local = true)) ||
                     (destination && opcode && (!bus.socket) && (fn = mapLocal[['ports', destination, methodName].join('.')]) && !(local = false)) ||
                     ((type = bus[typeName]) && (fn = type['master.' + methodName]) && (local = false));
@@ -420,7 +419,7 @@ module.exports = function Bus() {
                                 $meta.method = destination + '.' + opcode;
                             }
                         }
-                        //else {applyArgs.push({});}
+                        // else {applyArgs.push({});}
                     }
                     if (local && validate && bus.local[destination] && bus.local[destination][opcode]) {
                         var requestSchema = (validate.request && bus.local[destination][opcode].request) || false;
@@ -482,7 +481,7 @@ module.exports = function Bus() {
                             return fn.apply(this, Array.prototype.slice.call(arguments));
                         }
                         fn = mapLocal[['ports', destination, 'request'].join('.')];
-                        return fn(msg, {mtid:'request', destination: destination, opcode: opcode, method: methodName})
+                        return fn(msg, {mtid: 'request', destination: destination, opcode: opcode, method: methodName})
                             .then(function(result) {
                                 return result[0];
                             });
@@ -506,7 +505,7 @@ module.exports = function Bus() {
                             } else {
                                 var value = {};
                                 value[methodName] = local[methodOrModuleName][methodName];
-                                merge(target,value, function(a, b) {
+                                merge(target, value, function(a, b) {
                                     if (Array.isArray(a)) {
                                         return a.concat(b);
                                     }

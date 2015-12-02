@@ -1,1 +1,1 @@
-throw new Error('Module net was improperly required in browser')
+throw new Error('Module net was improperly required in browser');

@@ -22,7 +22,7 @@ var createQueue = function queue(config, callback) {
     var r = new Readable({objectMode: true});
     var forQueue = false;
     var empty = config && config.empty;
-    var t = false;
+    var t;
 
     function emitEmpty() {
         t = setTimeout(emitEmpty, empty);
@@ -106,7 +106,7 @@ Port.prototype.messageDispatch = function() {
 
 Port.prototype.start = function start() {
     this.log.info && this.log.info({$meta: {opcode: 'port.start'}, id: this.config.id, config: this.config});
-    var startList =  this.config.start ? [this.config.start] : [];
+    var startList = this.config.start ? [this.config.start] : [];
     this.config.imports && this.config.imports.forEach(function(imp) {
         imp.match(/\.start$/) && startList.push(this.config[imp]);
         this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
@@ -149,7 +149,7 @@ Port.prototype.request = function request() {
                     return b - a;
                 });
                 var queue;
-                if (keys.length && port.connRouter && typeof(port.connRouter) === 'function') {
+                if (keys.length && port.connRouter && typeof port.connRouter === 'function') {
                     queue = this.queues[port.connRouter(this.queues)];
                 } else if (!(queue = keys && keys.length && this.queues[keys[0]])) {
                     var error = new Error('No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues)));
@@ -177,7 +177,7 @@ Port.prototype.publish = function publish() {
         var keys = Object.keys(this.queues).sort(function(a, b) {
             return b - a;
         });
-        if (keys.length && this.connRouter && typeof(this.connRouter) === 'function') {
+        if (keys.length && this.connRouter && typeof this.connRouter === 'function') {
             queue = this.queues[this.connRouter(this.queues)];
         } else if (!(queue = keys && keys.length && this.queues[keys[0]])) {
             var error = new Error('No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues)));
@@ -213,7 +213,6 @@ Port.prototype.findMeta = function findMeta($meta, context) {
 
 Port.prototype.error = function(error) {
     this.log && this.log.error && this.log.error(error);
-
 };
 
 Port.prototype.receive = function(stream, packet, context) {
@@ -274,7 +273,6 @@ Port.prototype.decode = function decode(context) {
             } else {
                 return false;
             }
-
         } else {
             return port.framePattern(rest);
         }
@@ -299,8 +297,8 @@ Port.prototype.decode = function decode(context) {
             callback();
         } catch (error) {
             port.error(error);
-            callback(null, null); //close the stream on error
-            //todo recreate the stream
+            callback(null, null); // close the stream on error
+            // todo recreate the stream
         }
     });
 };
@@ -354,7 +352,6 @@ Port.prototype.encode = function encode(context) {
                 } else {
                     callback();
                 }
-
             })
             .catch(function(err) {
                 port.error(err);
@@ -363,7 +360,7 @@ Port.prototype.encode = function encode(context) {
                 $meta.errorMessage = err && err.message;
                 msgCallback(err, $meta);
                 callback();
-                //todo close and recreate stream on error
+                // todo close and recreate stream on error
             })
             .done();
     });
@@ -419,7 +416,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
         if ($meta && ($meta.mtid === 'error' || $meta.mtid === 'response')) {
             this.push(packet);
         } else {
-            //todo maybe this cb preserving logic is not needed
+            // todo maybe this cb preserving logic is not needed
             var cb = $meta && $meta.callback;
             if (cb) {
                 delete $meta.callback;

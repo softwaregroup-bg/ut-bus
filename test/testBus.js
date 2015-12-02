@@ -2,50 +2,50 @@ var wire = require('wire');
 var when = require('when');
 
 var m = wire({
-    master:{
-        create:'../',
-        init:'init',
-        ready:'start',
+    master: {
+        create: '../',
+        init: 'init',
+        ready: 'start',
         destroy: 'destroy',
-        properties:{
-            server:true,
-            socket:'test',
-            id:'master',
-            logFactory:null,
+        properties: {
+            server: true,
+            socket: 'test',
+            id: 'master',
+            logFactory: null,
             logLevel: 'trace'
         }
     },
-    worker1:{
-        create:'../',
-        init:'init',
+    worker1: {
+        create: '../',
+        init: 'init',
         destroy: 'destroy',
-        properties:{
-            server:false,
-            socket:'test',
-            id:'worker1',
-            logFactory:null,
+        properties: {
+            server: false,
+            socket: 'test',
+            id: 'worker1',
+            logFactory: null,
             logLevel: 'trace'
         }
     },
-    worker2:{
-        create:'../',
-        init:'init',
+    worker2: {
+        create: '../',
+        init: 'init',
         destroy: 'destroy',
-        properties:{
-            server:false,
-            socket:'test',
-            id:'worker2',
-            logFactory:null,
+        properties: {
+            server: false,
+            socket: 'test',
+            id: 'worker2',
+            logFactory: null,
             logLevel: 'trace'
         }
     }
-}, {require:require});
+}, {require: require});
 
 m.then(function(c) {
     global.x = c;
-    var fn1 = function() {return c.worker1.importMethod('worker2.test.m1')('worker1').then(function(result) {console.log(result);});};
-    var fn2 = function() {return c.worker1.importMethod('worker2.m2')('worker1').then(function(result) {console.log(result);});};
-    var fn3 = function() {return c.worker2.importMethod('worker1.m3')('worker2').then(function(result) {console.log(result);});};
+    var fn1 = function() { return c.worker1.importMethod('worker2.test.m1')('worker1').then(function(result) { console.log(result); }); };
+    var fn2 = function() { return c.worker1.importMethod('worker2.m2')('worker1').then(function(result) { console.log(result); }); };
+    var fn3 = function() { return c.worker2.importMethod('worker1.m3')('worker2').then(function(result) { console.log(result); }); };
     c.worker2.register({
         'test.m1': function(test) {
             console.log('test.m1 argument ' + test);
