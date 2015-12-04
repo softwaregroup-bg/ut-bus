@@ -170,27 +170,30 @@ module.exports = function Bus() {
         return registerRemoteMethods(remotes, methodNames, adapt);
     }
 
-    function objectToError(obj) {
-        var e = new Error(obj.message);
-        e.opcode = obj.opcode;
-        e.type = obj.type;
-        e.code = obj.code;
-        e.print = obj.print;
-        e.fields = obj.fields;
-        return e;
+    function processError(obj, $meta) {
+        if (obj && $meta && $meta.method) {
+            if (Array.isArray(obj.method)) {
+                obj.method.push($meta.method);
+            } else if (obj.method) {
+                obj.method = [obj.method, $meta.method];
+            } else {
+                obj.method = $meta.method;
+            }
+        }
+        return obj;
     }
 
-    function handleRPCResponse(obj, fn, args) {
+    function handleRPCResponse(obj, fn, args, server) {
         var $meta = (args.length && args[args.length - 1]);
         return when.promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
                     if (err.length > 1) {
                         $meta.mtid = 'error';
-                        reject(objectToError(err[0]));
+                        reject(server ? err[0] : processError(err[0], $meta));
                     } else {
                         $meta.mtid = 'error';
-                        reject(objectToError(err));
+                        reject(server ? err : processError(err, $meta));
                     }
                 } else {
                     if (res.length > 1) {
@@ -293,6 +296,7 @@ module.exports = function Bus() {
 
         registerRemote: function(index, type, methods, cb) {
             var id = this.id;
+            var server = this.server;
             var adapt = {
                 req: function req(fn) {
                     return function() {
@@ -300,7 +304,7 @@ module.exports = function Bus() {
                             return when.reject(errors.busError('Remote method not found for object "' + id + '"'));
                         }
                         var args = Array.prototype.slice.call(arguments);
-                        return handleRPCResponse(undefined, fn, args);
+                        return handleRPCResponse(undefined, fn, args, server);
                     };
                 },
                 pub: function subscribe(fn) {
@@ -342,6 +346,7 @@ module.exports = function Bus() {
                             callback(undefined, result);
                         })
                         .catch(function(error) {
+                            console.error(error);
                             callback(error);
                         });
                 };
