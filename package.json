@@ -7,9 +7,9 @@
     "errno": "^0.1.4",
     "joi": "~6.6.1",
     "lodash": "^3.5.0",
-    "readable-stream": "~1.1.13",
+    "readable-stream": "~2.0.2",
     "reconnect-core": "^1.0.0",
-    "through2": "~1.1.1",
+    "through2": "~2.0.0",
     "ut-rpc": "5.3.1",
     "when": "~3.7.2"
   },
