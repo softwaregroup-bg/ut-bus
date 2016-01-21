@@ -29,6 +29,36 @@ function createFieldError(errType, module, validation) {
     throw error;
 }
 
+function flattenAPI(data) {
+    var result = {};
+    function recurse(cur, prop) {
+        if (Object(cur) !== cur) {
+            result[prop] = cur;
+        } else if (Array.isArray(cur) || typeof cur === 'function') {
+            result[prop] = cur;
+        } else {
+            var isEmpty = true;
+            for (var p in cur) {
+                isEmpty = false;
+                recurse(cur[p], prop ? prop + '.' + p : p);
+            }
+            if (isEmpty && prop) {
+                result[prop] = {};
+            }
+        }
+    }
+    recurse(data, '');
+    return result;
+}
+
+function parseMethodName(methodName, destination) {
+    var tokens = methodName.split('.');
+    return {
+        opcode: tokens.pop() || 'request',
+        destination: tokens.join('.') || destination || 'ut'
+    };
+}
+
 module.exports = function Bus() {
     // private fields
     var remotes = [];
@@ -372,7 +402,14 @@ module.exports = function Bus() {
                     this.local[namespace] = methods.namespace;
                 }.bind(this));
             } else {
-                this.local[namespace] = methods;
+                var x = {};
+                x[namespace] = methods;
+                x = flattenAPI(x);
+                Object.keys(x).forEach(function(name) {
+                    var tokens = parseMethodName(name, namespace);
+                    this.local[tokens.destination] || (this.local[tokens.destination] = {});
+                    this.local[tokens.destination][tokens.opcode] = x[name];
+                }.bind(this));
             }
         },
 
@@ -473,9 +510,9 @@ module.exports = function Bus() {
                     }
                     return;
                 }
-                var tokens = methodName.split('.');
-                var opcode = tokens.pop() || 'request';
-                var destination = tokens.join('.') || 'ut';
+                var tokens = parseMethodName(methodName);
+                var opcode = tokens.opcode;
+                var destination = tokens.destination;
                 var method;
                 if (self.socket) {
                     method = self.getMethod('req', 'request', destination, opcode, validate);
