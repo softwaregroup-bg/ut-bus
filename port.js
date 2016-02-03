@@ -11,8 +11,14 @@ function handleStreamClose(stream, conId) {
         stream.destroy();
     }
     if (conId) {
+        if (this.queues[conId] && this.queues[conId].clearTimeout) {
+            this.queues[conId].clearTimeout();
+        }
         delete this.queues[conId];
     } else {
+        if (this.queue && this.queue.clearTimeout) {
+            this.queue.clearTimeout();
+        }
         this.queue = null;
     }
 }
@@ -29,12 +35,12 @@ var createQueue = function queue(config, callback) {
         callback('empty');
     }
 
-    function clear() {
+    r.clearTimeout = function() {
         if (t) {
             clearTimeout(t);
             t = false;
         }
-    }
+    };
 
     r._read = function readQueue() {
         if (q.length) {
@@ -46,7 +52,7 @@ var createQueue = function queue(config, callback) {
     };
 
     r.add = function add(msg) {
-        clear();
+        this.clearTimeout();
         if (forQueue) {
             q.push(msg);
         } else {
