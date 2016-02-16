@@ -224,7 +224,9 @@ Port.prototype.error = function(error) {
 Port.prototype.receive = function(stream, packet, context) {
     var port = this;
     var $meta = packet.length && packet[packet.length - 1];
-    var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) || port.config.receive;
+    var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'receive'].join('.')]) ||
+        ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) ||
+        port.config.receive;
 
     if (!fn) {
         $meta && (packet[packet.length - 1] = port.findMeta($meta, context));
@@ -319,7 +321,9 @@ Port.prototype.encode = function encode(context) {
     var port = this;
     return through2.obj(function encodePacket(packet, enc, callback) {
         var $meta = packet.length && packet[packet.length - 1];
-        var fn = ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) || port.config.send;
+        var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'send'].join('.')]) ||
+            ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) ||
+            port.config.send;
         var msgCallback = ($meta && $meta.callback) || function() {};
 
         if (fn) {
