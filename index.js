@@ -468,7 +468,7 @@ module.exports = function Bus() {
                         var responseSchema = (validate.response && bus.local[destination][opcode].response) || false;
                         var joi = (requestSchema || responseSchema) && require('joi');
                         if (requestSchema) {
-                            var requestValidation = joi.validate(applyArgs[0], {abortEarly: false});
+                            var requestValidation = joi.validate(applyArgs[0], requestSchema, {abortEarly: false});
                             if (requestValidation.error) {
                                 return createFieldError('RequestFieldError', destination, requestValidation);
                             }
