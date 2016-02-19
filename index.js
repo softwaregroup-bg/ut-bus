@@ -238,6 +238,8 @@ module.exports = function Bus() {
         });
     }
 
+    function noOp() {};
+
     return {
         // properties
         id: null,
@@ -248,6 +250,8 @@ module.exports = function Bus() {
         local: {},
         logLevel: 'warn',
         logFactory: null,
+        performance: null,
+        stop: noOp,
 
         init: function() {
             this.masterRequest = this.getMethod('req', 'request');
@@ -274,7 +278,7 @@ module.exports = function Bus() {
                             fs.unlinkSync(pipe);
                         }
                     }
-                    net.createServer(function(socket) {
+                    var server = net.createServer(function(socket) {
                         socket.on('data', function(msg) {
                             log.trace && log.trace({$meta: {opcode: 'frameIn'}, message: msg});
                         });
@@ -292,6 +296,12 @@ module.exports = function Bus() {
                     }).listen(pipe, function(err) {
                         err ? reject(err) : resolve();
                     });
+                    // todo set on error handler
+                    self.stop = function() {
+                        server.close();
+                        server.unref();
+                        self.stop = noOp;
+                    };
                 } else {
                     var connection = net.createConnection(pipe, function() {
                         connection.on('data', function(msg) {
@@ -311,6 +321,12 @@ module.exports = function Bus() {
                         });
                         rpc.pipe(connection).pipe(rpc);
                     });
+                    // todo set on error handler
+                    self.stop = function() {
+                        connection.end();
+                        connection.unref();
+                        self.stop = noOp;
+                    };
                 }
 
                 // todo handle out frames
@@ -322,6 +338,8 @@ module.exports = function Bus() {
             remotes.forEach(function(remote) {
                 // todo destroy connection
             });
+            this.stop();
+            this.performance && this.performance.stop();
         },
 
         registerRemote: function(index, type, methods, cb) {
