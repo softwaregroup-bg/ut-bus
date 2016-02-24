@@ -38,10 +38,10 @@ function flattenAPI(data) {
             result[prop] = cur;
         } else {
             var isEmpty = true;
-            for (var p in cur) {
+            Object.keys(cur).forEach(function(p) {
                 isEmpty = false;
                 recurse(cur[p], prop ? prop + '.' + p : p);
-            }
+            });
             if (isEmpty && prop) {
                 result[prop] = {};
             }
