@@ -1,9 +1,21 @@
-var create = require('errno').custom.createError;
+var create = require('ut-error').define;
 
-var BusError = create('BusError');
+var Bus = create('Bus');
+var MethodNotFound = create('MethodNotFound', Bus);
+var DestinationNotFound = create('DestinationNotFound', Bus);
+var MissingMethod = create('MissingMethod', Bus);
 
 module.exports = {
-    busError: function(cause) {
-        return new BusError('Bus error', cause);
+    bus: function(cause) {
+        return new Bus(cause);
+    },
+    methodNotFound: function(method) {
+        return new MethodNotFound({message: 'Method {method} not found', params: {method: method}});
+    },
+    destinationNotFound: function(destination) {
+        return new DestinationNotFound({message: 'Destination {destination} not found', params: {destination: destination}});
+    },
+    missingMethod: function() {
+        return new MissingMethod('Missing method');
     }
 };

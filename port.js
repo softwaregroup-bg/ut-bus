@@ -94,7 +94,7 @@ Port.prototype.init = function init() {
     methods.req[this.config.id + '.start'] = this.start;
     methods.req[this.config.id + '.stop'] = this.stop;
 
-    (this.config.namespace || [this.config.id]).reduce(function(prev, next) {
+    (this.config.namespace || this.config.imports || [this.config.id]).reduce(function(prev, next) {
         prev.req[next + '.request'] = this.request.bind(this);
         prev.pub[next + '.publish'] = this.publish.bind(this);
         return prev;
@@ -487,6 +487,10 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
         }
     });
     return this.pipe(stream);
+};
+
+Port.prototype.isDebug = function isDebug() {
+    return this.config.debug || (this.config.debug == null && this.bus.config && this.bus.config.debug);
 };
 
 module.exports = Port;

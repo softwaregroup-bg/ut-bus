@@ -4,13 +4,13 @@
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
-    "errno": "^0.1.4",
     "joi": "~6.6.1",
     "lodash": "^3.5.0",
     "readable-stream": "~2.0.2",
     "reconnect-core": "^1.0.0",
     "through2": "~2.0.0",
     "ut-rpc": "5.3.6",
+    "ut-error": "5.3.5",
     "when": "~3.7.2"
   },
   "devDependencies": {
