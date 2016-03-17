@@ -401,7 +401,6 @@ module.exports = function Bus() {
                             callback(undefined, result);
                         })
                         .catch(function(error) {
-                            console.error(error);
                             callback(error);
                         });
                 };
