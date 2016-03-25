@@ -67,7 +67,7 @@ module.exports = function Bus() {
 
     function findMethod(where, cache, methodName, type) {
         var key = ['ports', methodName, type].join('.');
-        var result = cache[key] || where[key];
+        var result = cache[key] || where[key] || where[methodName];
         if (!result) {
             var names = methodName.split('.');
             while (names.length) {
