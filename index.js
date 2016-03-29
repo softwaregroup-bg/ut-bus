@@ -291,7 +291,7 @@ module.exports = function Bus() {
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
-                        }, true);
+                        }, true, log);
                         locals.push(rpc);
                         rpc.on('remote', function(remote) {
                             remotes.push(remote);
@@ -316,7 +316,7 @@ module.exports = function Bus() {
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
-                        }, false);
+                        }, false, log);
                         locals.push(rpc);
                         rpc.on('remote', function(remote) {
                             remotes.push(remote);
