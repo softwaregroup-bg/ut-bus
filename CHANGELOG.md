@@ -1,3 +1,13 @@
+<a name="5.3.32"></a>
+## [5.3.32](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.31...v5.3.32) (2016-03-31)
+
+
+### Bug Fixes
+
+* use constant dependencies ([a909713](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/a909713))
+
+
+
 <a name="5.3.31"></a>
 ## [5.3.31](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.29...v5.3.31) (2016-03-30)
 
