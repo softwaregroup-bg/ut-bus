@@ -1,3 +1,13 @@
+<a name="5.3.33"></a>
+## [5.3.33](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.32...v5.3.33) (2016-04-01)
+
+
+### Features
+
+* update ut-error dependency ([f504f60](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/f504f60))
+
+
+
 <a name="5.3.32"></a>
 ## [5.3.32](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.31...v5.3.32) (2016-03-31)
 
