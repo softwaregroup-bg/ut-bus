@@ -10,7 +10,7 @@
     "reconnect-core": "1.0.0",
     "through2": "2.0.1",
     "ut-rpc": "5.3.6",
-    "ut-error": "5.3.5",
+    "ut-error": "^5.3.10",
     "when": "3.7.7"
   },
   "devDependencies": {
