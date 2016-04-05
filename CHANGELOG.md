@@ -1,3 +1,13 @@
+<a name="5.3.34"></a>
+## [5.3.34](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.33...v5.3.34) (2016-04-05)
+
+
+### Bug Fixes
+
+* **version:** bump ([c95c76a](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/c95c76a))
+
+
+
 <a name="5.3.33"></a>
 ## [5.3.33](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.32...v5.3.33) (2016-04-01)
 
