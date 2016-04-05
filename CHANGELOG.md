@@ -1,3 +1,13 @@
+<a name="5.3.35"></a>
+## [5.3.35](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.34...v5.3.35) (2016-04-05)
+
+
+### Bug Fixes
+
+* fix ut-rpc dependency ([aa4207b](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/aa4207b))
+
+
+
 <a name="5.3.34"></a>
 ## [5.3.34](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.33...v5.3.34) (2016-04-05)
 
