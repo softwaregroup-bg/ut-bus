@@ -9,7 +9,7 @@
     "readable-stream": "2.0.6",
     "reconnect-core": "1.0.0",
     "through2": "2.0.1",
-    "ut-rpc": "5.3.9",
+    "ut-rpc": "^5.3.10",
     "ut-error": "^5.3.10",
     "when": "3.7.7"
   },
