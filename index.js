@@ -496,7 +496,7 @@ module.exports = function Bus() {
                             return when(response).then(validateResult).catch(validateResult);
                         }
                     }
-                    return fn.apply(this, applyArgs);
+                    return when(fn.apply(this, applyArgs));
                 } else {
                     return when.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
                 }
