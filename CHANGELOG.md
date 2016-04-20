@@ -1,3 +1,13 @@
+<a name="5.3.37"></a>
+## [5.3.37](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.36...v5.3.37) (2016-04-20)
+
+
+### Bug Fixes
+
+* **importMethod:** always return promise ([56c2925](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/56c2925))
+
+
+
 <a name="5.3.36"></a>
 ## [5.3.36](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.35...v5.3.36) (2016-04-15)
 
