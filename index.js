@@ -508,7 +508,7 @@ module.exports = function Bus() {
             return busMethod;
         },
 
-        importMethods: function(target, methods, validate, binding) {
+        importMethods: function(target, methods, validate, binding, single) {
             var local = this.local;
             var self = this;
             var cache = binding ? cacheNotBound : cacheBound;
@@ -551,7 +551,7 @@ module.exports = function Bus() {
             if (methods && methods.length) {
                 var unmatched = methods.slice();
                 // create regular expression matching all listed methods as passed or as prefixes
-                var exp = new RegExp(['^', methods.map(function(m) { return '(' + m.replace(/\./g, '\\.') + '(?:\\..*)?)'; }).join('|'), '$'].join(''), 'i');
+                var exp = new RegExp(['^', methods.map(function(m) { return '(' + m.replace(/\./g, '\\.') + (single ? ')' : '(?:\\..*)?)'); }).join('|'), '$'].join(''), 'i');
 
                 Object.keys(local).forEach(function(name) {
                     var match = name.match(exp);
@@ -576,7 +576,7 @@ module.exports = function Bus() {
         importMethod: function(methodName, validate) {
             var result = cacheBound[methodName];
             if (!result) {
-                this.importMethods(cacheBound, [methodName], validate);
+                this.importMethods(cacheBound, [methodName], validate, undefined, true);
                 result = cacheBound[methodName];
             }
 
