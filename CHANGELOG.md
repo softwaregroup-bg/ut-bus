@@ -1,3 +1,13 @@
+<a name="5.3.38"></a>
+## [5.3.38](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.37...v5.3.38) (2016-04-26)
+
+
+### Bug Fixes
+
+* importMethod should only import a single method ([c1df551](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/c1df551))
+
+
+
 <a name="5.3.37"></a>
 ## [5.3.37](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.36...v5.3.37) (2016-04-20)
 
