@@ -4,6 +4,7 @@ var Bus = create('Bus');
 var MethodNotFound = create('MethodNotFound', Bus);
 var DestinationNotFound = create('DestinationNotFound', Bus);
 var MissingMethod = create('MissingMethod', Bus);
+var UnhandledError = create('UnhandledError', Bus);
 
 module.exports = {
     bus: function(cause) {
@@ -17,5 +18,12 @@ module.exports = {
     },
     missingMethod: function() {
         return new MissingMethod('Missing method');
+    },
+    unhandledError: function($meta) {
+        var err = new UnhandledError('Unhandled Error' + ($meta.errorMessage ? ': ' + $meta.errorMessage : ''));
+        if ($meta.errorCode) {
+            err.code = $meta.errorCode;
+        }
+        return err;
     }
 };

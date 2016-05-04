@@ -95,6 +95,14 @@ module.exports = function Bus() {
             var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
             var method = $meta.method;
             if (!method) {
+                if ($meta.mtid === 'error') {
+                    if (arguments[0] instanceof Error) {
+                        return when.reject(arguments[0]);
+                    }
+                    var err = errors.unhandledError($meta);
+                    err.cause = arguments[0];
+                    return when.reject(err);
+                }
                 return when.reject(errors.missingMethod());
             }
             var fn = findMethod(thisPub, pub, $meta.destination || method, 'publish');
@@ -588,6 +596,9 @@ module.exports = function Bus() {
             var mtid;
             if ($meta) {
                 mtid = $meta.mtid;
+                if (mtid === 'discard') {
+                    return true;
+                }
                 if (this.socket) {
                     if (mtid === 'request') {
                         return this.masterRequest.apply(this, Array.prototype.slice.call(arguments));
