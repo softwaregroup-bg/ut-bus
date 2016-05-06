@@ -1,3 +1,13 @@
+<a name="5.3.39"></a>
+## [5.3.39](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.38...v5.3.39) (2016-05-06)
+
+
+### Bug Fixes
+
+* **mtid:** mtid in the $meta is not handled properly. On error method, proper error should be thrown, on discard no method should be attempted to call.([851afd6](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/851afd6))
+
+
+
 <a name="5.3.38"></a>
 ## [5.3.38](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.37...v5.3.38) (2016-04-26)
 
