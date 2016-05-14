@@ -1,3 +1,13 @@
+<a name="5.3.40"></a>
+## [5.3.40](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.39...v5.3.40) (2016-05-14)
+
+
+### Features
+
+* pass method when meta is missing ([77d8f67](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/77d8f67))
+
+
+
 <a name="5.3.39"></a>
 ## [5.3.39](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.38...v5.3.39) (2016-05-06)
 
