@@ -449,6 +449,9 @@ module.exports = function Bus() {
             function busMethod() {
                 var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
                 var applyArgs = Array.prototype.slice.call(arguments);
+                if (!$meta) {
+                    applyArgs.push({method: methodName});
+                }
                 if (!methodName && $meta && typeof $meta.callback === 'function') {
                     var cb = $meta.callback;
                     delete $meta.callback;
