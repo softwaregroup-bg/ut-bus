@@ -1,3 +1,13 @@
+<a name="5.3.41"></a>
+## [5.3.41](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.40...v5.3.41) (2016-05-30)
+
+
+### Bug Fixes
+
+* fix importMethod regex ([610a88e](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/610a88e))
+
+
+
 <a name="5.3.40"></a>
 ## [5.3.40](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.39...v5.3.40) (2016-05-14)
 
