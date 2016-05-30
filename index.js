@@ -562,7 +562,7 @@ module.exports = function Bus() {
             if (methods && methods.length) {
                 var unmatched = methods.slice();
                 // create regular expression matching all listed methods as passed or as prefixes
-                var exp = new RegExp(['^', methods.map(function(m) { return '(' + m.replace(/\./g, '\\.') + (single ? ')' : '(?:\\..*)?)'); }).join('|'), '$'].join(''), 'i');
+                var exp = new RegExp(methods.map(function(m) { return '(^' + m.replace(/\./g, '\\.') + (single ? '$)' : '(?:\\..*)?$)'); }).join('|'), 'i');
 
                 Object.keys(local).forEach(function(name) {
                     var match = name.match(exp);
