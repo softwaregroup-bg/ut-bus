@@ -1,3 +1,13 @@
+<a name="5.3.42"></a>
+## [5.3.42](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.41...v5.3.42) (2016-05-30)
+
+
+### Features
+
+* add support for endpoint/method syntax ([85826cc](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/85826cc))
+
+
+
 <a name="5.3.41"></a>
 ## [5.3.41](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.40...v5.3.41) (2016-05-30)
 
