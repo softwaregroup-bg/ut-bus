@@ -225,6 +225,7 @@ Port.prototype.receive = function(stream, packet, context) {
     var port = this;
     var $meta = packet.length && packet[packet.length - 1];
     var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'receive'].join('.')]) ||
+        ($meta && $meta.method && port.config[[port.methodPath($meta.method), $meta.mtid, 'receive'].join('.')]) ||
         ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) ||
         port.config.receive;
 
@@ -317,11 +318,16 @@ Port.prototype.traceMeta = function traceMeta($meta, context) {
     }
 };
 
+Port.prototype.methodPath = function methodPath(methodName) {
+    return methodName.split('/', 2)[1];
+};
+
 Port.prototype.encode = function encode(context) {
     var port = this;
     return through2.obj(function encodePacket(packet, enc, callback) {
         var $meta = packet.length && packet[packet.length - 1];
         var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'send'].join('.')]) ||
+            ($meta && $meta.method && port.config[[port.methodPath($meta.method), $meta.mtid, 'send'].join('.')]) ||
             ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) ||
             port.config.send;
         var msgCallback = ($meta && $meta.callback) || function() {};
