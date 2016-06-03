@@ -1,3 +1,13 @@
+<a name="5.3.43"></a>
+## [5.3.43](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.42...v5.3.43) (2016-06-03)
+
+
+### Bug Fixes
+
+* restore $meta before calling receive ([f0b7f17](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/f0b7f17))
+
+
+
 <a name="5.3.42"></a>
 ## [5.3.42](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.41...v5.3.42) (2016-05-30)
 
