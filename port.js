@@ -224,24 +224,23 @@ Port.prototype.error = function(error) {
 Port.prototype.receive = function(stream, packet, context) {
     var port = this;
     var $meta = packet.length && packet[packet.length - 1];
+    $meta = $meta && port.findMeta($meta, context);
     var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'receive'].join('.')]) ||
         ($meta && $meta.method && port.config[[port.methodPath($meta.method), $meta.mtid, 'receive'].join('.')]) ||
         ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) ||
         port.config.receive;
 
     if (!fn) {
-        $meta && (packet[packet.length - 1] = port.findMeta($meta, context));
+        $meta && (packet[packet.length - 1] = $meta);
         stream.push(packet);
     } else {
         when(when.lift(fn).apply(port, packet))
             .then(function(result) {
-                $meta = port.findMeta($meta, context);
                 stream.push([result, $meta]);
                 port.log.debug && port.log.debug({message: result, $meta: $meta});
             })
             .catch(function(err) {
                 port.error(err);
-                $meta = port.findMeta($meta, context);
                 $meta.mtid = 'error';
                 $meta.errorCode = err && err.code;
                 $meta.errorMessage = err && err.message;
