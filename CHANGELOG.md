@@ -1,3 +1,13 @@
+<a name="5.3.44"></a>
+## [5.3.44](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.43...v5.3.44) (2016-06-08)
+
+
+### Bug Fixes
+
+* upgrade lodash ([1c04075](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/1c04075))
+
+
+
 <a name="5.3.43"></a>
 ## [5.3.43](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.42...v5.3.43) (2016-06-03)
 
