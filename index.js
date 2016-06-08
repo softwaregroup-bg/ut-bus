@@ -1,6 +1,6 @@
 var when = require('when');
-var assign = require('lodash/object/assign');
-var capitalize = require('lodash/string/capitalize');
+var assign = require('lodash.assign');
+var capitalize = require('lodash.capitalize');
 var errors = require('./errors');
 
 function createFieldError(errType, module, validation) {

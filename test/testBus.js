@@ -1,6 +1,6 @@
 /* eslint no-console:0, no-process-exit:0 */
 
-var assign = require('lodash/object/assign');
+var assign = require('lodash.assign');
 var Bus = require('../');
 var when = require('when');
 

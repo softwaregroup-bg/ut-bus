@@ -3,7 +3,7 @@ var Readable = require('readable-stream/readable');
 var when = require('when');
 var Buffer = require('buffer').Buffer;
 var bufferCreate = Buffer;
-var assign = require('lodash/object/assign');
+var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 
 function handleStreamClose(stream, conId) {
