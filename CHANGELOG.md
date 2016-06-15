@@ -1,3 +1,13 @@
+<a name="5.3.45"></a>
+## [5.3.45](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.44...v5.3.45) (2016-06-15)
+
+
+### Bug Fixes
+
+* **$meta:** Wrong $meta check result of giving additional $meta to the "request.send" and "response.receive" hooks. ([5eb8ea5](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/5eb8ea5))
+
+
+
 <a name="5.3.44"></a>
 ## [5.3.44](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.43...v5.3.44) (2016-06-08)
 
