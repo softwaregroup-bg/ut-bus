@@ -1,3 +1,13 @@
+<a name="5.3.46"></a>
+## [5.3.46](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.45...v5.3.46) (2016-06-16)
+
+
+### Bug Fixes
+
+* **$meta:** $meta of request should match $meta of response. ([9309f02](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/9309f02))
+
+
+
 <a name="5.3.45"></a>
 ## [5.3.45](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.44...v5.3.45) (2016-06-15)
 
