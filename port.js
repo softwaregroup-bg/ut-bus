@@ -230,11 +230,11 @@ Port.prototype.receive = function(stream, packet, context) {
         ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) ||
         port.config.receive;
 
+    $meta && (packet[packet.length - 1] = $meta);
     if (!fn) {
-        $meta && (packet[packet.length - 1] = $meta);
         stream.push(packet);
     } else {
-        when(when.lift(fn).apply(port, packet))
+        when.lift(fn).apply(port, packet)
             .then(function(result) {
                 stream.push([result, $meta]);
                 port.log.debug && port.log.debug({message: result, $meta: $meta});
