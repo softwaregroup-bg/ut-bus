@@ -1,3 +1,13 @@
+<a name="5.4.1"></a>
+## [5.4.1](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.46...v5.4.1) (2016-07-11)
+
+
+### Features
+
+* upgrade dependencies ([c413a92](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/c413a92))
+
+
+
 <a name="5.3.46"></a>
 ## [5.3.46](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.3.45...v5.3.46) (2016-06-16)
 
