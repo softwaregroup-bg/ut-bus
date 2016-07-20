@@ -253,7 +253,9 @@ module.exports = function Bus() {
         });
     }
 
-    function noOp() {};
+    function noOp() {
+        return Promise.resolve();
+    };
 
     return {
         // properties
@@ -313,9 +315,16 @@ module.exports = function Bus() {
                     });
                     // todo set on error handler
                     self.stop = function() {
-                        server.close();
-                        server.unref();
                         self.stop = noOp;
+                        return new Promise(function(resolve, reject) {
+                            server.close(function(err) {
+                                server.unref();
+                                if (err) {
+                                    reject(err);
+                                }
+                                resolve();
+                            });
+                        });
                     };
                 } else {
                     var connection = net.createConnection(pipe, function() {
@@ -341,6 +350,7 @@ module.exports = function Bus() {
                         connection.end();
                         connection.unref();
                         self.stop = noOp;
+                        return Promise.resolve();
                     };
                 }
 
@@ -353,8 +363,10 @@ module.exports = function Bus() {
             remotes.forEach(function(remote) {
                 // todo destroy connection
             });
-            this.stop();
-            this.performance && this.performance.stop();
+            return this.stop()
+                .then(() => {
+                    return this.performance && this.performance.stop();
+                });
         },
 
         registerRemote: function(index, type, methods, cb) {
