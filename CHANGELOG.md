@@ -1,3 +1,13 @@
+<a name="5.4.3"></a>
+## [5.4.3](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.4.2...v5.4.3) (2016-07-21)
+
+
+### Bug Fixes
+
+* test sequence on windows ([4c0ce2b](https://git.softwaregroup-bg.com/ut5/ut-bus/commit/4c0ce2b))
+
+
+
 <a name="5.4.2"></a>
 ## [5.4.2](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.4.1...v5.4.2) (2016-07-11)
 
