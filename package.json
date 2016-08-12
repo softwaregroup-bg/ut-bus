@@ -16,14 +16,11 @@
   },
   "devDependencies": {
     "glob": "7.0.5",
-    "ut-tools": "^5.4.1"
-  },
-  "publishConfig": {
-    "registry": "https://nexus.softwaregroup-bg.com/repository/npm-internal"
+    "ut-tools": "^5.6.0"
   },
   "repository": {
     "type": "git",
-    "url": "git@git.softwaregroup-bg.com:ut5/ut-bus.git"
+    "url": "git@github.com:softwaregroup-bg/ut-bus.git"
   },
   "scripts": {
     "lint": "ut-lint .",
@@ -48,5 +45,6 @@
     "fs": "./browser/fs",
     "joi": "./browser/joi",
     "net": "./browser/net"
-  }
+  },
+  "license": "Apache-2.0"
 }
