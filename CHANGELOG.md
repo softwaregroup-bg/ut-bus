@@ -1,3 +1,13 @@
+<a name="5.4.7"></a>
+## [5.4.7](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.6...v5.4.7) (2016-08-12)
+
+
+### Bug Fixes
+
+* publish to npm ([79568cf](https://github.com/softwaregroup-bg/ut-bus/commit/79568cf))
+
+
+
 <a name="5.4.6"></a>
 ## [5.4.6](https://git.softwaregroup-bg.com/ut5/ut-bus/compare/v5.4.5...v5.4.6) (2016-08-02)
 
