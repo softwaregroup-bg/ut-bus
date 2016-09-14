@@ -1,3 +1,13 @@
+<a name="5.4.8"></a>
+## [5.4.8](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.7...v5.4.8) (2016-09-14)
+
+
+### Bug Fixes
+
+* fix notifications handling ([d825595](https://github.com/softwaregroup-bg/ut-bus/commit/d825595))
+
+
+
 <a name="5.4.7"></a>
 ## [5.4.7](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.6...v5.4.7) (2016-08-12)
 
