@@ -71,7 +71,7 @@ module.exports = function Bus() {
         if (!result) {
             var names = methodName.split('.');
             while (names.length) {
-                result = where[['ports', names.join('.'), 'request'].join('.')];
+                result = where[['ports', names.join('.'), type].join('.')];
                 if (result) {
                     where[key] = result;
                     break;
