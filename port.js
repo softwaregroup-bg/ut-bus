@@ -6,7 +6,7 @@ var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 
-function handleStreamClose(stream, conId) {
+function handleStreamClose(stream, conId, done) {
     if (stream) {
         stream.destroy();
     }
@@ -20,6 +20,9 @@ function handleStreamClose(stream, conId) {
             this.queue.clearTimeout();
         }
         this.queue = null;
+    }
+    if (done && typeof (done) === 'function') {
+        done();
     }
 }
 
@@ -313,7 +316,10 @@ Port.prototype.decode = function decode(context) {
 
 Port.prototype.traceMeta = function traceMeta($meta, context) {
     if ($meta && $meta.trace && $meta.callback && $meta.mtid === 'request') {
-        context.callbacks[$meta.trace] = {$meta: $meta, expire: Date.now() + 60000, startTime: Date.now()};
+        var expireTimeout = 60000;
+        context.callbacks[$meta.trace] = {
+            $meta: $meta, expire: Date.now() + expireTimeout, startTime: Date.now()
+        };
     }
 };
 
@@ -392,21 +398,27 @@ Port.prototype.pipe = function pipe(stream, context) {
         this.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
     }
 
+    function unpipe() {
+        result.reduce(function(prev, next, idx) {
+            return next ? prev.unpipe(next) : prev;
+        }, queue);
+    }
+
     if (context && conId) {
         queue = createQueue(this.config.queue, queueEvent.bind(this));
         this.queues[conId] = queue;
         if (this.socketTimeOut) {
-            stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId));
+            stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId, unpipe));
         }
-        stream.on('end', handleStreamClose.bind(this, undefined, conId))
-            .on('error', handleStreamClose.bind(this, stream, conId));
+        stream.on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
+            .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
     } else {
         queue = this.queue = createQueue(this.config.queue, queueEvent.bind(this));
-        stream.on('end', handleStreamClose.bind(this, undefined))
-            .on('error', handleStreamClose.bind(this, stream));
+        stream.on('end', handleStreamClose.bind(this, undefined, undefined, unpipe))
+            .on('error', handleStreamClose.bind(this, stream, undefined, unpipe));
     }
 
-    result.reduce(function(prev, next) {
+    result.reduce(function(prev, next, idx) {
         return next ? prev.pipe(next) : prev;
     }, queue).on('data', function(packet) {
         var $meta = (packet.length > 1) && packet[packet.length - 1];
@@ -420,7 +432,6 @@ Port.prototype.pipe = function pipe(stream, context) {
             }
         });
     }.bind(this));
-
     return result;
 };
 
