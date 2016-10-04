@@ -1,3 +1,13 @@
+<a name="5.4.10"></a>
+## [5.4.10](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.9...v5.4.10) (2016-10-04)
+
+
+### Bug Fixes
+
+* proboably memory leak... unpipe streams on close ([098708f](https://github.com/softwaregroup-bg/ut-bus/commit/098708f))
+
+
+
 <a name="5.4.9"></a>
 ## [5.4.9](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.8...v5.4.9) (2016-09-20)
 
