@@ -1,3 +1,13 @@
+<a name="5.4.13"></a>
+## [5.4.13](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.12...v5.4.13) (2016-10-05)
+
+
+### Bug Fixes
+
+* all anon functions named(for profiling), some underlook code fixed ([1f29234](https://github.com/softwaregroup-bg/ut-bus/commit/1f29234))
+
+
+
 <a name="5.4.12"></a>
 ## [5.4.12](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.11...v5.4.12) (2016-10-05)
 
