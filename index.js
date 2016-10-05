@@ -1,3 +1,5 @@
+'use strict';
+
 var when = require('when');
 var assign = require('lodash.assign');
 var capitalize = require('lodash.capitalize');
