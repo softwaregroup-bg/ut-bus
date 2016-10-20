@@ -1,3 +1,13 @@
+<a name="5.5.0"></a>
+# [5.5.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.14...v5.5.0) (2016-10-20)
+
+
+### Features
+
+* split empty notification to empty and idle ([57b6ca8](https://github.com/softwaregroup-bg/ut-bus/commit/57b6ca8))
+
+
+
 <a name="5.4.14"></a>
 ## [5.4.14](https://github.com/softwaregroup-bg/ut-bus/compare/v5.4.13...v5.4.14) (2016-10-06)
 
