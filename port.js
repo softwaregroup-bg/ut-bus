@@ -29,17 +29,35 @@ var createQueue = function createQueue(config, callback) {
     var r = new Readable({objectMode: true});
     var forQueue = false;
     var empty = config && config.empty;
-    var t;
+    var idleTime = config && config.idle;
+    var idleTimer;
 
     function emitEmpty() {
-        t = setTimeout(emitEmpty, empty);
         callback('empty');
     }
 
-    r.clearTimeout = function createQueueClearTimeout() {
-        if (t) {
-            clearTimeout(t);
-            t = false;
+    function emitIdle() {
+        if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = false;
+        }
+        idleTimer = setTimeout(emitIdle, idleTime);
+        callback('idle');
+    }
+
+    r.clearTimeout = function queueClearTimeout() {
+        if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = false;
+        }
+    };
+
+    r.resetTimeout = function queueResetTimeout() {
+        if (idleTimer) {
+            clearTimeout(idleTimer);
+        }
+        if (idleTime) {
+            idleTimer = setTimeout(emitIdle, idleTime);
         }
     };
 
@@ -53,7 +71,7 @@ var createQueue = function createQueue(config, callback) {
     };
 
     r.add = function add(msg) {
-        this.clearTimeout();
+        this.resetTimeout();
         if (forQueue) {
             q.push(msg);
         } else {
@@ -66,8 +84,10 @@ var createQueue = function createQueue(config, callback) {
         r.push(null);
         r.unpipe();
         r.clearTimeout();
-        r = empty = q = undefined;
+        r = q = undefined;
     };
+
+    r.resetTimeout();
 
     return r;
 };
