@@ -1,3 +1,13 @@
+<a name="5.6.0"></a>
+# [5.6.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.5.2...v5.6.0) (2016-11-05)
+
+
+### Features
+
+* do autoselect the first queue ([4d510fc](https://github.com/softwaregroup-bg/ut-bus/commit/4d510fc))
+
+
+
 <a name="5.5.2"></a>
 ## [5.5.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.5.1...v5.5.2) (2016-11-01)
 
