@@ -1,10 +1,14 @@
 var create = require('ut-error').define;
 
-var Bus = create('Bus');
-var MethodNotFound = create('MethodNotFound', Bus);
-var DestinationNotFound = create('DestinationNotFound', Bus);
-var MissingMethod = create('MissingMethod', Bus);
-var UnhandledError = create('UnhandledError', Bus);
+var Bus = create('bus');
+var MethodNotFound = create('methodNotFound', Bus);
+var DestinationNotFound = create('destinationNotFound', Bus);
+var MissingMethod = create('missingMethod', Bus);
+var UnhandledError = create('unhandledError', Bus);
+var Port = create('port');
+var MissingParams = create('missingParameters', Port, 'Missing parameters');
+var MissingMeta = create('missingMeta', Port, 'Missing metadata');
+var NotConnected = create('notConnected', Port, 'No connection, port: {port}');
 
 module.exports = {
     bus: function(cause) {
@@ -25,5 +29,14 @@ module.exports = {
             err.code = $meta.errorCode;
         }
         return err;
+    },
+    missingParams: function(cause) {
+        return new MissingParams(cause);
+    },
+    missingMeta: function(cause) {
+        return new MissingMeta(cause);
+    },
+    notConnected: function(port) {
+        return new NotConnected({params: {port}});
     }
 };

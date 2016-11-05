@@ -7,6 +7,7 @@ var Buffer = require('buffer').Buffer;
 var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
+var errors = require('./errors');
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -162,9 +163,9 @@ Port.prototype.request = function request() {
     var args = Array.prototype.slice.call(arguments);
     return when.promise(function requestPromise(resolve, reject) {
         if (!args.length) {
-            reject(new Error('Missing parameters'));
+            reject(errors.missingParams());
         } else if (!$meta) {
-            reject(new Error('Missing metadata'));
+            reject(errors.missingMeta());
         } else {
             $meta.callback = function requestPromiseCb(msg) {
                 if ($meta && $meta.mtid !== 'error') {
@@ -178,19 +179,11 @@ Port.prototype.request = function request() {
                 this.queue.add(args);
             } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
                 this.queues[$meta.conId].add(args);
+            } else if (Object.keys(this.queues).length && port.connRouter && typeof port.connRouter === 'function') {
+                var queue = this.queues[port.connRouter(this.queues, Array.prototype.slice.call(arguments))];
+                queue && queue.add(args);
             } else {
-                var keys = Object.keys(this.queues).sort(function sortQueues(a, b) {
-                    return b - a;
-                });
-                var queue;
-                if (keys.length && port.connRouter && typeof port.connRouter === 'function') {
-                    queue = this.queues[port.connRouter(this.queues)];
-                } else if (!(queue = keys && keys.length && this.queues[keys[0]])) {
-                    var error = new Error('No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues)));
-                    error.code = 'notConnected';
-                    reject(error);
-                }
-                queue.add(args);
+                reject(errors.notConnected(this.config.id));
             }
         }
     }.bind(this));
@@ -200,24 +193,17 @@ Port.prototype.publish = function publish() {
     var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
     var queue;
     if (!arguments.length) {
-        return when.reject(new Error('Missing parameters'));
+        return when.reject(errors.missingParams());
     } else if (!$meta) {
-        return when.reject(new Error('Missing metadata'));
+        return when.reject(errors.missingMeta());
     } else if (this.queue) {
         queue = this.queue;
     } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
         queue = this.queues[$meta.conId];
+    } else if (Object.keys(this.queues).length && this.connRouter && typeof this.connRouter === 'function') {
+        queue = this.queues[this.connRouter(this.queues, Array.prototype.slice.call(arguments))];
     } else {
-        var keys = Object.keys(this.queues).sort(function sortQueues(a, b) {
-            return b - a;
-        });
-        if (keys.length && this.connRouter && typeof this.connRouter === 'function') {
-            queue = this.queues[this.connRouter(this.queues)];
-        } else if (!(queue = keys && keys.length && this.queues[keys[0]])) {
-            var error = new Error('No connection to ' + this.config.id + '; queues: ' + JSON.stringify(Object.keys(this.queues)));
-            error.code = 'notConnected';
-            return when.reject(error);
-        }
+        return when.reject(errors.notConnected(this.config.id));
     }
     if (queue) {
         queue.add(Array.prototype.slice.call(arguments));
