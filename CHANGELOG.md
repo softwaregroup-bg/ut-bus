@@ -1,3 +1,13 @@
+<a name="5.6.1"></a>
+## [5.6.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.6.0...v5.6.1) (2016-11-18)
+
+
+### Bug Fixes
+
+* upgrade dependencies ([e7a0919](https://github.com/softwaregroup-bg/ut-bus/commit/e7a0919))
+
+
+
 <a name="5.6.0"></a>
 # [5.6.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.5.2...v5.6.0) (2016-11-05)
 
