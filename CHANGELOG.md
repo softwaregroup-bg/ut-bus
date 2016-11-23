@@ -1,3 +1,13 @@
+<a name="5.6.2"></a>
+## [5.6.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.6.1...v5.6.2) (2016-11-23)
+
+
+### Bug Fixes
+
+* deps bump ([6f22609](https://github.com/softwaregroup-bg/ut-bus/commit/6f22609))
+
+
+
 <a name="5.6.1"></a>
 ## [5.6.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.6.0...v5.6.1) (2016-11-18)
 
