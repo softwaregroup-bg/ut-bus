@@ -4,7 +4,7 @@
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
-    "joi": "9.2.0",
+    "joi": "10.0.1",
     "lodash.assign": "4.2.0",
     "lodash.capitalize": "4.2.1",
     "readable-stream": "2.1.4",
@@ -15,8 +15,8 @@
     "when": "3.7.7"
   },
   "devDependencies": {
-    "glob": "7.0.5",
-    "ut-tools": "^5.10.6"
+    "glob": "7.1.1",
+    "ut-tools": "^5.10.8"
   },
   "repository": {
     "type": "git",
