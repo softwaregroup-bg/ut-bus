@@ -1,3 +1,13 @@
+<a name="5.7.0"></a>
+# [5.7.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.6.2...v5.7.0) (2016-11-27)
+
+
+### Features
+
+* allow dispatching by destination ([23f5ca5](https://github.com/softwaregroup-bg/ut-bus/commit/23f5ca5))
+
+
+
 <a name="5.6.2"></a>
 ## [5.6.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.6.1...v5.6.2) (2016-11-23)
 
