@@ -628,7 +628,7 @@ module.exports = function Bus() {
                         delete $meta.callback;
                         return cb.apply(this, Array.prototype.slice.call(arguments));
                     }
-                    var f = findMethod(mapLocal, mapLocal, $meta.method, mtid);
+                    var f = findMethod(mapLocal, mapLocal, $meta.destination || $meta.method, mtid);
                     if (f) {
                         return f.apply(undefined, Array.prototype.slice.call(arguments))
                             .then(function(result) {
