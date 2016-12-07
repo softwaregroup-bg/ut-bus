@@ -299,7 +299,7 @@ module.exports = function Bus() {
                     }
                     var server = net.createServer(function(socket) {
                         socket.on('data', function(msg) {
-                            log.trace && log.trace({$meta: {opcode: 'frameIn'}, message: msg});
+                            log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
@@ -331,7 +331,7 @@ module.exports = function Bus() {
                 } else {
                     var connection = net.createConnection(pipe, function() {
                         connection.on('data', function(msg) {
-                            log.trace && log.trace({$meta: {opcode: 'frameIn'}, message: msg});
+                            log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
                         });
                         var rpc = utRPC({
                             registerRemote: self.registerRemote.bind(self, locals.length)
@@ -421,6 +421,7 @@ module.exports = function Bus() {
                     when(f.apply(self, args))
                         .then(function(result) {
                             callback(undefined, result);
+                            return result;
                         })
                         .catch(function(error) {
                             callback(error);
@@ -552,7 +553,7 @@ module.exports = function Bus() {
                     method = function(msg) {
                         var fn = local[methodName];
                         if (fn) {
-                            return fn.apply(this, Array.prototype.slice.call(arguments));
+                            return Promise.resolve(fn.apply(this, Array.prototype.slice.call(arguments)));
                         }
 
                         fn = findMethod(mapLocal, mapLocal, methodName, 'request');
@@ -608,6 +609,10 @@ module.exports = function Bus() {
             return result;
         },
 
+        notification: function(method) {
+            return msg => this.dispatch(msg, {mtid: 'notification', method});
+        },
+
         dispatch: function() {
             var $meta = (arguments.length && arguments[arguments.length - 1]);
             var mtid;
@@ -628,9 +633,9 @@ module.exports = function Bus() {
                         delete $meta.callback;
                         return cb.apply(this, Array.prototype.slice.call(arguments));
                     }
-                    var f = findMethod(mapLocal, mapLocal, $meta.destination || $meta.method, mtid);
+                    var f = findMethod(mapLocal, mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
                     if (f) {
-                        return f.apply(undefined, Array.prototype.slice.call(arguments))
+                        return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)))
                             .then(function(result) {
                                 return result[0];
                             });
