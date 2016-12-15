@@ -4,7 +4,7 @@
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
-    "joi": "10.0.1",
+    "joi": "10.0.6",
     "lodash.assign": "4.2.0",
     "lodash.capitalize": "4.2.1",
     "readable-stream": "2.1.4",
