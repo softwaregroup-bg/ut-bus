@@ -1,3 +1,18 @@
+<a name="5.8.0"></a>
+# [5.8.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.7.0...v5.8.0) (2016-12-19)
+
+
+### Bug Fixes
+
+* deps versions bump ([f6e9d69](https://github.com/softwaregroup-bg/ut-bus/commit/f6e9d69))
+
+
+### Features
+
+* adding support for notifications ([fd51b03](https://github.com/softwaregroup-bg/ut-bus/commit/fd51b03))
+
+
+
 <a name="5.7.0"></a>
 # [5.7.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.6.2...v5.7.0) (2016-11-27)
 
