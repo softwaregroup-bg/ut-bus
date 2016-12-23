@@ -1,3 +1,13 @@
+<a name="5.8.1"></a>
+## [5.8.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.8.0...v5.8.1) (2016-12-23)
+
+
+### Bug Fixes
+
+* update dependencies ([b607d9e](https://github.com/softwaregroup-bg/ut-bus/commit/b607d9e))
+
+
+
 <a name="5.8.0"></a>
 # [5.8.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.7.0...v5.8.0) (2016-12-19)
 
