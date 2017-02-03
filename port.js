@@ -93,6 +93,19 @@ var createQueue = function createQueue(config, callback) {
     return r;
 };
 
+function triggerEvent(event) {
+    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.' + event}, id: this.config.id, config: this.config});
+    var handlers = this.config[event] ? [this.config[event]] : [];
+    var regExp = new RegExp('\\.' + event + '$');
+    this.config.imports && this.config.imports.forEach(function foreachImports(imp) {
+        regExp.test(imp) && handlers.push(this.config[imp]);
+        this.config[imp + '.' + event] && handlers.push(this.config[imp + '.' + event]);
+    }.bind(this));
+    return when.reduce(handlers, function reduceCalls(prev, handler) {
+        return handler.call(this);
+    }.bind(this), []);
+}
+
 function Port() {
     this.log = {};
     this.logFactory = null;
@@ -140,21 +153,15 @@ Port.prototype.messageDispatch = function messageDispatch() {
 };
 
 Port.prototype.start = function start() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.start'}, id: this.config.id, config: this.config});
-    var startList = this.config.start ? [this.config.start] : [];
-    this.config.imports && this.config.imports.forEach(function foreachImports(imp) {
-        imp.match(/\.start$/) && startList.push(this.config[imp]);
-        this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
-    }.bind(this));
-    return when.reduce(startList, function reduceCalls(prev, start) {
-        return start.call(this);
-    }.bind(this), []);
+    return triggerEvent.call(this, 'start');
 };
 
 Port.prototype.stop = function stop() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
-    this.config.stop && this.config.stop.call(this);
-    return true;
+    return triggerEvent.call(this, 'stop');
+};
+
+Port.prototype.ready = function ready() {
+    return triggerEvent.call(this, 'ready');
 };
 
 Port.prototype.request = function request() {
