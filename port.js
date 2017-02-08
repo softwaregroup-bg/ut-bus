@@ -14,11 +14,17 @@ function handleStreamClose(stream, conId, done) {
         stream.destroy();
     }
     if (conId) {
-        this.queues[conId].destroy();
-        delete this.queues[conId];
+        try {
+            this.queues[conId] && this.queues[conId].destroy();
+        } finally {
+            delete this.queues[conId];
+        }
     } else {
-        this.queue.destroy();
-        this.queue = null;
+        try {
+            this.queue && this.queue.destroy();
+        } finally {
+            this.queue = null;
+        }
     }
     if (done && typeof (done) === 'function') {
         done();
@@ -105,6 +111,7 @@ function Port() {
     this.msgReceived = null;
     this.latency = null;
     this.counter = null;
+    this.streams = [];
 }
 
 Port.prototype.init = function init() {
@@ -154,6 +161,9 @@ Port.prototype.start = function start() {
 Port.prototype.stop = function stop() {
     this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
     this.config.stop && this.config.stop.call(this);
+    this.streams.forEach(stream => {
+        stream.end();
+    });
     return true;
 };
 
@@ -486,7 +496,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     }, stream).on('data', function pipeReverseQueueData(packet) {
         this.messageDispatch.apply(this, packet);
     }.bind(this));
-
+    this.streams.push(stream);
     return stream;
 };
 
@@ -528,6 +538,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
             callback();
         }
     });
+    this.streams.push(stream);
     return this.pipe(stream);
 };
 
