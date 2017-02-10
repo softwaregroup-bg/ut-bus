@@ -8,24 +8,31 @@ var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
+var systemEvents = ['start', 'stop', 'ready'];
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
         stream.destroy();
     }
     if (conId) {
-        this.queues[conId].destroy();
-        delete this.queues[conId];
+        try {
+            this.queues[conId] && this.queues[conId].destroy();
+        } finally {
+            delete this.queues[conId];
+        }
     } else {
-        this.queue.destroy();
-        this.queue = null;
+        try {
+            this.queue && this.queue.destroy();
+        } finally {
+            this.queue = null;
+        }
     }
     if (done && typeof (done) === 'function') {
         done();
     }
 }
 
-var createQueue = function createQueue(config, callback) {
+function createQueue(config, callback) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
@@ -118,6 +125,7 @@ function Port() {
     this.msgReceived = null;
     this.latency = null;
     this.counter = null;
+    this.streams = [];
 }
 
 Port.prototype.init = function init() {
@@ -152,17 +160,18 @@ Port.prototype.messageDispatch = function messageDispatch() {
     return result;
 };
 
-Port.prototype.start = function start() {
-    return triggerEvent.call(this, 'start');
+Port.prototype.triggerEvent = function triggerEvent(event) {
+    if (~systemEvents.indexOf(event)) {
+        return Promise.resolve();
+    }
+    return triggerEvent.call(this, event);
 };
 
-Port.prototype.stop = function stop() {
-    return triggerEvent.call(this, 'stop');
-};
-
-Port.prototype.ready = function ready() {
-    return triggerEvent.call(this, 'ready');
-};
+systemEvents.forEach(function(event) {
+    Port.prototype[event] = function() {
+        return triggerEvent.call(this, event);
+    };
+});
 
 Port.prototype.request = function request() {
     var port = this;
@@ -493,7 +502,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     }, stream).on('data', function pipeReverseQueueData(packet) {
         this.messageDispatch.apply(this, packet);
     }.bind(this));
-
+    this.streams.push(stream);
     return stream;
 };
 
@@ -535,6 +544,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
             callback();
         }
     });
+    this.streams.push(stream);
     return this.pipe(stream);
 };
 

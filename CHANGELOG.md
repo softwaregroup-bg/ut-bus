@@ -1,3 +1,13 @@
+<a name="5.8.2"></a>
+## [5.8.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.8.1...v5.8.2) (2017-02-08)
+
+
+### Bug Fixes
+
+* close streams created by pipeExec/pipeReverse ([bd720f7](https://github.com/softwaregroup-bg/ut-bus/commit/bd720f7))
+
+
+
 <a name="5.8.1"></a>
 ## [5.8.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.8.0...v5.8.1) (2016-12-23)
 
