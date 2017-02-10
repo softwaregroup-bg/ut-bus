@@ -8,7 +8,7 @@ var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
-var systemEvents = ['start', 'stop', 'ready'];
+var systemEvents = ['start', 'ready'];
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -172,6 +172,14 @@ systemEvents.forEach(function(event) {
         return triggerEvent.call(this, event);
     };
 });
+
+Port.prototype.stop = function stop() {
+    return triggerEvent.call(this, 'stop')
+        .then(() => {
+            this.streams.forEach(stream => stream.end());
+            return true;
+        });
+};
 
 Port.prototype.request = function request() {
     var port = this;
