@@ -270,7 +270,7 @@ Port.prototype.receive = function portReceive(stream, packet, context) {
                 $meta.mtid = 'error';
                 $meta.errorCode = err && err.code;
                 $meta.errorMessage = err && err.message;
-                stream.push([err, $meta]);
+                stream.writable && stream.push([err, $meta]);
             });
     }
 };
@@ -413,6 +413,11 @@ Port.prototype.encode = function encode(context) {
     });
 };
 
+Port.prototype.disconnect = function(reason) {
+    this.error(reason);
+    throw errors.disconnect(reason);
+};
+
 Port.prototype.pipe = function pipe(stream, context) {
     var queue;
     var conId = context && context.conId && context.conId.toString();
@@ -451,6 +456,10 @@ Port.prototype.pipe = function pipe(stream, context) {
         var $meta = (packet.length > 1) && packet[packet.length - 1];
         var mtid = $meta.mtid;
         var opcode = $meta.opcode;
+        if (packet[0] instanceof errors.Disconnect) {
+            stream.end();
+            return;
+        }
         when(this.messageDispatch.apply(this, packet)).then(function messageDispatchResolve(result) {
             if (mtid === 'request' && $meta.mtid !== 'discard') {
                 ($meta.mtid) || ($meta.mtid = 'response');
