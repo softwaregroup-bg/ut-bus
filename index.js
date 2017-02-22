@@ -539,6 +539,21 @@ module.exports = function Bus() {
             var self = this;
             var cache = binding ? cacheNotBound : cacheBound;
 
+            function startRetry(fn, {timeout, retry}) {
+                return new Promise((resolve, reject) => {
+                    const attempt = () => fn()
+                    .then(resolve)
+                    .catch(error => { // todo maybe log these errors
+                        if (Date.now() > timeout) {
+                            reject(errors.timeout(error));
+                        } else {
+                            setTimeout(attempt, retry);
+                        }
+                    });
+                    attempt();
+                });
+            };
+
             function importMethod(methodName) {
                 if (cache[methodName]) {
                     if (target !== cache) {
@@ -567,7 +582,16 @@ module.exports = function Bus() {
                         }
                     };
                 }
-                target[methodName] = binding ? assign(method.bind(binding), method) : method;
+
+                // target[methodName] = binding ? assign(method.bind(binding), method) : method;
+                target[methodName] = assign(function(msg, $meta) {
+                    if ($meta && $meta.timeout) {
+                        return startRetry(() => method.apply(binding, arguments), $meta);
+                    } else {
+                        return method.apply(binding, arguments);
+                    }
+                }, method);
+
                 if (target !== cacheBound) {
                     cacheBound[methodName] = target[methodName];
                     cacheNotBound[methodName] = method;
