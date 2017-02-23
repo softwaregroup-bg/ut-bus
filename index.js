@@ -112,7 +112,7 @@ module.exports = function Bus() {
                 delete $meta.destination;
                 return fn.apply(undefined, Array.prototype.slice.call(arguments));
             } else {
-                return when.reject($meta.destination ? errors.methodNotFound($meta.destination) : errors.methodNotFound(method));
+                return when.reject($meta.destination ? errors.destinationNotFound({destination: {method: $meta.destination}}) : errors.methodNotFound({params: {method}}));
             }
         }
 
@@ -146,7 +146,7 @@ module.exports = function Bus() {
                         throw error;
                     });
             } else {
-                return when.reject($meta.destination ? errors.methodNotFound($meta.destination) : errors.methodNotFound(method));
+                return when.reject($meta.destination ? errors.destinationNotFound({params: {destination: $meta.destination}}) : errors.methodNotFound({params: {method}}));
             }
         }
 
@@ -563,7 +563,7 @@ module.exports = function Bus() {
                                     return result[0];
                                 });
                         } else {
-                            throw errors.methodNotFound(methodName);
+                            throw errors.methodNotFound({params: {method: methodName}});
                         }
                     };
                 }
@@ -640,7 +640,7 @@ module.exports = function Bus() {
                                 return result[0];
                             });
                     } else {
-                        throw errors.methodNotFound($meta.method);
+                        throw errors.methodNotFound({params: {method: $meta.method}});
                     }
                 }
             } else {
