@@ -456,7 +456,7 @@ Port.prototype.pipe = function pipe(stream, context) {
         var $meta = (packet.length > 1) && packet[packet.length - 1];
         var mtid = $meta.mtid;
         var opcode = $meta.opcode;
-        if (packet[0] instanceof errors.Disconnect) {
+        if (packet[0] instanceof errors.disconnect) {
             stream.end();
             return;
         }
