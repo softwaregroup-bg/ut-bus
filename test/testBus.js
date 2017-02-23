@@ -28,7 +28,7 @@ var worker2 = assign(new Bus(), {
     logFactory: null
 });
 
-master.init()
+var result = master.init()
     .then(worker1.init.bind(worker1))
     .then(worker2.init.bind(worker2))
     .then(master.start.bind(master))
@@ -36,19 +36,22 @@ master.init()
         var fn1 = function() {
             return worker1.importMethod('worker2.test.m1')('worker1').then(function(result) {
                 console.log(result);
+                return result;
             });
         };
         var fn2 = function() {
             return worker1.importMethod('worker2.m2')('worker1').then(function(result) {
                 console.log(result);
+                return result;
             });
         };
         var fn3 = function() {
             return worker2.importMethod('worker1.m3')('worker2').then(function(result) {
                 console.log(result);
+                return result;
             });
         };
-        worker2.register({
+        return worker2.register({
             'test.m1': function(test) {
                 console.log('test.m1 argument ' + test);
                 return 'test.m1 invoked with argument ' + test;
@@ -69,15 +72,16 @@ master.init()
         })
         .then(function(r) {
             console.log(r);
-            when.all([fn1(), fn2(), fn3()]).then(function() {
+            return when.all([fn1(), fn2(), fn3()]).then(function() {
                 console.log('done');
-            }).done();
+                return;
+            });
         })
         .finally(function() {
             worker1.destroy();
             worker2.destroy();
             master.destroy();
-        })
-        .done();
-    })
-    .done();
+        });
+    });
+
+result.done();
