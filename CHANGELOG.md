@@ -1,3 +1,20 @@
+<a name="5.9.0"></a>
+# [5.9.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.8.2...v5.9.0) (2017-03-07)
+
+
+### Bug Fixes
+
+* improve disconnection handling ([2a213b2](https://github.com/softwaregroup-bg/ut-bus/commit/2a213b2))
+* simplify error definitions ([8eebd6c](https://github.com/softwaregroup-bg/ut-bus/commit/8eebd6c))
+* update dependencies ([8c0a5e4](https://github.com/softwaregroup-bg/ut-bus/commit/8c0a5e4))
+
+
+### Features
+
+* control retry logic through meta ([1d192b8](https://github.com/softwaregroup-bg/ut-bus/commit/1d192b8))
+
+
+
 <a name="5.8.2"></a>
 ## [5.8.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.8.1...v5.8.2) (2017-02-08)
 
