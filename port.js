@@ -8,6 +8,7 @@ var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
+var systemEvents = ['start', 'ready'];
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -31,7 +32,7 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-var createQueue = function createQueue(config, callback) {
+function createQueue(config, callback) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
@@ -99,6 +100,19 @@ var createQueue = function createQueue(config, callback) {
     return r;
 };
 
+function triggerEvent(event) {
+    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.' + event}, id: this.config.id, config: this.config});
+    var handlers = this.config[event] ? [this.config[event]] : [];
+    var regExp = new RegExp('\\.' + event + '$');
+    this.config.imports && this.config.imports.forEach(function foreachImports(imp) {
+        regExp.test(imp) && handlers.push(this.config[imp]);
+        this.config[imp + '.' + event] && handlers.push(this.config[imp + '.' + event]);
+    }.bind(this));
+    return when.reduce(handlers, function reduceCalls(prev, handler) {
+        return handler.call(this);
+    }.bind(this), []);
+}
+
 function Port() {
     this.log = {};
     this.logFactory = null;
@@ -146,25 +160,25 @@ Port.prototype.messageDispatch = function messageDispatch() {
     return result;
 };
 
-Port.prototype.start = function start() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.start'}, id: this.config.id, config: this.config});
-    var startList = this.config.start ? [this.config.start] : [];
-    this.config.imports && this.config.imports.forEach(function foreachImports(imp) {
-        imp.match(/\.start$/) && startList.push(this.config[imp]);
-        this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
-    }.bind(this));
-    return when.reduce(startList, function reduceCalls(prev, start) {
-        return start.call(this);
-    }.bind(this), []);
+Port.prototype.triggerEvent = function triggerEvent(event) {
+    if (~systemEvents.indexOf(event)) {
+        return Promise.resolve();
+    }
+    return triggerEvent.call(this, event);
 };
 
+systemEvents.forEach(function(event) {
+    Port.prototype[event] = function() {
+        return triggerEvent.call(this, event);
+    };
+});
+
 Port.prototype.stop = function stop() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
-    this.config.stop && this.config.stop.call(this);
-    this.streams.forEach(stream => {
-        stream.end();
-    });
-    return true;
+    return triggerEvent.call(this, 'stop')
+        .then(() => {
+            this.streams.forEach(stream => stream.end());
+            return true;
+        });
 };
 
 Port.prototype.request = function request() {
