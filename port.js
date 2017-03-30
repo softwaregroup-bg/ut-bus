@@ -8,6 +8,7 @@ var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
+var includes = require('./includes');
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -553,6 +554,17 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
 
 Port.prototype.isDebug = function isDebug() {
     return this.config.debug || (this.config.debug == null && this.bus.config && this.bus.config.debug);
+};
+
+Port.prototype.includesConfig = function includesConfig(name, values, defaultValue) {
+    var configValue = this.config[name];
+    if (configValue == null) {
+        return defaultValue;
+    }
+    if (!Array.isArray(values)) {
+        values = [values];
+    }
+    return includes(configValue, values);
 };
 
 function noop() {};
