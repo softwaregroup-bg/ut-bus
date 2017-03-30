@@ -1,3 +1,13 @@
+<a name="5.10.0"></a>
+# [5.10.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.9.0...v5.10.0) (2017-03-30)
+
+
+### Features
+
+* add includesConfig method ([9ee5c6a](https://github.com/softwaregroup-bg/ut-bus/commit/9ee5c6a))
+
+
+
 <a name="5.9.0"></a>
 # [5.9.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.8.2...v5.9.0) (2017-03-07)
 
