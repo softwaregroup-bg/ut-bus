@@ -1,5 +1,5 @@
 'use strict';
-
+var childProcessFactory = require('./childProcessFactory');
 var when = require('when');
 var assign = require('lodash.assign');
 var capitalize = require('lodash.capitalize');
@@ -66,6 +66,7 @@ module.exports = function Bus() {
     var listReq = [];
     var listPub = [];
     var mapLocal = {};
+    var childProcessFactoryInstance = childProcessFactory.getInstance();
 
     function findMethod(where, cache, methodName, type) {
         var key = ['ports', methodName, type].join('.');
@@ -670,6 +671,8 @@ module.exports = function Bus() {
             } else {
                 return false;
             }
-        }
+        },
+        registerChildProcess: childProcessFactoryInstance.registerChildProcess,
+        importForkMethod: childProcessFactoryInstance.importMethod
     };
 };
