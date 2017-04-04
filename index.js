@@ -303,8 +303,8 @@ module.exports = function Bus() {
                             registerRemoteMethods([remote], listReq, true),
                             registerRemoteMethods([remote], listPub, false),
                             registerLocalMethods([rpc], mapLocal)
-                        ]
-                        return self.server ? methods : Promise.all(methods).then(resolve).catch(reject)
+                        ];
+                        return self.server ? methods : Promise.all(methods).then(resolve).catch(reject);
                     });
                     rpc.pipe(socket).pipe(rpc);
                 }
@@ -319,7 +319,7 @@ module.exports = function Bus() {
                         .listen(pipe, function(err) {
                             if (err) {
                                 log && log.error && log.error(err);
-                                reject(error);
+                                reject(err);
                             } else {
                                 resolve();
                             }
@@ -347,7 +347,8 @@ module.exports = function Bus() {
                         .connect(pipe);
                     // todo set on error handler
                     self.stop = function() {
-                        connection.disconnect()._connection.unref();
+                        var emitter = connection.disconnect();
+                        emitter._connection && emitter._connection.unref();
                         self.stop = noOp;
                         return Promise.resolve();
                     };
