@@ -290,7 +290,18 @@ module.exports = function Bus() {
                 var net = require('net');
                 var utRPC = require('ut-rpc');
                 function connectionHandler(socket) {
-                    socket.on('data', function(msg) {
+                    var context = {
+                        localAddress: socket.localAddress,
+                        localPort: socket.localPort,
+                        remoteAddress: socket.remoteAddress,
+                        remotePort: socket.remotePort
+                    };
+                    log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, context});
+                    socket.on('close', () => {
+                        log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, context});
+                    }).on('error', (err) => {
+                        log && log.error && log.error(err);
+                    }).on('data', function(msg) {
                         log && log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
                     });
                     var rpc = utRPC({
@@ -316,14 +327,18 @@ module.exports = function Bus() {
                         }
                     }
                     var server = net.createServer(connectionHandler)
-                        .listen(pipe, function(err) {
-                            if (err) {
-                                log && log.error && log.error(err);
-                                reject(err);
-                            } else {
-                                resolve();
-                            }
-                        });
+                        .on('close', () => {
+                            log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.close'}, address: pipe});
+                        })
+                        .on('error', err => {
+                            log && log.error && log.error(err);
+                            reject(err);
+                        })
+                        .on('listening', () => {
+                            log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.listening'}, address: pipe});
+                            resolve();
+                        })
+                        .listen(pipe);
                     // todo set on error handler
                     self.stop = function() {
                         self.stop = noOp;
