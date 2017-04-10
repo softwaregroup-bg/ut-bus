@@ -1,3 +1,13 @@
+<a name="5.11.0"></a>
+# [5.11.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.10.1...v5.11.0) (2017-04-10)
+
+
+### Features
+
+* reconnect and log connection events ([61ab579](https://github.com/softwaregroup-bg/ut-bus/commit/61ab579))
+
+
+
 <a name="5.10.1"></a>
 ## [5.10.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.10.0...v5.10.1) (2017-04-05)
 
