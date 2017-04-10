@@ -74,7 +74,7 @@ var result = master.init()
             console.log(r);
             return when.all([fn1(), fn2(), fn3()]).then(function() {
                 console.log('done');
-                return;
+                return true;
             });
         })
         .finally(function() {

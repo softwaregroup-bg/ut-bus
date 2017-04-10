@@ -287,9 +287,38 @@ module.exports = function Bus() {
                 } else {
                     pipe = self.socket;
                 }
-
                 var net = require('net');
                 var utRPC = require('ut-rpc');
+                function connectionHandler(socket) {
+                    var context = {
+                        localAddress: socket.localAddress,
+                        localPort: socket.localPort,
+                        remoteAddress: socket.remoteAddress,
+                        remotePort: socket.remotePort
+                    };
+                    log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, context});
+                    socket.on('close', () => {
+                        log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, context});
+                    }).on('error', (err) => {
+                        log && log.error && log.error(err);
+                    }).on('data', function(msg) {
+                        log && log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
+                    });
+                    var rpc = utRPC({
+                        registerRemote: self.registerRemote.bind(self, locals.length)
+                    }, self.server, log);
+                    locals.push(rpc);
+                    rpc.on('remote', function(remote) {
+                        remotes.push(remote);
+                        var methods = [
+                            registerRemoteMethods([remote], listReq, true),
+                            registerRemoteMethods([remote], listPub, false),
+                            registerLocalMethods([rpc], mapLocal)
+                        ];
+                        return self.server ? methods : Promise.all(methods).then(resolve).catch(reject);
+                    });
+                    rpc.pipe(socket).pipe(rpc);
+                }
                 if (self.server) {
                     if (process.platform !== 'win32') {
                         var fs = require('fs');
@@ -297,24 +326,19 @@ module.exports = function Bus() {
                             fs.unlinkSync(pipe);
                         }
                     }
-                    var server = net.createServer(function(socket) {
-                        socket.on('data', function(msg) {
-                            log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
-                        });
-                        var rpc = utRPC({
-                            registerRemote: self.registerRemote.bind(self, locals.length)
-                        }, true, log);
-                        locals.push(rpc);
-                        rpc.on('remote', function(remote) {
-                            remotes.push(remote);
-                            registerRemoteMethods([remote], listReq, true);
-                            registerRemoteMethods([remote], listPub, false);
-                            registerLocalMethods([rpc], mapLocal);
-                        });
-                        rpc.pipe(socket).pipe(rpc);
-                    }).listen(pipe, function(err) {
-                        err ? reject(err) : resolve();
-                    });
+                    var server = net.createServer(connectionHandler)
+                        .on('close', () => {
+                            log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.close'}, address: pipe});
+                        })
+                        .on('error', err => {
+                            log && log.error && log.error(err);
+                            reject(err);
+                        })
+                        .on('listening', () => {
+                            log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.listening'}, address: pipe});
+                            resolve();
+                        })
+                        .listen(pipe);
                     // todo set on error handler
                     self.stop = function() {
                         self.stop = noOp;
@@ -322,6 +346,7 @@ module.exports = function Bus() {
                             server.close(function(err) {
                                 server.unref();
                                 if (err) {
+                                    log && log.error && log.error(err);
                                     reject(err);
                                 }
                                 resolve();
@@ -329,28 +354,16 @@ module.exports = function Bus() {
                         });
                     };
                 } else {
-                    var connection = net.createConnection(pipe, function() {
-                        connection.on('data', function(msg) {
-                            log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
-                        });
-                        var rpc = utRPC({
-                            registerRemote: self.registerRemote.bind(self, locals.length)
-                        }, false, log);
-                        locals.push(rpc);
-                        rpc.on('remote', function(remote) {
-                            remotes.push(remote);
-                            when.all([
-                                registerRemoteMethods([remote], listReq, true),
-                                registerRemoteMethods([remote], listPub, false),
-                                registerLocalMethods([rpc], mapLocal)
-                            ]).then(resolve).catch(reject);
-                        });
-                        rpc.pipe(connection).pipe(rpc);
-                    });
+                    var reconnect = self.ssl ? require('./reconnect-tls') : require('./reconnect-net');
+                    var connection = reconnect(connectionHandler)
+                        .on('error', (err) => {
+                            log && log.error && log.error(err);
+                        })
+                        .connect(pipe);
                     // todo set on error handler
                     self.stop = function() {
-                        connection.end();
-                        connection.unref();
+                        var emitter = connection.disconnect();
+                        emitter._connection && emitter._connection.unref();
                         self.stop = noOp;
                         return Promise.resolve();
                     };
