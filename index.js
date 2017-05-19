@@ -112,7 +112,7 @@ module.exports = function Bus() {
                 delete $meta.destination;
                 return fn.apply(undefined, Array.prototype.slice.call(arguments));
             } else {
-                return when.reject($meta.destination ? errors.destinationNotFound({destination: {method: $meta.destination}}) : errors.methodNotFound({params: {method}}));
+                return when.reject($meta.destination ? errors.destinationNotFound({params: {destination: {method: $meta.destination}}}) : errors.methodNotFound({params: {method}}));
             }
         }
 
@@ -578,18 +578,27 @@ module.exports = function Bus() {
                 if (self.socket) {
                     method = self.getMethod('req', 'request', methodName, validate);
                 } else {
-                    method = function(msg) {
+                    method = function imported(msg) {
                         var fn = local[methodName];
+                        var stackInfo = {};
+                        var setStack = error => {
+                            error.stack = error.stack + '-- imported ' + methodName + ' ' + stackInfo.stack;
+                            throw error;
+                        };
+
                         if (fn) {
-                            return Promise.resolve(fn.apply(this, Array.prototype.slice.call(arguments)));
+                            Error.captureStackTrace(stackInfo, imported);
+                            return Promise
+                                .resolve(fn.apply(this, Array.prototype.slice.call(arguments)))
+                                .catch(setStack);
                         }
 
                         fn = findMethod(mapLocal, mapLocal, methodName, 'request');
                         if (fn) {
+                            Error.captureStackTrace(stackInfo, imported);
                             return fn(msg, {mtid: 'request', opcode: getOpcode(methodName), method: methodName})
-                                .then(function(result) {
-                                    return result[0];
-                                });
+                                .then(result => result[0])
+                                .catch(setStack);
                         } else {
                             throw errors.methodNotFound({params: {method: methodName}});
                         }
