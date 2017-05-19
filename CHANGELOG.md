@@ -1,3 +1,13 @@
+<a name="5.11.2"></a>
+## [5.11.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.1...v5.11.2) (2017-05-19)
+
+
+### Bug Fixes
+
+* pass proper params ([602907c](https://github.com/softwaregroup-bg/ut-bus/commit/602907c))
+
+
+
 <a name="5.11.1"></a>
 ## [5.11.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.0...v5.11.1) (2017-04-24)
 
