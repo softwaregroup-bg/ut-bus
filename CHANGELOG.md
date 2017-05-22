@@ -1,3 +1,8 @@
+<a name="5.11.4"></a>
+## [5.11.4](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.3...v5.11.4) (2017-05-22)
+
+
+
 <a name="5.11.3"></a>
 ## [5.11.3](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.2...v5.11.3) (2017-05-22)
 
