@@ -587,7 +587,11 @@ module.exports = function Bus() {
                         };
 
                         if (fn) {
-                            Error.captureStackTrace(stackInfo, imported);
+                            if (Error.captureStackTrace) {
+                                Error.captureStackTrace(stackInfo, imported);
+                            } else {
+                                stackInfo = new Error();
+                            }
                             return Promise
                                 .resolve(fn.apply(this, Array.prototype.slice.call(arguments)))
                                 .catch(setStack);
@@ -595,7 +599,11 @@ module.exports = function Bus() {
 
                         fn = findMethod(mapLocal, mapLocal, methodName, 'request');
                         if (fn) {
-                            Error.captureStackTrace(stackInfo, imported);
+                            if (Error.captureStackTrace) {
+                                Error.captureStackTrace(stackInfo, imported);
+                            } else {
+                                stackInfo = new Error();
+                            }
                             return fn(msg, {mtid: 'request', opcode: getOpcode(methodName), method: methodName})
                                 .then(result => result[0])
                                 .catch(setStack);
