@@ -1,3 +1,13 @@
+<a name="5.11.8"></a>
+## [5.11.8](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.7...v5.11.8) (2017-06-02)
+
+
+### Bug Fixes
+
+* browser compatibility ([d3f4a39](https://github.com/softwaregroup-bg/ut-bus/commit/d3f4a39))
+
+
+
 <a name="5.11.7"></a>
 ## [5.11.7](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.6...v5.11.7) (2017-05-22)
 
