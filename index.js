@@ -472,7 +472,7 @@ module.exports = function Bus() {
         getMethod: function(typeName, methodType, methodName, validate) {
             var bus = this;
             var fn = null;
-            var local;
+            var local = false;
 
             function busMethod() {
                 var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
@@ -491,16 +491,10 @@ module.exports = function Bus() {
                             local = true;
                         } else if (!bus.socket) {
                             fn = findMethod(mapLocal, mapLocal, methodName, methodType);
-                            if (fn) {
-                                local = false;
-                            }
                         }
                     }
                     if (!fn && bus[typeName]) {
                         fn = bus[typeName]['master.' + methodType];
-                        if (fn) {
-                            local = false;
-                        }
                     }
                 }
                 if (fn) {
