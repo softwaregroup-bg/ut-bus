@@ -1,3 +1,13 @@
+<a name="5.11.9"></a>
+## [5.11.9](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.8...v5.11.9) (2017-06-05)
+
+
+### Bug Fixes
+
+* cleanup ([#12](https://github.com/softwaregroup-bg/ut-bus/issues/12)) ([e1738f2](https://github.com/softwaregroup-bg/ut-bus/commit/e1738f2))
+
+
+
 <a name="5.11.8"></a>
 ## [5.11.8](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.7...v5.11.8) (2017-06-02)
 
