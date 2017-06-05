@@ -472,7 +472,7 @@ module.exports = function Bus() {
         getMethod: function(typeName, methodType, methodName, validate) {
             var bus = this;
             var fn = null;
-            var local;
+            var local = false;
 
             function busMethod() {
                 var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
@@ -485,11 +485,17 @@ module.exports = function Bus() {
                     delete $meta.callback;
                     return cb.apply(this, applyArgs);
                 } else if (!fn) {
-                    var type;
-                    // noinspection JSUnusedAssignment
-                    (methodName && (type = bus.local) && (fn = type[methodName]) && (local = true)) ||
-                    (methodName && (!bus.socket) && (fn = findMethod(mapLocal, mapLocal, methodName, methodType)) && !(local = false)) ||
-                    ((type = bus[typeName]) && (fn = type['master.' + methodType]) && (local = false));
+                    if (methodName) {
+                        fn = bus.local[methodName];
+                        if (fn) {
+                            local = true;
+                        } else if (!bus.socket) {
+                            fn = findMethod(mapLocal, mapLocal, methodName, methodType);
+                        }
+                    }
+                    if (!fn && bus[typeName]) {
+                        fn = bus[typeName]['master.' + methodType];
+                    }
                 }
                 if (fn) {
                     if (!local) {
