@@ -383,7 +383,7 @@ Port.prototype.createStream = function createStream(handler, concurrency) {
         return Promise.resolve()
             .then(() => handler(packet))
             .catch((e) => {
-                // TODO: handle error (e.g. close and recreate stream on error)
+                // TODO: handle error (e.g. close and recreate stream)
                 port.error(e);
                 this.push(null);
                 return null;
@@ -460,27 +460,22 @@ Port.prototype.disconnect = function(reason) {
 };
 
 Port.prototype.pipe = function pipe(stream, context) {
-    var queue;
     var conId = context && context.conId && context.conId.toString();
-    var queueEvent = (name) => {
+    var queue = createQueue(this.config.queue, (name) => {
         this.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    }
+    });
 
     if (context && conId) {
-        queue = createQueue(this.config.queue, queueEvent);
         this.queues[conId] = queue;
         if (this.socketTimeOut) {
             stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId, unpipe));
         }
-        stream
-            .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
-            .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
     } else {
-        queue = this.queue = createQueue(this.config.queue, queueEvent);
-        stream
-            .on('end', handleStreamClose.bind(this, undefined, undefined, unpipe))
-            .on('error', handleStreamClose.bind(this, stream, undefined, unpipe));
+        this.queue = queue;
     }
+    stream
+        .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
+        .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
 
     var streamSequence = [queue, this.encode(context), stream, this.decode(context)];
     function unpipe() {
