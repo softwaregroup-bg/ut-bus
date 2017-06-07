@@ -368,15 +368,16 @@ Port.prototype.getConversion = function getConversion($meta, type) {
     return fn;
 };
 
+// concurrency can be a number (indicating the treshhold) or true (for unmilited concurrency)
 Port.prototype.createStream = function createStream(handler, concurrency) {
     var countActive = 0;
     var port = this;
-    if (concurrency !== false && !concurrency) {
+    if (!concurrency) {
         concurrency = this.config.concurrency;
     }
     return through2({objectMode: true}, function(chunk, enc, callback) {
         countActive++;
-        if (!concurrency || (countActive < concurrency)) {
+        if (concurrency === true || (countActive < concurrency)) {
             callback();
         }
         return Promise.resolve()
@@ -540,8 +541,8 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
                 return false;
             }
         }
-    }, false);
-    var streamSequence = [stream, this.decode(context), callStream, this.encode(context)];
+    }, true);
+    var streamSequence = [stream, this.decode(context, true), callStream, this.encode(context, true)];
     streamSequence.reduce((prev, next) => {
         return next ? prev.pipe(next) : prev;
     })
