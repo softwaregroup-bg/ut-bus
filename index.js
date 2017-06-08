@@ -1,6 +1,5 @@
 'use strict';
 
-var when = require('when');
 var assign = require('lodash.assign');
 var capitalize = require('lodash.capitalize');
 var errors = require('./errors');
@@ -99,20 +98,20 @@ module.exports = function Bus() {
             if (!method) {
                 if ($meta.mtid === 'error') {
                     if (arguments[0] instanceof Error) {
-                        return when.reject(arguments[0]);
+                        return Promise.reject(arguments[0]);
                     }
                     var err = errors.unhandledError($meta);
                     err.cause = arguments[0];
-                    return when.reject(err);
+                    return Promise.reject(err);
                 }
-                return when.reject(errors.missingMethod());
+                return Promise.reject(errors.missingMethod());
             }
             var fn = findMethod(thisPub, pub, $meta.destination || method, 'publish');
             if (fn) {
                 delete $meta.destination;
                 return fn.apply(undefined, Array.prototype.slice.call(arguments));
             } else {
-                return when.reject($meta.destination ? errors.destinationNotFound({params: {destination: {method: $meta.destination}}}) : errors.methodNotFound({params: {method}}));
+                return Promise.reject($meta.destination ? errors.destinationNotFound({params: {destination: {method: $meta.destination}}}) : errors.methodNotFound({params: {method}}));
             }
         }
 
@@ -132,7 +131,7 @@ module.exports = function Bus() {
             var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
             var method = $meta.method;
             if (!method) {
-                return when.reject(errors.missingMethod());
+                return Promise.reject(errors.missingMethod());
             }
             var fn = findMethod(thisRPC, RPC, $meta.destination || method, 'request');
             if (fn) {
@@ -146,7 +145,7 @@ module.exports = function Bus() {
                         throw error;
                     });
             } else {
-                return when.reject($meta.destination ? errors.destinationNotFound({params: {destination: $meta.destination}}) : errors.methodNotFound({params: {method}}));
+                return Promise.reject($meta.destination ? errors.destinationNotFound({params: {destination: $meta.destination}}) : errors.methodNotFound({params: {method}}));
             }
         }
 
@@ -154,9 +153,9 @@ module.exports = function Bus() {
     }
 
     function registerRemoteMethods(where, methodNames, adapt) {
-        return when.all(
-            when.reduce(where, function(prev, remote) {
-                prev.push(when.promise(function(resolve, reject) {
+        return Promise.all(
+            where.reduce(function(prev, remote) {
+                prev.push(new Promise(function(resolve, reject) {
                     remote.registerRemote(adapt ? 'req' : 'pub', methodNames, function(err, res) {
                         if (err) {
                             reject(err);
@@ -232,7 +231,7 @@ module.exports = function Bus() {
 
     function handleRPCResponse(obj, fn, args, server) {
         var $meta = (args.length && args[args.length - 1]);
-        return when.promise(function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
                     if (err.length > 1) {
@@ -277,7 +276,7 @@ module.exports = function Bus() {
             this.masterPublish = this.getMethod('pub', 'publish');
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             var self = this;
-            return when.promise(function(resolve, reject) {
+            return new Promise(function(resolve, reject) {
                 var pipe;
                 if (!self.socket) {
                     resolve();
@@ -391,7 +390,7 @@ module.exports = function Bus() {
                 req: function req(fn) {
                     return function() {
                         if (!fn) {
-                            return when.reject(errors.bus('Remote method not found for object "' + id + '"'));
+                            return Promise.reject(errors.bus('Remote method not found for object "' + id + '"'));
                         }
                         var args = Array.prototype.slice.call(arguments);
                         return handleRPCResponse(undefined, fn, args, server);
@@ -431,7 +430,10 @@ module.exports = function Bus() {
                 return function() {
                     var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
                     var callback = arguments[arguments.length - 1];
-                    when(f.apply(self, args))
+                    return Promise.resolve()
+                        .then(function() {
+                            return f.apply(self, args);
+                        })
                         .then(function(result) {
                             callback(undefined, result);
                             return result;
@@ -463,7 +465,7 @@ module.exports = function Bus() {
         },
 
         start: function() {
-            return when.all([
+            return Promise.all([
                 this.register([_request(this.req)]),
                 this.subscribe([_publish(this.pub)])
             ]);
@@ -538,12 +540,12 @@ module.exports = function Bus() {
                                     return result;
                                 }
                             };
-                            return when(response).then(validateResult).catch(validateResult);
+                            return Promise.resolve(response).then(validateResult).catch(validateResult);
                         }
                     }
-                    return when(fn.apply(this, applyArgs));
+                    return Promise.resolve().then(() => fn.apply(this, applyArgs));
                 } else {
-                    return when.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
+                    return Promise.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
                 }
             }
 

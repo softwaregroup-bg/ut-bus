@@ -2,7 +2,6 @@
 
 var assign = require('lodash.assign');
 var Bus = require('../');
-var when = require('when');
 
 var master = assign(new Bus(), {
     server: true,
@@ -72,7 +71,7 @@ var result = master.init()
         })
         .then(function(r) {
             console.log(r);
-            return when.all([fn1(), fn2(), fn3()]).then(function() {
+            return Promise.all([fn1(), fn2(), fn3()]).then(function() {
                 console.log('done');
                 return true;
             });
