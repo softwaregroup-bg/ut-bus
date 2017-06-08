@@ -27,7 +27,8 @@ var worker2 = assign(new Bus(), {
     logFactory: null
 });
 
-var result = master.init()
+function test() {
+    return master.init()
     .then(worker1.init.bind(worker1))
     .then(worker2.init.bind(worker2))
     .then(master.start.bind(master))
@@ -75,12 +76,14 @@ var result = master.init()
                 console.log('done');
                 return true;
             });
-        })
-        .finally(function() {
-            worker1.destroy();
-            worker2.destroy();
-            master.destroy();
         });
+    })
+    .then(function() {
+        worker1.destroy();
+        worker2.destroy();
+        master.destroy();
+        return true;
     });
+}
 
-result.done();
+test();
