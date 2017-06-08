@@ -411,7 +411,7 @@ Port.prototype.createStream = function createStream(handler, concurrency) {
 
 Port.prototype.encode = function encode(context, concurrency) {
     var port = this;
-    return this.createStream((packet) => {
+    return this.createStream(function encodePacket(packet) {
         var $meta = packet.length && packet[packet.length - 1];
         var fn = port.getConversion($meta, 'send');
         var msgCallback = ($meta && $meta.callback) || noop;
@@ -424,10 +424,7 @@ Port.prototype.encode = function encode(context, concurrency) {
                     return [result, $meta];
                 });
         }
-        return Promise.resolve()
-            .then(function encodePacket() {
-                return packet;
-            })
+        return Promise.resolve(packet)
             .then(function encodePacketResolveLog(message) {
                 port.log.debug && port.log.debug({message: message[0], $meta: message[1]});
                 var result = port.codec ? port.codec.encode(message[0], message[1], context) : message;
@@ -499,7 +496,7 @@ Port.prototype.pipe = function pipe(stream, context) {
         .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
         .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
 
-    return streamSequence
+    streamSequence
         .reduce((prev, next) => {
             return next ? prev.pipe(next) : prev;
         })
@@ -530,12 +527,11 @@ Port.prototype.pipe = function pipe(stream, context) {
                     return port.error(e);
                 });
         });
+    return streamSequence.slice(1);
 };
 
 Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     var self = this;
-    var encode = this.encode(context, true);
-    var decode = this.decode(context, true);
     var callStream = this.createStream(function pipeReverseThrough(packet) {
         var $meta = (packet.length && packet[packet.length - 1]) || {};
         if ($meta.mtid === 'error' || $meta.mtid === 'response') {
@@ -567,13 +563,14 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
             }
         }
     }, true);
-    var streamSequence = [stream, decode, callStream, encode];
-    streamSequence.reduce(function pipeReverseReduce(prev, next) {
-        return next ? prev.pipe(next) : prev;
-    })
-    .on('data', function pipeReverseQueueData(packet) {
-        self.messageDispatch.apply(self, packet);
-    });
+
+    [stream, this.decode(context, true), callStream, this.encode(context, true)]
+        .reduce(function pipeReverseReduce(prev, next) {
+            return next ? prev.pipe(next) : prev;
+        })
+        .on('data', function pipeReverseQueueData(packet) {
+            self.messageDispatch.apply(self, packet);
+        });
     this.streams.push(stream);
     return stream;
 };
