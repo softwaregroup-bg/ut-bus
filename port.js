@@ -8,6 +8,7 @@ var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
 var includes = require('./includes');
+var discardChunk = Symbol('discard chunk');
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -333,7 +334,7 @@ Port.prototype.decode = function decode(context, concurrency) {
             } else {
                 convert(this, packet);
             }
-            return false;
+            return discardChunk;
         } catch (error) {
             return Promise.reject(error);
         }
@@ -393,10 +394,10 @@ Port.prototype.createStream = function createStream(handler, concurrency) {
                 // TODO: handle error (e.g. close and recreate stream)
                 port.error(e);
                 stream.push(null);
-                return false;
+                return discardChunk;
             })
             .then(function createStreamPromiseThen(res) {
-                if (res !== false) {
+                if (res !== discardChunk) {
                     stream.push(res);
                 }
                 if (countActive-- === concurrency) {
@@ -454,7 +455,7 @@ Port.prototype.encode = function encode(context, concurrency) {
                     port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'out'}, message: buffer});
                     return buffer;
                 }
-                return false;
+                return discardChunk;
             })
             .catch(function encodePacketResolveThrow(err) {
                 port.error(err);
@@ -462,7 +463,7 @@ Port.prototype.encode = function encode(context, concurrency) {
                 $meta.errorCode = err && err.code;
                 $meta.errorMessage = err && err.message;
                 msgCallback(err, $meta);
-                return false;
+                return discardChunk;
             });
     }, concurrency);
 };
@@ -562,7 +563,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
                     .catch(push);
             } else {
                 self.messageDispatch.apply(self, packet);
-                return false;
+                return discardChunk;
             }
         }
     }, true);
