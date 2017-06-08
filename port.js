@@ -9,6 +9,7 @@ var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
 var includes = require('./includes');
 var discardChunk = Symbol('discard chunk');
+var unlimitedConcurrency = Symbol('unlimited concurrency');
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -379,11 +380,11 @@ Port.prototype.createStream = function createStream(handler, concurrency) {
     var port = this;
     if (!concurrency) {
         // don't allow setting concurrency:true from config
-        concurrency = Number.isInteger(this.config.concurrency) ? this.config.concurrency : 10;
+        concurrency = this.config.concurrency || 10;
     }
     var stream = through2({objectMode: true}, function createStreamThrough(packet, enc, callback) {
         countActive++;
-        if (concurrency === true || (countActive < concurrency)) {
+        if (concurrency === unlimitedConcurrency || (countActive < concurrency)) {
             callback();
         }
         return Promise.resolve()
@@ -562,9 +563,9 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
                 return discardChunk;
             }
         }
-    }, true);
+    }, unlimitedConcurrency);
 
-    [stream, this.decode(context, true), callStream, this.encode(context, true)]
+    [stream, this.decode(context, unlimitedConcurrency), callStream, this.encode(context, unlimitedConcurrency)]
         .reduce(function pipeReverseReduce(prev, next) {
             return next ? prev.pipe(next) : prev;
         })
