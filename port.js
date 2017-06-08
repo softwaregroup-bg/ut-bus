@@ -377,7 +377,8 @@ Port.prototype.createStream = function createStream(handler, concurrency) {
     var countActive = 0;
     var port = this;
     if (!concurrency) {
-        concurrency = this.config.concurrency;
+        // don't allow setting concurrency:true from config
+        concurrency = Number.isInteger(this.config.concurrency) ? this.config.concurrency : 10;
     }
     var stream = through2({objectMode: true}, function createStreamThrough(packet, enc, callback) {
         countActive++;
@@ -576,7 +577,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     return stream;
 };
 
-Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
+Port.prototype.pipeExec = function pipeExec(exec) {
     var port = this;
     var stream = this.createStream(function pipeExecThrough(chunk) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
@@ -608,7 +609,7 @@ Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
                 }
                 return [error, $meta];
             });
-    }, concurrency);
+    });
     this.streams.push(stream);
     return this.pipe(stream);
 };
