@@ -583,10 +583,10 @@ Port.prototype.pipeExec = function pipeExec(exec) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
         var startTime = hrtime();
         return Promise.resolve()
-            .then(function pipeExecPromise() {
+            .then(function pipeExecThrough() {
                 return exec.apply(port, chunk);
             })
-            .then(function pipeExecPromiseResolve(result) {
+            .then(function pipeExecThroughResolved(result) {
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
                 port.latency && port.latency(diff, 1);
@@ -598,7 +598,7 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 }
                 return [result, $meta];
             })
-            .catch(function pipeExecPromiseReject(error) {
+            .catch(function pipeExecThroughRejected(error) {
                 port.error(error);
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
