@@ -582,6 +582,9 @@ Port.prototype.pipeExec = function pipeExec(exec) {
     var stream = this.createStream(function pipeExecThrough(chunk) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
         var startTime = hrtime();
+        if ($meta && $meta.mtid === 'request') {
+            $meta.mtid = 'response';
+        }
         return Promise.resolve()
             .then(function pipeExecThrough() {
                 return exec.apply(port, chunk);
@@ -591,9 +594,6 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 diff = diff[0] * 1000 + diff[1] / 1000000;
                 port.latency && port.latency(diff, 1);
                 if ($meta) {
-                    if ($meta.mtid === 'request') {
-                        $meta.mtid = 'response';
-                    }
                     $meta.timeTaken = diff;
                 }
                 return [result, $meta];

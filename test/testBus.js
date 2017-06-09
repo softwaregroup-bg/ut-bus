@@ -83,7 +83,8 @@ function test() {
         worker2.destroy();
         master.destroy();
         return true;
-    });
+    })
+    .catch(() => process.exit(1));
 }
 
 test();
