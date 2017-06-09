@@ -165,7 +165,7 @@ Port.prototype.start = function start() {
 Port.prototype.stop = function stop() {
     this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
     this.config.stop && this.config.stop.call(this);
-    this.streams.forEach(stream => {
+    this.streams.forEach(function streamEnd(stream) {
         stream.end();
     });
     return true;
@@ -481,7 +481,7 @@ Port.prototype.pipe = function pipe(stream, context) {
     });
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
-        return streamSequence.reduce((prev, next) => {
+        return streamSequence.reduce(function unpipeStream(prev, next) {
             return next ? prev.unpipe(next) : prev;
         });
     }
@@ -498,7 +498,7 @@ Port.prototype.pipe = function pipe(stream, context) {
         .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
 
     streamSequence
-        .reduce((prev, next) => {
+        .reduce(function pipeStream(prev, next) {
             return next ? prev.pipe(next) : prev;
         })
         .on('data', function queueData(packet) {
@@ -533,6 +533,7 @@ Port.prototype.pipe = function pipe(stream, context) {
 
 Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     var self = this;
+    var concurrency = this.config.concurrency || unlimitedConcurrency;
     var callStream = this.createStream(function pipeReverseThrough(packet) {
         var $meta = (packet.length && packet[packet.length - 1]) || {};
         if ($meta.mtid === 'error' || $meta.mtid === 'response') {
@@ -563,9 +564,9 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
                 return discardChunk;
             }
         }
-    }, unlimitedConcurrency);
+    }, concurrency);
 
-    [stream, this.decode(context, unlimitedConcurrency), callStream, this.encode(context, unlimitedConcurrency)]
+    [stream, this.decode(context, concurrency), callStream, this.encode(context, concurrency)]
         .reduce(function pipeReverseReduce(prev, next) {
             return next ? prev.pipe(next) : prev;
         })
