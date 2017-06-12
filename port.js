@@ -416,16 +416,17 @@ Port.prototype.encode = function encode(context, concurrency) {
         var $meta = packet.length && packet[packet.length - 1];
         var fn = port.getConversion($meta, 'send');
         var msgCallback = ($meta && $meta.callback) || noop;
+        var promise = Promise.resolve(packet);
         if (fn) {
-            packet = Promise.resolve()
-                .then(function encodeConvert() {
-                    return fn.apply(port, Array.prototype.concat(packet, context));
+            promise = promise
+                .then(function encodeConvert(message) {
+                    return fn.apply(port, Array.prototype.concat(message, context));
                 })
                 .then(function encodeConvertResolve(result) {
                     return [result, $meta];
                 });
         }
-        return Promise.resolve(packet)
+        return promise
             .then(function encodePacketResolveLog(message) {
                 port.log.debug && port.log.debug({message: message[0], $meta: message[1]});
                 var result = port.codec ? port.codec.encode(message[0], message[1], context) : message;
