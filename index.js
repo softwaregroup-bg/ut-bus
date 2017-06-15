@@ -637,7 +637,7 @@ module.exports = function Bus() {
             if (methods && methods.length) {
                 var unmatched = methods.slice();
                 // create regular expression matching all listed methods as passed or as prefixes
-                var exp = new RegExp(methods.map(function(m) { return '(^' + m.replace(/\./g, '\\.') + (single ? '$)' : '(?:\\..*)?$)'); }).join('|'), 'i');
+                var exp = new RegExp(methods.map(function(m) { return '(^' + m.replace(/\./g, '\\.') + (single ? '$)' : '(?:\\..+)?$)'); }).join('|'), 'i');
 
                 Object.keys(local).forEach(function(name) {
                     var match = name.match(exp);
@@ -649,10 +649,13 @@ module.exports = function Bus() {
                             target[name] = x;
                         }
                         match.forEach(function(value, index) {
-                            (index > 0) && (unmatched[index - 1] = null);
+                            if (index > 0) { // clear all methods that exists in local e.g. abc, a.b, a.b.c .. etc.
+                                unmatched[index - 1] = null;
+                            }
                         });
                     }
                 });
+                // import all nonexisting
                 unmatched.forEach(function(name) {
                     name && importMethod(name);
                 });
