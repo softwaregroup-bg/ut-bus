@@ -169,52 +169,45 @@ Port.prototype.stop = function stop() {
 };
 
 Port.prototype.request = function request() {
-    var port = this;
-    var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
+    var $meta = arguments.length && arguments[arguments.length - 1];
+    if (!arguments.length) {
+        return Promise.reject(errors.missingParams());
+    } else if (!$meta) {
+        return Promise.reject(errors.missingMeta());
+    }
     var args = Array.prototype.slice.call(arguments);
-    return when.promise(function requestPromise(resolve, reject) {
-        if (!args.length) {
-            reject(errors.missingParams());
-        } else if (!$meta) {
-            reject(errors.missingMeta());
-        } else {
-            $meta.callback = function requestPromiseCb(msg) {
-                if ($meta && $meta.mtid !== 'error') {
-                    resolve(Array.prototype.slice.call(arguments));
-                } else {
-                    reject(msg);
-                }
-                return true;
-            };
-            if (this.queue) {
-                this.queue.add(args);
-            } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
-                this.queues[$meta.conId].add(args);
-            } else if (Object.keys(this.queues).length && port.connRouter && typeof port.connRouter === 'function') {
-                var queue = this.queues[port.connRouter(this.queues, Array.prototype.slice.call(arguments))];
-                queue && queue.add(args);
+    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
+    if (!queue) {
+        return Promise.reject(errors.notConnected(this.config.id));
+    }
+    queue.add(args);
+    return new Promise((resolve, reject) => {
+        $meta.callback = function callback(msg) {
+            if ($meta.mtid !== 'error') {
+                resolve(Array.prototype.slice.call(arguments));
             } else {
-                reject(errors.notConnected(this.config.id));
+                reject(msg);
             }
-        }
-    }.bind(this));
+            return true;
+        };
+    });
 };
 
 Port.prototype.publish = function publish() {
-    var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
+    var $meta = arguments.length && arguments[arguments.length - 1];
     var queue;
     if (!arguments.length) {
-        return when.reject(errors.missingParams());
+        return Promise.reject(errors.missingParams());
     } else if (!$meta) {
-        return when.reject(errors.missingMeta());
+        return Promise.reject(errors.missingMeta());
     } else if (this.queue) {
         queue = this.queue;
-    } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
+    } else if ($meta.conId && this.queues[$meta.conId]) {
         queue = this.queues[$meta.conId];
-    } else if (Object.keys(this.queues).length && this.connRouter && typeof this.connRouter === 'function') {
+    } else if (Object.keys(this.queues).length) {
         queue = this.queues[this.connRouter(this.queues, Array.prototype.slice.call(arguments))];
     } else {
-        return when.reject(errors.notConnected(this.config.id));
+        return Promise.reject(errors.notConnected(this.config.id));
     }
     if (queue) {
         queue.add(Array.prototype.slice.call(arguments));
@@ -566,6 +559,8 @@ Port.prototype.includesConfig = function includesConfig(name, values, defaultVal
     }
     return includes(configValue, values);
 };
+
+Port.prototype.connRouter = noop;
 
 function noop() {};
 
