@@ -191,7 +191,7 @@ Port.prototype.request = function request() {
             } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
                 this.queues[$meta.conId].add(args);
             } else if (Object.keys(this.queues).length && port.connRouter && typeof port.connRouter === 'function') {
-                var queue = this.queues[port.connRouter(this.queues, Array.prototype.slice.call(arguments))];
+                var queue = this.queues[port.connRouter(this.queues, args)];
                 queue && queue.add(args);
             } else {
                 reject(errors.notConnected(this.config.id));
