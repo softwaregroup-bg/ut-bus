@@ -172,7 +172,7 @@ Port.prototype.request = function request() {
     var args = Array.prototype.slice.call(arguments);
     if (!args.length) {
         return Promise.reject(errors.missingParams());
-    } else if (args.length === 1) {
+    } else if (args.length === 1 || !args[args.length - 1]) {
         return Promise.reject(errors.missingMeta());
     }
     var $meta = args[args.length - 1];
