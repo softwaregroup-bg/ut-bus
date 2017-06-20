@@ -169,20 +169,20 @@ Port.prototype.stop = function stop() {
 };
 
 Port.prototype.request = function request() {
-    var $meta = arguments.length && arguments[arguments.length - 1];
-    if (!arguments.length) {
+    var args = Array.prototype.slice.call(arguments);
+    if (!args.length) {
         return Promise.reject(errors.missingParams());
-    } else if (!$meta) {
+    } else if (args.length === 1) {
         return Promise.reject(errors.missingMeta());
     }
-    var args = Array.prototype.slice.call(arguments);
+    var $meta = args[args.length - 1];
     var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
     if (!queue) {
+        this.log.error && this.log.error('Queue not found', {arguments: args});
         return Promise.reject(errors.notConnected(this.config.id));
     }
-    queue.add(args);
-    return new Promise((resolve, reject) => {
-        $meta.callback = function callback(msg) {
+    return new Promise(function requestPromise(resolve, reject) {
+        $meta.callback = function requestPromiseCb(msg) {
             if ($meta.mtid !== 'error') {
                 resolve(Array.prototype.slice.call(arguments));
             } else {
@@ -190,30 +190,24 @@ Port.prototype.request = function request() {
             }
             return true;
         };
+        queue.add(args);
     });
 };
 
 Port.prototype.publish = function publish() {
-    var $meta = arguments.length && arguments[arguments.length - 1];
-    var queue;
-    if (!arguments.length) {
+    var args = Array.prototype.slice.call(arguments);
+    if (!args.length) {
         return Promise.reject(errors.missingParams());
-    } else if (!$meta) {
+    } else if (args.length === 1) {
         return Promise.reject(errors.missingMeta());
-    } else if (this.queue) {
-        queue = this.queue;
-    } else if ($meta.conId && this.queues[$meta.conId]) {
-        queue = this.queues[$meta.conId];
-    } else if (Object.keys(this.queues).length) {
-        queue = this.queues[this.connRouter(this.queues, Array.prototype.slice.call(arguments))];
-    } else {
-        return Promise.reject(errors.notConnected(this.config.id));
     }
+    var $meta = args[args.length - 1];
+    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
     if (queue) {
-        queue.add(Array.prototype.slice.call(arguments));
+        queue.add(args);
         return true;
     } else {
-        this.log.error && this.log.error('Queue not found', {arguments: Array.prototype.slice.call(arguments)});
+        this.log.error && this.log.error('Queue not found', {arguments: args});
         return false;
     }
 };
