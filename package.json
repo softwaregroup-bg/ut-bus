@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "5.11.10-connrouter.0",
+  "version": "5.11.10-connrouter.1",
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
