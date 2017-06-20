@@ -172,58 +172,45 @@ Port.prototype.stop = function stop() {
 };
 
 Port.prototype.request = function request() {
-    var port = this;
-    var $meta = arguments.length && arguments[arguments.length - 1];
     var args = Array.prototype.slice.call(arguments);
+    if (!args.length) {
+        return Promise.reject(errors.missingParams());
+    } else if (args.length === 1 || !args[args.length - 1]) {
+        return Promise.reject(errors.missingMeta());
+    }
+    var $meta = args[args.length - 1];
+    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
+    if (!queue) {
+        this.log.error && this.log.error('Queue not found', {arguments: args});
+        return Promise.reject(errors.notConnected(this.config.id));
+    }
     return new Promise(function requestPromise(resolve, reject) {
-        if (!args.length) {
-            reject(errors.missingParams());
-        } else if (!$meta) {
-            reject(errors.missingMeta());
-        } else {
-            $meta.callback = function requestPromiseCb(msg) {
-                if ($meta.mtid !== 'error') {
-                    resolve(Array.prototype.slice.call(arguments));
-                } else {
-                    reject(msg);
-                }
-                return true;
-            };
-            if (port.queue) {
-                port.queue.add(args);
-            } else if ($meta.conId && port.queues[$meta.conId]) {
-                port.queues[$meta.conId].add(args);
-            } else if (Object.keys(port.queues).length && port.connRouter && typeof port.connRouter === 'function') {
-                var queue = port.queues[port.connRouter(port.queues, Array.prototype.slice.call(arguments))];
-                queue && queue.add(args);
+        $meta.callback = function requestPromiseCb(msg) {
+            if ($meta.mtid !== 'error') {
+                resolve(Array.prototype.slice.call(arguments));
             } else {
-                reject(errors.notConnected(port.config.id));
+                reject(msg);
             }
-        }
+            return true;
+        };
+        queue.add(args);
     });
 };
 
 Port.prototype.publish = function publish() {
-    var $meta = (arguments.length && arguments[arguments.length - 1]);
-    var queue;
-    if (!arguments.length) {
+    var args = Array.prototype.slice.call(arguments);
+    if (!args.length) {
         return Promise.reject(errors.missingParams());
-    } else if (!$meta) {
+    } else if (args.length === 1 || !args[args.length - 1]) {
         return Promise.reject(errors.missingMeta());
-    } else if (this.queue) {
-        queue = this.queue;
-    } else if ($meta.conId && this.queues[$meta.conId]) {
-        queue = this.queues[$meta.conId];
-    } else if (Object.keys(this.queues).length && this.connRouter && typeof this.connRouter === 'function') {
-        queue = this.queues[this.connRouter(this.queues, Array.prototype.slice.call(arguments))];
-    } else {
-        return Promise.reject(errors.notConnected(this.config.id));
     }
+    var $meta = args[args.length - 1];
+    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
     if (queue) {
-        queue.add(Array.prototype.slice.call(arguments));
+        queue.add(args);
         return true;
     } else {
-        this.log.error && this.log.error('Queue not found', {arguments: Array.prototype.slice.call(arguments)});
+        this.log.error && this.log.error('Queue not found', {arguments: args});
         return false;
     }
 };
@@ -629,6 +616,8 @@ Port.prototype.includesConfig = function includesConfig(name, values, defaultVal
     }
     return includes(configValue, values);
 };
+
+Port.prototype.connRouter = noop;
 
 function noop() {};
 
