@@ -2,7 +2,6 @@
 
 var assign = require('lodash.assign');
 var Bus = require('../');
-var when = require('when');
 
 var master = assign(new Bus(), {
     server: true,
@@ -28,7 +27,8 @@ var worker2 = assign(new Bus(), {
     logFactory: null
 });
 
-var result = master.init()
+function test() {
+    return master.init()
     .then(worker1.init.bind(worker1))
     .then(worker2.init.bind(worker2))
     .then(master.start.bind(master))
@@ -72,16 +72,19 @@ var result = master.init()
         })
         .then(function(r) {
             console.log(r);
-            return when.all([fn1(), fn2(), fn3()]).then(function() {
+            return Promise.all([fn1(), fn2(), fn3()]).then(function() {
                 console.log('done');
                 return true;
             });
-        })
-        .finally(function() {
-            worker1.destroy();
-            worker2.destroy();
-            master.destroy();
         });
-    });
+    })
+    .then(function() {
+        worker1.destroy();
+        worker2.destroy();
+        master.destroy();
+        return true;
+    })
+    .catch(() => process.exit(1));
+}
 
-result.done();
+test();
