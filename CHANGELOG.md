@@ -1,3 +1,18 @@
+<a name="5.12.0"></a>
+# [5.12.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.10...v5.12.0) (2017-06-27)
+
+
+### Bug Fixes
+
+* comments + more strict regex ([#13](https://github.com/softwaregroup-bg/ut-bus/issues/13)) ([7ea3e68](https://github.com/softwaregroup-bg/ut-bus/commit/7ea3e68))
+
+
+### Features
+
+* improve concurrency support ([f7caa4f](https://github.com/softwaregroup-bg/ut-bus/commit/f7caa4f))
+
+
+
 <a name="5.11.10"></a>
 ## [5.11.10](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.9...v5.11.10) (2017-06-20)
 
