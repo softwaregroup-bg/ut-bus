@@ -2,13 +2,14 @@
 
 var through2 = require('through2');
 var Readable = require('readable-stream/readable');
-var when = require('when');
 var Buffer = require('buffer').Buffer;
 var bufferCreate = Buffer;
 var assign = require('lodash.assign');
 var hrtime = require('browser-process-hrtime');
 var errors = require('./errors');
 var includes = require('./includes');
+var discardChunk = Symbol('discard chunk');
+var unlimitedConcurrency = Symbol('unlimited concurrency');
 
 function handleStreamClose(stream, conId, done) {
     if (stream) {
@@ -32,7 +33,7 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-var createQueue = function createQueue(config, callback) {
+function createQueue(config, callback) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
@@ -136,13 +137,13 @@ Port.prototype.init = function init() {
         prev.pub[next + '.publish'] = this.publish.bind(this);
         return prev;
     }.bind(this), methods);
-    return this.bus && when.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
+    return this.bus && Promise.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
 };
 
 Port.prototype.messageDispatch = function messageDispatch() {
     var result = this.bus && this.bus.dispatch.apply(this.bus, Array.prototype.slice.call(arguments));
     if (!result) {
-        this.log && this.log.error && this.log.error('Cannot dispatch message to bus', {message: Array.prototype.slice.call(arguments)});
+        this.log.error && this.log.error('Cannot dispatch message to bus', {message: Array.prototype.slice.call(arguments)});
     }
     return result;
 };
@@ -154,73 +155,62 @@ Port.prototype.start = function start() {
         imp.match(/\.start$/) && startList.push(this.config[imp]);
         this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
     }.bind(this));
-    return when.reduce(startList, function reduceCalls(prev, start) {
-        return start.call(this);
-    }.bind(this), []);
+    var promise = Promise.resolve();
+    startList.forEach((start) => {
+        promise = promise.then(() => start.call(this));
+    });
+    return promise;
 };
 
 Port.prototype.stop = function stop() {
     this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
     this.config.stop && this.config.stop.call(this);
-    this.streams.forEach(stream => {
+    this.streams.forEach(function streamEnd(stream) {
         stream.end();
     });
     return true;
 };
 
 Port.prototype.request = function request() {
-    var port = this;
-    var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
     var args = Array.prototype.slice.call(arguments);
-    return when.promise(function requestPromise(resolve, reject) {
-        if (!args.length) {
-            reject(errors.missingParams());
-        } else if (!$meta) {
-            reject(errors.missingMeta());
-        } else {
-            $meta.callback = function requestPromiseCb(msg) {
-                if ($meta && $meta.mtid !== 'error') {
-                    resolve(Array.prototype.slice.call(arguments));
-                } else {
-                    reject(msg);
-                }
-                return true;
-            };
-            if (this.queue) {
-                this.queue.add(args);
-            } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
-                this.queues[$meta.conId].add(args);
-            } else if (Object.keys(this.queues).length && port.connRouter && typeof port.connRouter === 'function') {
-                var queue = this.queues[port.connRouter(this.queues, Array.prototype.slice.call(arguments))];
-                queue && queue.add(args);
+    if (!args.length) {
+        return Promise.reject(errors.missingParams());
+    } else if (args.length === 1 || !args[args.length - 1]) {
+        return Promise.reject(errors.missingMeta());
+    }
+    var $meta = args[args.length - 1];
+    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
+    if (!queue) {
+        this.log.error && this.log.error('Queue not found', {arguments: args});
+        return Promise.reject(errors.notConnected(this.config.id));
+    }
+    return new Promise(function requestPromise(resolve, reject) {
+        $meta.callback = function requestPromiseCb(msg) {
+            if ($meta.mtid !== 'error') {
+                resolve(Array.prototype.slice.call(arguments));
             } else {
-                reject(errors.notConnected(this.config.id));
+                reject(msg);
             }
-        }
-    }.bind(this));
+            return true;
+        };
+        queue.add(args);
+    });
 };
 
 Port.prototype.publish = function publish() {
-    var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
-    var queue;
-    if (!arguments.length) {
-        return when.reject(errors.missingParams());
-    } else if (!$meta) {
-        return when.reject(errors.missingMeta());
-    } else if (this.queue) {
-        queue = this.queue;
-    } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
-        queue = this.queues[$meta.conId];
-    } else if (Object.keys(this.queues).length && this.connRouter && typeof this.connRouter === 'function') {
-        queue = this.queues[this.connRouter(this.queues, Array.prototype.slice.call(arguments))];
-    } else {
-        return when.reject(errors.notConnected(this.config.id));
+    var args = Array.prototype.slice.call(arguments);
+    if (!args.length) {
+        return Promise.reject(errors.missingParams());
+    } else if (args.length === 1 || !args[args.length - 1]) {
+        return Promise.reject(errors.missingMeta());
     }
+    var $meta = args[args.length - 1];
+    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
     if (queue) {
-        queue.add(Array.prototype.slice.call(arguments));
+        queue.add(args);
         return true;
     } else {
-        this.log.error && this.log.error('Queue not found', {arguments: Array.prototype.slice.call(arguments)});
+        this.log.error && this.log.error('Queue not found', {arguments: args});
         return false;
     }
 };
@@ -243,7 +233,7 @@ Port.prototype.findMeta = function findMeta($meta, context) {
 };
 
 Port.prototype.error = function portError(error) {
-    this.log && this.log.error && this.log.error(error);
+    this.log.error && this.log.error(error);
 };
 
 Port.prototype.receive = function portReceive(stream, packet, context) {
@@ -251,16 +241,15 @@ Port.prototype.receive = function portReceive(stream, packet, context) {
     var $meta = packet.length && packet[packet.length - 1];
     $meta = $meta && port.findMeta($meta, context);
     $meta.conId = context && context.conId;
-    var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'receive'].join('.')]) ||
-        ($meta && $meta.method && port.config[[port.methodPath($meta.method), $meta.mtid, 'receive'].join('.')]) ||
-        ($meta && port.config[[$meta.opcode, $meta.mtid, 'receive'].join('.')]) ||
-        port.config.receive;
-
+    var fn = this.getConversion($meta, 'receive');
     $meta && (packet[packet.length - 1] = $meta);
     if (!fn) {
         stream.push(packet);
     } else {
-        when.lift(fn).apply(port, Array.prototype.concat(packet, context))
+        return Promise.resolve()
+            .then(function receivePromise() {
+                return fn.apply(port, Array.prototype.concat(packet, context));
+            })
             .then(function receivePromiseResolved(result) {
                 stream.push([result, $meta]);
                 port.log.debug && port.log.debug({message: result, $meta: $meta});
@@ -276,7 +265,7 @@ Port.prototype.receive = function portReceive(stream, packet, context) {
     }
 };
 
-Port.prototype.decode = function decode(context) {
+Port.prototype.decode = function decode(context, concurrency) {
     var port = this;
     var buffer = bufferCreate(0);
 
@@ -285,7 +274,10 @@ Port.prototype.decode = function decode(context) {
         port.msgReceived && port.msgReceived(1);
         if (port.codec) {
             $meta = {conId: context && context.conId};
-            when(port.codec.decode(msg, $meta, context))
+            return Promise.resolve()
+                .then(function decodeConvert() {
+                    return port.codec.decode(msg, $meta, context);
+                })
                 .then(function decodeConvertResolved(message) {
                     port.receive(stream, [message, $meta], context);
                     return message;
@@ -315,14 +307,13 @@ Port.prototype.decode = function decode(context) {
         }
     }
 
-    return through2.obj(function decodePacket(packet, enc, callback) {
+    return this.createStream(function decodePacket(packet) {
         port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: packet});
         try {
             if (port.framePattern) {
                 port.bytesReceived && port.bytesReceived(packet.length);
                 buffer = Buffer.concat([buffer, packet]);
                 var frame = applyPattern(buffer);
-
                 while (frame) {
                     buffer = frame.rest;
                     convert(this, frame.data); // todo handle promise
@@ -331,13 +322,11 @@ Port.prototype.decode = function decode(context) {
             } else {
                 convert(this, packet);
             }
-            callback();
+            return discardChunk;
         } catch (error) {
-            port.error(error);
-            callback(null, null); // close the stream on error
-            // todo recreate the stream
+            return Promise.reject(error);
         }
-    });
+    }, concurrency);
 };
 
 Port.prototype.traceMeta = function traceMeta($meta, context) {
@@ -353,24 +342,78 @@ Port.prototype.methodPath = function methodPath(methodName) {
     return methodName.split('/', 2)[1];
 };
 
-Port.prototype.encode = function encode(context) {
-    var port = this;
-    return through2.obj(function encodePacket(packet, enc, callback) {
-        var $meta = packet.length && packet[packet.length - 1];
-        var fn = ($meta && $meta.method && port.config[[$meta.method, $meta.mtid, 'send'].join('.')]) ||
-            ($meta && $meta.method && port.config[[port.methodPath($meta.method), $meta.mtid, 'send'].join('.')]) ||
-            ($meta && port.config[[$meta.opcode, $meta.mtid, 'send'].join('.')]) ||
-            port.config.send;
-        var msgCallback = ($meta && $meta.callback) || noop;
+Port.prototype.getConversion = function getConversion($meta, type) {
+    var fn;
+    if ($meta) {
+        if ($meta.method) {
+            fn = this.config[[$meta.method, $meta.mtid, type].join('.')];
+            if (!fn) {
+                fn = this.config[[this.methodPath($meta.method), $meta.mtid, type].join('.')];
+            }
+        }
+        if (!fn) {
+            fn = this.config[[$meta.opcode, $meta.mtid, type].join('.')];
+        }
+    }
+    if (!fn) {
+        fn = this.config[type];
+    }
+    return fn;
+};
 
+// concurrency can be a number (indicating the treshhold) or true (for unmilited concurrency)
+Port.prototype.createStream = function createStream(handler, concurrency) {
+    var countActive = 0;
+    var port = this;
+    if (!concurrency) {
+        // don't allow setting concurrency:true from config
+        concurrency = this.config.concurrency || 10;
+    }
+    var stream = through2({objectMode: true}, function createStreamThrough(packet, enc, callback) {
+        countActive++;
+        if (concurrency === unlimitedConcurrency || (countActive < concurrency)) {
+            callback();
+        }
+        return Promise.resolve()
+            .then(function createStreamPromise() {
+                return handler.call(stream, packet);
+            })
+            .catch(function createStreamPromiseCatch(e) {
+                // TODO: handle error (e.g. close and recreate stream)
+                port.error(e);
+                stream.push(null);
+                return discardChunk;
+            })
+            .then(function createStreamPromiseThen(res) {
+                if (res !== discardChunk) {
+                    stream.push(res);
+                }
+                if (countActive-- === concurrency) {
+                    callback();
+                }
+                return res;
+            });
+    });
+    return stream;
+};
+
+Port.prototype.encode = function encode(context, concurrency) {
+    var port = this;
+    return this.createStream(function encodePacket(packet) {
+        var $meta = packet.length && packet[packet.length - 1];
+        var fn = port.getConversion($meta, 'send');
+        var msgCallback = ($meta && $meta.callback) || noop;
+        var promise = Promise.resolve(packet);
         if (fn) {
-            packet = when.lift(fn).apply(port, Array.prototype.concat(packet, context))
-                .then(function encodePacketResolve(result) {
+            promise = promise
+                .then(function encodeConvert(message) {
+                    return fn.apply(port, Array.prototype.concat(message, context));
+                })
+                .then(function encodeConvertResolve(result) {
                     return [result, $meta];
                 });
         }
-
-        when(packet)
+        return promise
             .then(function encodePacketResolveLog(message) {
                 port.log.debug && port.log.debug({message: message[0], $meta: message[1]});
                 var result = port.codec ? port.codec.encode(message[0], message[1], context) : message;
@@ -396,11 +439,9 @@ Port.prototype.encode = function encode(context) {
                 if (buffer) {
                     port.msgSent && port.msgSent(1);
                     port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'out'}, message: buffer});
-                    callback(null, buffer);
-                } else {
-                    callback();
+                    return buffer;
                 }
-                return buffer;
+                return discardChunk;
             })
             .catch(function encodePacketResolveThrow(err) {
                 port.error(err);
@@ -408,10 +449,9 @@ Port.prototype.encode = function encode(context) {
                 $meta.errorCode = err && err.code;
                 $meta.errorMessage = err && err.message;
                 msgCallback(err, $meta);
-                callback();
-                // todo close and recreate stream on error
+                return discardChunk;
             });
-    });
+    }, concurrency);
 };
 
 Port.prototype.disconnect = function(reason) {
@@ -420,133 +460,143 @@ Port.prototype.disconnect = function(reason) {
 };
 
 Port.prototype.pipe = function pipe(stream, context) {
-    var queue;
     var conId = context && context.conId && context.conId.toString();
     var encode = this.encode(context);
     var decode = this.decode(context);
-    var result = [encode, stream, decode];
     var port = this;
-
-    function queueEvent(name) {
-        this.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    }
-
+    var queue = createQueue(this.config.queue, function queueEvent(name) {
+        return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
+    });
+    var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
-        result.reduce(function unpipeReduce(prev, next, idx) {
+        return streamSequence.reduce(function unpipeStream(prev, next) {
             return next ? prev.unpipe(next) : prev;
-        }, queue);
+        });
     }
-
     if (context && conId) {
-        queue = createQueue(this.config.queue, queueEvent.bind(this));
         this.queues[conId] = queue;
         if (this.socketTimeOut) {
             stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId, unpipe));
         }
-        stream.on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
-            .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
     } else {
-        queue = this.queue = createQueue(this.config.queue, queueEvent.bind(this));
-        stream.on('end', handleStreamClose.bind(this, undefined, undefined, unpipe))
-            .on('error', handleStreamClose.bind(this, stream, undefined, unpipe));
+        this.queue = queue;
     }
+    stream
+        .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
+        .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
 
-    result.reduce(function pipeReduce(prev, next, idx) {
-        return next ? prev.pipe(next) : prev;
-    }, queue).on('data', function queueData(packet) {
-        var $meta = (packet.length > 1) && packet[packet.length - 1];
-        var mtid = $meta.mtid;
-        var opcode = $meta.opcode;
-        if (packet[0] instanceof errors.disconnect) {
-            stream.end();
-            return;
-        }
-        when(this.messageDispatch.apply(this, packet)).then(function messageDispatchResolve(result) {
-            if (mtid === 'request' && $meta.mtid !== 'discard') {
-                ($meta.mtid) || ($meta.mtid = 'response');
-                ($meta.opcode) || ($meta.opcode = opcode);
-                queue.add([result, $meta]);
+    streamSequence
+        .reduce(function pipeStream(prev, next) {
+            return next ? prev.pipe(next) : prev;
+        })
+        .on('data', function queueData(packet) {
+            var $meta = (packet.length > 1) && packet[packet.length - 1];
+            var mtid = $meta.mtid;
+            var opcode = $meta.opcode;
+            if (packet[0] instanceof errors.disconnect) {
+                return stream.end();
             }
-            return result;
-        }).catch(function messageDispatchError(error) {
-            port.error(error);
+            return Promise.resolve()
+                .then(function pipeMessageDispatch() {
+                    return port.messageDispatch.apply(port, packet);
+                })
+                .then(function pipeMessageDispatchResolve(result) {
+                    if (mtid === 'request' && $meta.mtid !== 'discard') {
+                        if (!$meta.mtid) {
+                            $meta.mtid = 'response';
+                        }
+                        if (!$meta.opcode) {
+                            $meta.opcode = opcode;
+                        }
+                        queue.add([result, $meta]);
+                    }
+                    return result;
+                })
+                .catch(function pipeMessageDispatchReject(e) {
+                    return port.error(e);
+                });
         });
-    }.bind(this));
-    return result;
+    return streamSequence.slice(1);
 };
 
 Port.prototype.pipeReverse = function pipeReverse(stream, context) {
     var self = this;
-    var callStream = through2({objectMode: true}, function pipeReverseThrough(packet, enc, callback) {
-        var $meta = packet.length && packet[packet.length - 1];
-        if ($meta && ($meta.mtid === 'error' || $meta.mtid === 'response')) {
-            this.push(packet);
+    var concurrency = this.config.concurrency || unlimitedConcurrency;
+    var callStream = this.createStream(function pipeReverseThrough(packet) {
+        var $meta = (packet.length && packet[packet.length - 1]) || {};
+        if ($meta.mtid === 'error' || $meta.mtid === 'response') {
+            return packet;
         } else {
             // todo maybe this cb preserving logic is not needed
-            var cb = $meta && $meta.callback;
-            if (cb) {
+            var cb;
+            if ($meta.callback) {
+                cb = $meta.callback;
                 delete $meta.callback;
             }
             var push = function pipeReverseInStreamCb(result) {
-                cb && ($meta.callback = cb);
-                this.push([result, $meta || {}]);
-            }.bind(this);
+                if (cb) {
+                    $meta.callback = cb;
+                }
+                return [result, $meta];
+            };
 
             if ($meta.mtid === 'request') {
-                when(self.messageDispatch.apply(self, packet)).then(push).catch(push);
+                return Promise.resolve()
+                    .then(function pipeReverseInStream() {
+                        return self.messageDispatch.apply(self, packet);
+                    })
+                    .then(push)
+                    .catch(push);
             } else {
                 self.messageDispatch.apply(self, packet);
+                return discardChunk;
             }
         }
-        callback();
-    });
+    }, concurrency);
 
-    [this.decode(context), callStream, this.encode(context)].reduce(function pipeReverseReduce(prev, next) {
-        return next ? prev.pipe(next) : prev;
-    }, stream).on('data', function pipeReverseQueueData(packet) {
-        this.messageDispatch.apply(this, packet);
-    }.bind(this));
+    [stream, this.decode(context, concurrency), callStream, this.encode(context, concurrency)]
+        .reduce(function pipeReverseReduce(prev, next) {
+            return next ? prev.pipe(next) : prev;
+        })
+        .on('data', function pipeReverseQueueData(packet) {
+            self.messageDispatch.apply(self, packet);
+        });
     this.streams.push(stream);
     return stream;
 };
 
-Port.prototype.pipeExec = function pipeExec(exec, concurrency) {
-    var countActive = 0;
-    var latency = this.latency;
+Port.prototype.pipeExec = function pipeExec(exec) {
     var port = this;
-    concurrency = concurrency || 10;
-    var stream = through2({objectMode: true}, function pipeExecThrough(chunk, enc, callback) {
+    var stream = this.createStream(function pipeExecThrough(chunk) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
-        countActive += 1;
         var startTime = hrtime();
-        $meta && ($meta.mtid === 'request') && ($meta.mtid = 'response');
-        /* eslint promise/catch-or-return:0 */
-        when(exec.apply(this, chunk))
+        if ($meta && $meta.mtid === 'request') {
+            $meta.mtid = 'response';
+        }
+        return Promise.resolve()
+            .then(function pipeExecThrough() {
+                return exec.apply(port, chunk);
+            })
             .then(function pipeExecThroughResolved(result) {
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                $meta && ($meta.timeTaken = diff);
-                latency && latency(diff, 1);
-                stream.push([result, $meta]);
-                return result;
+                port.latency && port.latency(diff, 1);
+                if ($meta) {
+                    $meta.timeTaken = diff;
+                }
+                return [result, $meta];
             })
             .catch(function pipeExecThroughRejected(error) {
                 port.error(error);
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                $meta && ($meta.timeTaken = diff);
-                latency && latency(diff, 1);
-                $meta.mtid = 'error';
-                stream.push([error, $meta]);
-            })
-            .finally(function pipeExecThroughFinally() {
-                countActive -= 1;
-                (countActive + 1 === concurrency) && callback();
-            })
-            .done();
-        if (countActive < concurrency) {
-            callback();
-        }
+                port.latency && port.latency(diff, 1);
+                if ($meta) {
+                    $meta.timeTaken = diff;
+                    $meta.mtid = 'error';
+                }
+                return [error, $meta];
+            });
     });
     this.streams.push(stream);
     return this.pipe(stream);
@@ -566,6 +616,8 @@ Port.prototype.includesConfig = function includesConfig(name, values, defaultVal
     }
     return includes(configValue, values);
 };
+
+Port.prototype.connRouter = noop;
 
 function noop() {};
 

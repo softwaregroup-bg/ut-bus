@@ -1,3 +1,13 @@
+<a name="5.11.10"></a>
+## [5.11.10](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.9...v5.11.10) (2017-06-20)
+
+
+### Bug Fixes
+
+* connrouter args ([d938538](https://github.com/softwaregroup-bg/ut-bus/commit/d938538))
+
+
+
 <a name="5.11.9"></a>
 ## [5.11.9](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.8...v5.11.9) (2017-06-05)
 
