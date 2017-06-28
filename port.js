@@ -179,7 +179,7 @@ Port.prototype.request = function request() {
         return Promise.reject(errors.missingMeta());
     }
     var $meta = args[args.length - 1];
-    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
+    var queue = this.queue || this.queues[$meta.conId] || (typeof this.connRouter === 'function' && this.queues[this.connRouter(this.queues, args)]);
     if (!queue) {
         this.log.error && this.log.error('Queue not found', {arguments: args});
         return Promise.reject(errors.notConnected(this.config.id));
@@ -205,7 +205,7 @@ Port.prototype.publish = function publish() {
         return Promise.reject(errors.missingMeta());
     }
     var $meta = args[args.length - 1];
-    var queue = this.queue || this.queues[$meta.conId] || this.queues[this.connRouter(this.queues, args)];
+    var queue = this.queue || this.queues[$meta.conId] || (typeof this.connRouter === 'function' && this.queues[this.connRouter(this.queues, args)]);
     if (queue) {
         queue.add(args);
         return true;
@@ -616,8 +616,6 @@ Port.prototype.includesConfig = function includesConfig(name, values, defaultVal
     }
     return includes(configValue, values);
 };
-
-Port.prototype.connRouter = noop;
 
 function noop() {};
 
