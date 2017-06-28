@@ -1,3 +1,13 @@
+<a name="5.12.1"></a>
+## [5.12.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.0...v5.12.1) (2017-06-28)
+
+
+### Bug Fixes
+
+* ensure connRouter to be function before call ([#21](https://github.com/softwaregroup-bg/ut-bus/issues/21)) ([ddb070a](https://github.com/softwaregroup-bg/ut-bus/commit/ddb070a))
+
+
+
 <a name="5.12.0"></a>
 # [5.12.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.10...v5.12.0) (2017-06-27)
 
