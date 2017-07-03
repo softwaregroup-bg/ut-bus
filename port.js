@@ -33,13 +33,18 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-function createQueue(config, callback) {
+function createQueue(config, callback, setQueueSize) {
     var q = [];
+    var qSize = 0;
     var r = new Readable({objectMode: true});
     var forQueue = false;
     var empty = config && config.empty;
     var idleTime = config && config.idle;
     var idleTimer;
+    function calcSize(num) {
+        qSize = qSize + num;
+        setQueueSize(qSize);
+    }
 
     function emitEmpty() {
         callback('empty');
@@ -72,6 +77,7 @@ function createQueue(config, callback) {
 
     r._read = function readQueue() {
         if (q.length) {
+            calcSize(-1);
             this.push(q.shift());
         } else {
             forQueue = false;
@@ -82,6 +88,7 @@ function createQueue(config, callback) {
     r.add = function add(msg) {
         this.resetTimeout();
         if (forQueue) {
+            calcSize(1);
             q.push(msg);
         } else {
             forQueue = true;
@@ -464,9 +471,13 @@ Port.prototype.pipe = function pipe(stream, context) {
     var encode = this.encode(context);
     var decode = this.decode(context);
     var port = this;
+    var counter = function() {};
+    if (this && this.counter) {
+        counter = this.counter('counter', `qsz-${this.config.id}`, 'Queue size');
+    }
     var queue = createQueue(this.config.queue, function queueEvent(name) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    });
+    }, counter);
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
         return streamSequence.reduce(function unpipeStream(prev, next) {
