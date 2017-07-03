@@ -471,13 +471,13 @@ Port.prototype.pipe = function pipe(stream, context) {
     var encode = this.encode(context);
     var decode = this.decode(context);
     var port = this;
-    var counter = function() {};
+    var queueSize = function() {};
     if (this && this.counter) {
-        counter = this.counter('counter', `qsz-${this.config.id}`, 'Queue size');
+        queueSize = this.counter('gauge', `qsz-${this.config.id}`, 'Queue size');
     }
     var queue = createQueue(this.config.queue, function queueEvent(name) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    }, counter);
+    }, queueSize);
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
         return streamSequence.reduce(function unpipeStream(prev, next) {
