@@ -111,11 +111,15 @@ function Port() {
     this.queues = {};
     this.bytesSent = null;
     this.bytesReceived = null;
-    this.msgSent = null;
-    this.msgReceived = null;
     this.latency = null;
     this.counter = null;
     this.streams = [];
+    // performance metric handlers
+    this.msgSent = null;
+    this.msgReceived = null;
+    this.activeExecCount = null;
+    this.activeSendCount = null;
+    this.activeReceiveCount = null;
 }
 
 Port.prototype.init = function init() {
@@ -128,6 +132,9 @@ Port.prototype.init = function init() {
         }.bind(this);
         this.msgSent = this.counter('counter', 'ms', 'Messages sent');
         this.msgReceived = this.counter('counter', 'mr', 'Messages received');
+        this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count');
+        this.activeSendCount = this.counter('gauge', 'as', 'Active send count');
+        this.activeReceiveCount = this.counter('gauge', 'ar', 'Active receive count');
     }
 
     var methods = {req: {}, pub: {}};
@@ -328,7 +335,7 @@ Port.prototype.decode = function decode(context, concurrency) {
         } catch (error) {
             return Promise.reject(error);
         }
-    }, concurrency);
+    }, concurrency, this.activeReceiveCount);
 };
 
 Port.prototype.traceMeta = function traceMeta($meta, context) {
@@ -364,15 +371,19 @@ Port.prototype.getConversion = function getConversion($meta, type) {
 };
 
 // concurrency can be a number (indicating the treshhold) or true (for unmilited concurrency)
-Port.prototype.createStream = function createStream(handler, concurrency) {
+Port.prototype.createStream = function createStream(handler, concurrency, activeCounter) {
     var countActive = 0;
     var port = this;
     if (!concurrency) {
-        // don't allow setting concurrency:true from config
+        // set to 10 by default
         concurrency = this.config.concurrency || 10;
+    }
+    if (activeCounter) {
+        activeCounter = activeCounter.bind(this);
     }
     var stream = through2({objectMode: true}, function createStreamThrough(packet, enc, callback) {
         countActive++;
+        activeCounter && activeCounter(countActive);
         if (concurrency === unlimitedConcurrency || (countActive < concurrency)) {
             callback();
         }
@@ -390,7 +401,9 @@ Port.prototype.createStream = function createStream(handler, concurrency) {
                 if (res !== discardChunk) {
                     stream.push(res);
                 }
-                if (countActive-- === concurrency) {
+                countActive--;
+                activeCounter && activeCounter(countActive);
+                if (concurrency !== unlimitedConcurrency && countActive + 1 >= concurrency) {
                     callback();
                 }
                 return res;
@@ -453,7 +466,7 @@ Port.prototype.encode = function encode(context, concurrency) {
                 msgCallback(err, $meta);
                 return discardChunk;
             });
-    }, concurrency);
+    }, concurrency, this.activeSendCount);
 };
 
 Port.prototype.disconnect = function(reason) {
@@ -558,7 +571,7 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
                 return discardChunk;
             }
         }
-    }, concurrency);
+    }, concurrency, this.activeExecCount);
 
     [stream, this.decode(context, concurrency), callStream, this.encode(context, concurrency)]
         .reduce(function pipeReverseReduce(prev, next) {
@@ -603,7 +616,7 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 }
                 return [error, $meta];
             });
-    });
+    }, this.config.concurrency, this.activeExecCount);
     this.streams.push(stream);
     return this.pipe(stream);
 };
