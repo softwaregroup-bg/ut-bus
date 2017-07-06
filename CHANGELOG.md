@@ -1,3 +1,13 @@
+<a name="5.12.2"></a>
+## [5.12.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.1...v5.12.2) (2017-07-06)
+
+
+### Bug Fixes
+
+* handle recursive concurrency and add gauge metrics ([caf676d](https://github.com/softwaregroup-bg/ut-bus/commit/caf676d))
+
+
+
 <a name="5.12.1"></a>
 ## [5.12.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.0...v5.12.1) (2017-06-28)
 
