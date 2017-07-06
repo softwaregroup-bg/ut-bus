@@ -35,16 +35,11 @@ function handleStreamClose(stream, conId, done) {
 
 function createQueue(config, callback, setQueueSize) {
     var q = [];
-    var qSize = 0;
     var r = new Readable({objectMode: true});
     var forQueue = false;
     var empty = config && config.empty;
     var idleTime = config && config.idle;
     var idleTimer;
-    function calcSize(num) {
-        qSize = qSize + num;
-        setQueueSize(qSize);
-    }
 
     function emitEmpty() {
         callback('empty');
@@ -77,8 +72,8 @@ function createQueue(config, callback, setQueueSize) {
 
     r._read = function readQueue() {
         if (q.length) {
-            calcSize(-1);
             this.push(q.shift());
+            setQueueSize(q.length);
         } else {
             forQueue = false;
         }
@@ -88,8 +83,8 @@ function createQueue(config, callback, setQueueSize) {
     r.add = function add(msg) {
         this.resetTimeout();
         if (forQueue) {
-            calcSize(1);
             q.push(msg);
+            setQueueSize(q.length);
         } else {
             forQueue = true;
             r.push(msg);
