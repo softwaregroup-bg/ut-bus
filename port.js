@@ -33,7 +33,7 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-function createQueue(config, callback) {
+function createQueue(config, callback, setQueueSize) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
@@ -73,6 +73,7 @@ function createQueue(config, callback) {
     r._read = function readQueue() {
         if (q.length) {
             this.push(q.shift());
+            setQueueSize(q.length);
         } else {
             forQueue = false;
         }
@@ -83,6 +84,7 @@ function createQueue(config, callback) {
         this.resetTimeout();
         if (forQueue) {
             q.push(msg);
+            setQueueSize(q.length);
         } else {
             forQueue = true;
             r.push(msg);
@@ -477,9 +479,13 @@ Port.prototype.pipe = function pipe(stream, context) {
     var encode = this.encode(context);
     var decode = this.decode(context);
     var port = this;
+    var queueSize = function() {};
+    if (this && this.counter) {
+        queueSize = this.counter('gauge', 'q', 'Queue size');
+    }
     var queue = createQueue(this.config.queue, function queueEvent(name) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    });
+    }, queueSize);
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
         return streamSequence.reduce(function unpipeStream(prev, next) {
