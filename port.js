@@ -473,7 +473,7 @@ Port.prototype.pipe = function pipe(stream, context) {
     var port = this;
     var queueSize = function() {};
     if (this && this.counter) {
-        queueSize = this.counter('gauge', `qsz-${this.config.id}`, 'Queue size');
+        queueSize = this.counter('gauge', 'q', 'Queue size');
     }
     var queue = createQueue(this.config.queue, function queueEvent(name) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
