@@ -1,3 +1,13 @@
+<a name="5.12.3"></a>
+## [5.12.3](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.2...v5.12.3) (2017-07-06)
+
+
+### Bug Fixes
+
+* add queue size counter ([#22](https://github.com/softwaregroup-bg/ut-bus/issues/22)) ([34425fc](https://github.com/softwaregroup-bg/ut-bus/commit/34425fc))
+
+
+
 <a name="5.12.2"></a>
 ## [5.12.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.1...v5.12.2) (2017-07-06)
 
