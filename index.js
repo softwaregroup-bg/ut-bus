@@ -543,7 +543,7 @@ module.exports = function Bus() {
                             return Promise.resolve(response).then(validateResult).catch(validateResult);
                         }
                     }
-                    return Promise.resolve().then(() => fn.apply(this, applyArgs));
+                    return Promise.resolve(fn.apply(this, applyArgs));
                 } else {
                     return Promise.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
                 }
