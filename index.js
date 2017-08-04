@@ -696,11 +696,11 @@ module.exports = function Bus() {
                     if (last) {
                         if (last.decay > 0 && last.timeout <= now) {
                             last.count = 1;
+                            last.timeout = now + last.decay;
                         } else {
                             last.count++;
                             mtid = 'discard';
                         }
-                        last.timeout = now + last.decay;
                         // todo persist last object in case decay > 0
                     } else {
                         var decay = this.decayTime($meta.resample);
