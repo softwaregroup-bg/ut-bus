@@ -1,3 +1,13 @@
+<a name="5.13.0"></a>
+# [5.13.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.3...v5.13.0) (2017-08-04)
+
+
+### Features
+
+* discard messages during decay time ([#27](https://github.com/softwaregroup-bg/ut-bus/issues/27)) ([5b0d86d](https://github.com/softwaregroup-bg/ut-bus/commit/5b0d86d))
+
+
+
 <a name="5.12.3"></a>
 ## [5.12.3](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.2...v5.12.3) (2017-07-06)
 
