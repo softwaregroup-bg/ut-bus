@@ -682,7 +682,8 @@ module.exports = function Bus() {
 
         decayTime: function(key) {
             var longestPrefix = (prev, cur) => (prev.length < cur.length && key.substr(0, cur.length) === cur) ? cur : prev;
-            return this.decay[Object.keys(this.decay).reduce(longestPrefix, '')];
+            var decay = (this.config.masterBus && this.config.masterBus.decay) || {};
+            return decay[Object.keys(decay).reduce(longestPrefix, '')];
         },
 
         dispatch: function() {
@@ -696,11 +697,11 @@ module.exports = function Bus() {
                     if (last) {
                         if (last.decay > 0 && last.timeout <= now) {
                             last.count = 1;
+                            last.timeout = now + last.decay;
                         } else {
                             last.count++;
                             mtid = 'discard';
                         }
-                        last.timeout = now + last.decay;
                         // todo persist last object in case decay > 0
                     } else {
                         var decay = this.decayTime($meta.resample);
