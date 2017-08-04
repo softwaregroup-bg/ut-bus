@@ -682,8 +682,7 @@ module.exports = function Bus() {
 
         decayTime: function(key) {
             var longestPrefix = (prev, cur) => (prev.length < cur.length && key.substr(0, cur.length) === cur) ? cur : prev;
-            var decay = (this.config.masterBus && this.config.masterBus.decay) || {};
-            return decay[Object.keys(decay).reduce(longestPrefix, '')];
+            return this.decay[Object.keys(this.decay).reduce(longestPrefix, '')];
         },
 
         dispatch: function() {
