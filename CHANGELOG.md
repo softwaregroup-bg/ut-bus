@@ -1,3 +1,13 @@
+<a name="5.13.1"></a>
+## [5.13.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.0...v5.13.1) (2017-08-15)
+
+
+### Bug Fixes
+
+* add timeTaken tagged measurement for all ports ([#25](https://github.com/softwaregroup-bg/ut-bus/issues/25)) ([af36159](https://github.com/softwaregroup-bg/ut-bus/commit/af36159))
+
+
+
 <a name="5.13.0"></a>
 # [5.13.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.12.3...v5.13.0) (2017-08-04)
 
