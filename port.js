@@ -126,15 +126,18 @@ Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name: this.config.id, context: this.config.type + ' port'}, this.config.log));
 
     if (this.config.metrics !== false && this.bus && this.bus.config.implementation && this.bus.performance) {
-        this.counter = function initCounters(type, code, name) {
-            return this.bus.performance.register((this.bus.performance.config.id || this.bus.config.implementation) + '_' +
-                (this.config.metrics || this.config.id), type, code, name);
+        var baseCounterName = (this.bus.performance.config.id || this.bus.config.implementation) + '_' + (this.config.metrics || this.config.id);
+        this.counter = function initCounters(fieldType, fieldCode, fieldName) {
+            return this.bus.performance.register(baseCounterName, fieldType, fieldCode, fieldName);
         }.bind(this);
         this.msgSent = this.counter('counter', 'ms', 'Messages sent');
         this.msgReceived = this.counter('counter', 'mr', 'Messages received');
         this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count');
         this.activeSendCount = this.counter('gauge', 'as', 'Active send count');
         this.activeReceiveCount = this.counter('gauge', 'ar', 'Active receive count');
+        if (this.bus.performance.measurements) {
+            this.timeTaken = this.bus.performance.register(baseCounterName + '_timeTaken', 'average', 'tt', 'Time taken', 'tagged');
+        }
     }
 
     var methods = {req: {}, pub: {}};
@@ -589,8 +592,10 @@ Port.prototype.pipeExec = function pipeExec(exec) {
     var stream = this.createStream(function pipeExecThrough(chunk) {
         var $meta = chunk.length > 1 && chunk[chunk.length - 1];
         var startTime = hrtime();
+        var methodName = '';
         if ($meta && $meta.mtid === 'request') {
             $meta.mtid = 'response';
+            methodName = $meta.method;
         }
         return Promise.resolve()
             .then(function pipeExecThrough() {
@@ -602,6 +607,9 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 port.latency && port.latency(diff, 1);
                 if ($meta) {
                     $meta.timeTaken = diff;
+                }
+                if (methodName && port.timeTaken) {
+                    port.timeTaken(methodName, {m: methodName}, diff, 1);
                 }
                 return [result, $meta];
             })
