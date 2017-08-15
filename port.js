@@ -135,7 +135,9 @@ Port.prototype.init = function init() {
         this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count');
         this.activeSendCount = this.counter('gauge', 'as', 'Active send count');
         this.activeReceiveCount = this.counter('gauge', 'ar', 'Active receive count');
-        this.timeTaken = this.bus.performance.register(baseCounterName + '_timeTaken', 'average', 'tt', 'Time taken', 'tagged');
+        if (this.bus.performance.measurements) {
+            this.timeTaken = this.bus.performance.register(baseCounterName + '_timeTaken', 'average', 'tt', 'Time taken', 'tagged');
+        }
     }
 
     var methods = {req: {}, pub: {}};
