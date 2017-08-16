@@ -1,3 +1,13 @@
+<a name="5.13.2"></a>
+## [5.13.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.1...v5.13.2) (2017-08-16)
+
+
+### Bug Fixes
+
+* improve latency precision ([88c7330](https://github.com/softwaregroup-bg/ut-bus/commit/88c7330))
+
+
+
 <a name="5.13.1"></a>
 ## [5.13.1](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.0...v5.13.1) (2017-08-15)
 
