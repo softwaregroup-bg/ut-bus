@@ -111,7 +111,6 @@ function Port() {
     this.queues = {};
     this.bytesSent = null;
     this.bytesReceived = null;
-    this.latency = null;
     this.counter = null;
     this.streams = [];
     // performance metric handlers
@@ -130,6 +129,7 @@ Port.prototype.init = function init() {
         this.counter = function initCounters(fieldType, fieldCode, fieldName) {
             return this.bus.performance.register(baseCounterName, fieldType, fieldCode, fieldName);
         }.bind(this);
+        this.latency = this.counter('average', 'lt', 'Latency');
         this.msgSent = this.counter('counter', 'ms', 'Messages sent');
         this.msgReceived = this.counter('counter', 'mr', 'Messages received');
         this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count');
