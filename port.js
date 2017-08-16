@@ -205,6 +205,7 @@ Port.prototype.request = function request() {
             }
             return true;
         };
+        $meta.startTime = hrtime();
         queue.add(args);
     });
 };
@@ -515,6 +516,11 @@ Port.prototype.pipe = function pipe(stream, context) {
             var $meta = (packet.length > 1) && packet[packet.length - 1];
             var mtid = $meta.mtid;
             var opcode = $meta.opcode;
+            if ($meta.startTime && port.latency) {
+                var diff = hrtime($meta.startTime);
+                diff = diff[0] * 1000 + diff[1] / 1000000;
+                port.latency(diff, 1);
+            }
             if (packet[0] instanceof errors.disconnect) {
                 return stream.end();
             }
@@ -563,7 +569,6 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
                 }
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                self.latency && self.latency(diff, 1);
                 if ($meta) {
                     $meta.timeTaken = diff;
                 }
@@ -612,7 +617,6 @@ Port.prototype.pipeExec = function pipeExec(exec) {
             .then(function pipeExecThroughResolved(result) {
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                port.latency && port.latency(diff, 1);
                 if ($meta) {
                     $meta.timeTaken = diff;
                 }
@@ -625,7 +629,6 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 port.error(error);
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                port.latency && port.latency(diff, 1);
                 if ($meta) {
                     $meta.timeTaken = diff;
                     $meta.mtid = 'error';
