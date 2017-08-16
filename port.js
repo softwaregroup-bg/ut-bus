@@ -548,31 +548,39 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
         var $meta = (packet.length && packet[packet.length - 1]) || {};
         if ($meta.mtid === 'error' || $meta.mtid === 'response') {
             return packet;
-        } else {
+        } else if ($meta.mtid === 'request') {
             // todo maybe this cb preserving logic is not needed
             var cb;
             if ($meta.callback) {
                 cb = $meta.callback;
                 delete $meta.callback;
             }
+            var methodName = $meta.method;
+            var startTime = hrtime();
             var push = function pipeReverseInStreamCb(result) {
                 if (cb) {
                     $meta.callback = cb;
                 }
+                var diff = hrtime(startTime);
+                diff = diff[0] * 1000 + diff[1] / 1000000;
+                self.latency && self.latency(diff, 1);
+                if ($meta) {
+                    $meta.timeTaken = diff;
+                }
+                if (methodName && self.timeTaken) {
+                    self.timeTaken(methodName, {m: methodName}, diff, 1);
+                }
                 return [result, $meta];
             };
-
-            if ($meta.mtid === 'request') {
-                return Promise.resolve()
-                    .then(function pipeReverseInStream() {
-                        return self.messageDispatch.apply(self, packet);
-                    })
-                    .then(push)
-                    .catch(push);
-            } else {
-                self.messageDispatch.apply(self, packet);
-                return discardChunk;
-            }
+            return Promise.resolve()
+                .then(function pipeReverseInStream() {
+                    return self.messageDispatch.apply(self, packet);
+                })
+                .then(push)
+                .catch(push);
+        } else {
+            self.messageDispatch.apply(self, packet);
+            return discardChunk;
         }
     }, concurrency, this.activeExecCount);
 
@@ -621,6 +629,9 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 if ($meta) {
                     $meta.timeTaken = diff;
                     $meta.mtid = 'error';
+                }
+                if (methodName && port.timeTaken) {
+                    port.timeTaken(methodName, {m: methodName}, diff, 1);
                 }
                 return [error, $meta];
             });
