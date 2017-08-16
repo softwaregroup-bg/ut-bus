@@ -111,7 +111,6 @@ function Port() {
     this.queues = {};
     this.bytesSent = null;
     this.bytesReceived = null;
-    this.latency = null;
     this.counter = null;
     this.streams = [];
     // performance metric handlers
@@ -130,6 +129,7 @@ Port.prototype.init = function init() {
         this.counter = function initCounters(fieldType, fieldCode, fieldName) {
             return this.bus.performance.register(baseCounterName, fieldType, fieldCode, fieldName);
         }.bind(this);
+        this.latency = this.counter('average', 'lt', 'Latency');
         this.msgSent = this.counter('counter', 'ms', 'Messages sent');
         this.msgReceived = this.counter('counter', 'mr', 'Messages received');
         this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count');
@@ -205,6 +205,7 @@ Port.prototype.request = function request() {
             }
             return true;
         };
+        $meta.startTime = hrtime();
         queue.add(args);
     });
 };
@@ -515,6 +516,11 @@ Port.prototype.pipe = function pipe(stream, context) {
             var $meta = (packet.length > 1) && packet[packet.length - 1];
             var mtid = $meta.mtid;
             var opcode = $meta.opcode;
+            if ($meta.startTime && port.latency) {
+                var diff = hrtime($meta.startTime);
+                diff = diff[0] * 1000 + diff[1] / 1000000;
+                port.latency(diff, 1);
+            }
             if (packet[0] instanceof errors.disconnect) {
                 return stream.end();
             }
@@ -548,31 +554,38 @@ Port.prototype.pipeReverse = function pipeReverse(stream, context) {
         var $meta = (packet.length && packet[packet.length - 1]) || {};
         if ($meta.mtid === 'error' || $meta.mtid === 'response') {
             return packet;
-        } else {
+        } else if ($meta.mtid === 'request') {
             // todo maybe this cb preserving logic is not needed
             var cb;
             if ($meta.callback) {
                 cb = $meta.callback;
                 delete $meta.callback;
             }
+            var methodName = $meta.method;
+            var startTime = hrtime();
             var push = function pipeReverseInStreamCb(result) {
                 if (cb) {
                     $meta.callback = cb;
                 }
+                var diff = hrtime(startTime);
+                diff = diff[0] * 1000 + diff[1] / 1000000;
+                if ($meta) {
+                    $meta.timeTaken = diff;
+                }
+                if (methodName && self.timeTaken) {
+                    self.timeTaken(methodName, {m: methodName}, diff, 1);
+                }
                 return [result, $meta];
             };
-
-            if ($meta.mtid === 'request') {
-                return Promise.resolve()
-                    .then(function pipeReverseInStream() {
-                        return self.messageDispatch.apply(self, packet);
-                    })
-                    .then(push)
-                    .catch(push);
-            } else {
-                self.messageDispatch.apply(self, packet);
-                return discardChunk;
-            }
+            return Promise.resolve()
+                .then(function pipeReverseInStream() {
+                    return self.messageDispatch.apply(self, packet);
+                })
+                .then(push)
+                .catch(push);
+        } else {
+            self.messageDispatch.apply(self, packet);
+            return discardChunk;
         }
     }, concurrency, this.activeExecCount);
 
@@ -604,7 +617,6 @@ Port.prototype.pipeExec = function pipeExec(exec) {
             .then(function pipeExecThroughResolved(result) {
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                port.latency && port.latency(diff, 1);
                 if ($meta) {
                     $meta.timeTaken = diff;
                 }
@@ -617,10 +629,12 @@ Port.prototype.pipeExec = function pipeExec(exec) {
                 port.error(error);
                 var diff = hrtime(startTime);
                 diff = diff[0] * 1000 + diff[1] / 1000000;
-                port.latency && port.latency(diff, 1);
                 if ($meta) {
                     $meta.timeTaken = diff;
                     $meta.mtid = 'error';
+                }
+                if (methodName && port.timeTaken) {
+                    port.timeTaken(methodName, {m: methodName}, diff, 1);
                 }
                 return [error, $meta];
             });
