@@ -1,5 +1,5 @@
 'use strict';
-
+var os = require('os');
 var through2 = require('through2');
 var Readable = require('readable-stream/readable');
 var Buffer = require('buffer').Buffer;
@@ -125,7 +125,7 @@ Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name: this.config.id, context: this.config.type + ' port'}, this.config.log));
 
     if (this.config.metrics !== false && this.bus && this.bus.config.implementation && this.bus.performance) {
-        var baseCounterName = (this.bus.performance.config.id || this.bus.config.implementation) + '_' + (this.config.metrics || this.config.id);
+        var baseCounterName = `${os.hostname()}_${this.bus.performance.config.id || this.bus.config.implementation}_${this.config.metrics || this.config.id}`;
         this.counter = function initCounters(fieldType, fieldCode, fieldName) {
             return this.bus.performance.register(baseCounterName, fieldType, fieldCode, fieldName);
         }.bind(this);
