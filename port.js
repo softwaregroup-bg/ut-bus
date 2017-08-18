@@ -1,5 +1,5 @@
 'use strict';
-
+var os = require('os');
 var through2 = require('through2');
 var Readable = require('readable-stream/readable');
 var Buffer = require('buffer').Buffer;
@@ -125,9 +125,13 @@ Port.prototype.init = function init() {
     this.logFactory && (this.log = this.logFactory.createLog(this.config.logLevel, {name: this.config.id, context: this.config.type + ' port'}, this.config.log));
 
     if (this.config.metrics !== false && this.bus && this.bus.config.implementation && this.bus.performance) {
-        var baseCounterName = (this.bus.performance.config.id || this.bus.config.implementation) + '_' + (this.config.metrics || this.config.id);
+        var measurementName = this.config.metrics || this.config.id;
+        var tags = {
+            host: os.hostname(),
+            impl: this.bus.performance.config.id || this.bus.config.implementation
+        };
         this.counter = function initCounters(fieldType, fieldCode, fieldName) {
-            return this.bus.performance.register(baseCounterName, fieldType, fieldCode, fieldName);
+            return this.bus.performance.register(measurementName, fieldType, fieldCode, fieldName, 'standard', tags);
         }.bind(this);
         this.latency = this.counter('average', 'lt', 'Latency');
         this.msgSent = this.counter('counter', 'ms', 'Messages sent');
@@ -136,7 +140,7 @@ Port.prototype.init = function init() {
         this.activeSendCount = this.counter('gauge', 'as', 'Active send count');
         this.activeReceiveCount = this.counter('gauge', 'ar', 'Active receive count');
         if (this.bus.performance.measurements) {
-            this.timeTaken = this.bus.performance.register(baseCounterName + '_timeTaken', 'average', 'tt', 'Time taken', 'tagged');
+            this.timeTaken = this.bus.performance.register(measurementName + '_tt', 'average', 'tt', 'Time taken', 'tagged', tags);
         }
     }
 
