@@ -1,3 +1,13 @@
+<a name="5.13.3"></a>
+## [5.13.3](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.2...v5.13.3) (2017-08-18)
+
+
+### Bug Fixes
+
+* add hostname to performance measurements for uniqueness ([#29](https://github.com/softwaregroup-bg/ut-bus/issues/29)) ([8236bbd](https://github.com/softwaregroup-bg/ut-bus/commit/8236bbd))
+
+
+
 <a name="5.13.2"></a>
 ## [5.13.2](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.1...v5.13.2) (2017-08-16)
 
