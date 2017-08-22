@@ -1,3 +1,13 @@
+<a name="5.14.0"></a>
+# [5.14.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.3...v5.14.0) (2017-08-22)
+
+
+### Features
+
+* port events implementation ([#30](https://github.com/softwaregroup-bg/ut-bus/issues/30)) ([bd9c40b](https://github.com/softwaregroup-bg/ut-bus/commit/bd9c40b))
+
+
+
 <a name="5.13.3"></a>
 ## [5.13.3](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.2...v5.13.3) (2017-08-18)
 
