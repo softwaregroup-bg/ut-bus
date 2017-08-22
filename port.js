@@ -165,17 +165,35 @@ Port.prototype.messageDispatch = function messageDispatch() {
 };
 
 Port.prototype.start = function start() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.start'}, id: this.config.id, config: this.config});
-    var startList = this.config.start ? [this.config.start] : [];
-    this.config.imports && this.config.imports.forEach(function foreachImports(imp) {
-        imp.match(/\.start$/) && startList.push(this.config[imp]);
-        this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
-    }.bind(this));
-    var promise = Promise.resolve();
-    startList.forEach((start) => {
-        promise = promise.then(() => start.call(this));
+    return this.fireEvent('start');
+};
+
+Port.prototype.ready = function ready() {
+    return this.fireEvent('ready');
+};
+
+Port.prototype.fireEvent = function fireEvent(event) {
+    this.log.info && this.log.info({
+        $meta: {
+            mtid: 'event',
+            opcode: `port.${event}`
+        },
+        id: this.config.id,
+        config: this.config
     });
-    return promise;
+    var eventHandlers = this.config[event] ? [this.config[event]] : [];
+    if (Array.isArray(this.config.imports) && this.config.imports.length) {
+        var regExp = new RegExp(`\\.${event}$`);
+        this.config.imports.forEach((imp) => {
+            imp.match(regExp) && eventHandlers.push(this.config[imp]);
+            this.config[`${imp}.${event}`] && eventHandlers.push(this.config[`${imp}.${event}`]);
+        });
+    }
+
+    return eventHandlers.reduce((promise, eventHandler) => {
+        promise = promise.then(() => eventHandler.call(this));
+        return promise;
+    }, Promise.resolve());
 };
 
 Port.prototype.stop = function stop() {
