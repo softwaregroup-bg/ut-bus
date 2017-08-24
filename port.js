@@ -57,7 +57,8 @@ function createQueue(config, callback, setQueueSize, destroy) {
 
     function emitEcho() {
         if (echoRetriesLimit && ++echoRetries > echoRetriesLimit) {
-            destroy(errors.disconnect());
+            r.push([errors.echoTimeout(), {opcode: 'echo', mtid: 'error'}]);
+            destroy();
         } else {
             clearTimeout(echoTimer);
             echoTimer = echoInterval && setTimeout(emitEcho, echoInterval);
@@ -66,11 +67,11 @@ function createQueue(config, callback, setQueueSize, destroy) {
     }
 
     r.clearTimeout = function queueClearTimeout() {
-        idleTimer = clearTimeout(idleTimer);
+        clearTimeout(idleTimer);
     };
 
     r.clearEcho = function queueClearEcho() {
-        echoTimer = clearTimeout(echoTimer);
+        clearTimeout(echoTimer);
     };
 
     r.resetTimeout = function queueResetTimeout() {
