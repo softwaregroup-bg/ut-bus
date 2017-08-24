@@ -522,8 +522,7 @@ Port.prototype.pipe = function pipe(stream, context) {
     stream
         .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
         .on('error', handleStreamClose.bind(this, stream, conId, unpipe))
-        .on('data', queue.resetEcho)
-        .pause(); // revert side effect from previous op
+        .on('data', queue.resetEcho);
 
     streamSequence
         .reduce(function pipeStream(prev, next) {
