@@ -33,41 +33,55 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-function createQueue(config, callback, setQueueSize) {
+function createQueue(config, callback, setQueueSize, destroy) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
     var empty = config && config.empty;
     var idleTime = config && config.idle;
     var idleTimer;
+    var echoInterval = config && config.echo && config.echo.interval;
+    var echoRetriesLimit = config && config.echo && config.echo.retries;
+    var echoRetries = 0;
+    var echoTimer;
 
     function emitEmpty() {
         callback('empty');
     }
 
     function emitIdle() {
-        if (idleTimer) {
-            clearTimeout(idleTimer);
-            idleTimer = false;
-        }
+        clearTimeout(idleTimer);
         idleTimer = setTimeout(emitIdle, idleTime);
         callback('idle');
     }
 
-    r.clearTimeout = function queueClearTimeout() {
-        if (idleTimer) {
-            clearTimeout(idleTimer);
-            idleTimer = false;
+    function emitEcho() {
+        if (echoRetriesLimit && ++echoRetries > echoRetriesLimit) {
+            destroy(errors.disconnect());
+        } else {
+            clearTimeout(echoTimer);
+            echoTimer = echoInterval && setTimeout(emitEcho, echoInterval);
+            callback('echo');
         }
+    }
+
+    r.clearTimeout = function queueClearTimeout() {
+        idleTimer = clearTimeout(idleTimer);
+    };
+
+    r.clearEcho = function queueClearEcho() {
+        echoTimer = clearTimeout(echoTimer);
     };
 
     r.resetTimeout = function queueResetTimeout() {
-        if (idleTimer) {
-            clearTimeout(idleTimer);
-        }
-        if (idleTime) {
-            idleTimer = setTimeout(emitIdle, idleTime);
-        }
+        clearTimeout(idleTimer);
+        idleTimer = idleTime && setTimeout(emitIdle, idleTime);
+    };
+
+    r.resetEcho = function queueResetEcho() {
+        echoRetries = 0;
+        clearTimeout(echoTimer);
+        echoTimer = echoInterval && setTimeout(emitEcho, echoInterval);
     };
 
     r._read = function readQueue() {
@@ -95,10 +109,12 @@ function createQueue(config, callback, setQueueSize) {
         r.push(null);
         r.unpipe();
         r.clearTimeout();
+        r.clearEcho();
         r = q = undefined;
     };
 
     r.resetTimeout();
+    r.resetEcho();
 
     return r;
 };
@@ -485,7 +501,9 @@ Port.prototype.pipe = function pipe(stream, context) {
     }
     var queue = createQueue(this.config.queue, function queueEvent(name) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    }, queueSize);
+    }, queueSize, function queueDestroy() {
+        stream.end();
+    });
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
         return streamSequence.reduce(function unpipeStream(prev, next) {
@@ -502,7 +520,9 @@ Port.prototype.pipe = function pipe(stream, context) {
     }
     stream
         .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
-        .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
+        .on('error', handleStreamClose.bind(this, stream, conId, unpipe))
+        .on('data', queue.resetEcho)
+        .pause(); // revert side effect from previous op
 
     streamSequence
         .reduce(function pipeStream(prev, next) {
