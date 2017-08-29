@@ -33,7 +33,7 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-function createQueue(config, callback, setQueueSize, destroy) {
+function createQueue(config, callback, setQueueSize, destroy, log) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
@@ -57,7 +57,7 @@ function createQueue(config, callback, setQueueSize, destroy) {
 
     function emitEcho() {
         if (echoRetriesLimit && ++echoRetries > echoRetriesLimit) {
-            r.push([errors.echoTimeout(), {opcode: 'echo', mtid: 'error'}]);
+            log && log.error && log.error(errors.echoTimeout());
             destroy();
         } else {
             clearTimeout(echoTimer);
@@ -504,7 +504,7 @@ Port.prototype.pipe = function pipe(stream, context) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
     }, queueSize, function queueDestroy() {
         stream.end();
-    });
+    }, this.log);
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
         return streamSequence.reduce(function unpipeStream(prev, next) {
@@ -514,16 +514,30 @@ Port.prototype.pipe = function pipe(stream, context) {
     if (context && conId) {
         this.queues[conId] = queue;
         if (this.socketTimeOut) {
+            // TODO: This can be moved to ut-port-tcp as it is net.Socket specific functionality
             stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId, unpipe));
         }
     } else {
         this.queue = queue;
     }
+    let receiveTimer;
+    let resetReceiveTimer = () => {
+        clearTimeout(receiveTimer);
+        let receiveTimeout = this.config && this.config.receiveTimeout;
+        if (receiveTimeout > 0) {
+            receiveTimer = setTimeout(() => {
+                this.log && this.log.error && this.log.error(errors.receiveTimeout());
+                stream.end();
+            }, receiveTimeout);
+        }
+    };
+    resetReceiveTimer();
     stream
         .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
+        .on('end', () => clearTimeout(receiveTimer))
         .on('error', handleStreamClose.bind(this, stream, conId, unpipe))
+        .on('data', resetReceiveTimer)
         .on('data', queue.resetEcho);
-
     streamSequence
         .reduce(function pipeStream(prev, next) {
             return next ? prev.pipe(next) : prev;
