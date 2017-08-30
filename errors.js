@@ -14,6 +14,8 @@ module.exports = {
     missingMeta: create('missingMeta', Port, 'Missing metadata'),
     notConnected: create('notConnected', Port, 'No connection'),
     disconnect: create('disconnect', Port, 'Port disconnected'),
+    echoTimeout: create('echoTimeout', Port, 'Echo retries limit exceeded'),
+    receiveTimeout: create('receiveTimeout', Port, 'Receive timeout'),
     unhandledError: function($meta) {
         var err = new UnhandledError('Unhandled Error' + ($meta.errorMessage ? ': ' + $meta.errorMessage : ''));
         if ($meta.errorCode) {
