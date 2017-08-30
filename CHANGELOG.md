@@ -1,3 +1,13 @@
+<a name="5.15.0"></a>
+# [5.15.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.14.0...v5.15.0) (2017-08-30)
+
+
+### Features
+
+* added echo.interval, echo.retries and receiveTimeout in configuration([#31](https://github.com/softwaregroup-bg/ut-bus/issues/31)) ([3ebecbe](https://github.com/softwaregroup-bg/ut-bus/commit/3ebecbe))
+
+
+
 <a name="5.14.0"></a>
 # [5.14.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.3...v5.14.0) (2017-08-22)
 
