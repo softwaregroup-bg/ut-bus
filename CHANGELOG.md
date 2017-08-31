@@ -1,3 +1,18 @@
+<a name="5.16.0"></a>
+# [5.16.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.15.0...v5.16.0) (2017-08-31)
+
+
+### Bug Fixes
+
+* stop ports properly ([5a26c48](https://github.com/softwaregroup-bg/ut-bus/commit/5a26c48))
+
+
+### Features
+
+* add this.isReady flag to indicate whether the port is ready - useful for asynchronous actions. e.g. httpserver health check ([7477eaa](https://github.com/softwaregroup-bg/ut-bus/commit/7477eaa))
+
+
+
 <a name="5.15.0"></a>
 # [5.15.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.14.0...v5.15.0) (2017-08-30)
 
