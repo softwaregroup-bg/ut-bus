@@ -136,6 +136,7 @@ function Port() {
     this.activeExecCount = null;
     this.activeSendCount = null;
     this.activeReceiveCount = null;
+    this.isReady = false;
 }
 
 Port.prototype.init = function init() {
@@ -186,7 +187,11 @@ Port.prototype.start = function start() {
 };
 
 Port.prototype.ready = function ready() {
-    return this.fireEvent('ready');
+    return this.fireEvent('ready')
+        .then((result) => {
+            this.isReady = true;
+            return result;
+        });
 };
 
 Port.prototype.fireEvent = function fireEvent(event) {
