@@ -136,6 +136,7 @@ function Port() {
     this.activeExecCount = null;
     this.activeSendCount = null;
     this.activeReceiveCount = null;
+    this.isReady = false;
 }
 
 Port.prototype.init = function init() {
@@ -186,7 +187,11 @@ Port.prototype.start = function start() {
 };
 
 Port.prototype.ready = function ready() {
-    return this.fireEvent('ready');
+    return this.fireEvent('ready')
+        .then((result) => {
+            this.isReady = true;
+            return result;
+        });
 };
 
 Port.prototype.fireEvent = function fireEvent(event) {
@@ -214,12 +219,13 @@ Port.prototype.fireEvent = function fireEvent(event) {
 };
 
 Port.prototype.stop = function stop() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
-    this.config.stop && this.config.stop.call(this);
-    this.streams.forEach(function streamEnd(stream) {
-        stream.end();
-    });
-    return true;
+    return this.fireEvent('stop')
+        .then(() => {
+            this.streams.forEach(function streamEnd(stream) {
+                stream.end();
+            });
+            return true;
+        });
 };
 
 Port.prototype.request = function request() {
