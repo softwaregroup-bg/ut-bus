@@ -270,6 +270,8 @@ module.exports = function Bus() {
         logLevel: 'warn',
         logFactory: null,
         performance: null,
+        last: {},
+        decay: {},
         stop: noOp,
 
         init: function() {
@@ -647,7 +649,12 @@ module.exports = function Bus() {
         },
 
         notification: function(method) {
-            return msg => this.dispatch(msg, {mtid: 'notification', method});
+            return (msg, $meta) => this.dispatch(msg, Object.assign($meta || {}, {mtid: 'notification', method}));
+        },
+
+        decayTime: function(key) {
+            var longestPrefix = (prev, cur) => (prev.length < cur.length && key.substr(0, cur.length) === cur) ? cur : prev;
+            return this.decay[Object.keys(this.decay).reduce(longestPrefix, '')];
         },
 
         dispatch: function() {
@@ -655,6 +662,31 @@ module.exports = function Bus() {
             var mtid;
             if ($meta) {
                 mtid = $meta.mtid;
+                if ($meta.resample) { // check if we need to discard messages coming earlier than specified decay time
+                    var now = Date.now();
+                    var last = this.last[$meta.resample];
+                    if (last) {
+                        if (last.decay > 0 && last.timeout <= now) {
+                            last.count = 1;
+                        } else {
+                            last.count++;
+                            mtid = 'discard';
+                        }
+                        last.timeout = now + last.decay;
+                         // todo persist last object in case decay > 0
+                    } else {
+                        var decay = this.decayTime($meta.resample);
+                        this.last[$meta.resample] = {
+                            count: 1,
+                            timeout: now + decay,
+                            decay
+                        };
+                        if (decay <= 0) {
+                            mtid = 'discard';
+                        }
+                        // todo persist last object in case decay > 0
+                    }
+                }
                 if (mtid === 'discard') {
                     return true;
                 }
