@@ -395,7 +395,13 @@ Port.prototype.encode = function encode(context) {
                 }
                 if (buffer) {
                     port.msgSent && port.msgSent(1);
-                    port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'out'}, message: buffer});
+                    port.log.trace && port.log.trace({
+                        $meta: {
+                            mtid: 'frame',
+                            opcode: 'out' + '/' + ((context && context.conId) || '*') + '/' + ($meta.trace || '*')
+                        },
+                        message: buffer
+                    });
                     callback(null, buffer);
                 } else {
                     callback();
