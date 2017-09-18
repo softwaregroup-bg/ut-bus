@@ -33,41 +33,56 @@ function handleStreamClose(stream, conId, done) {
     }
 }
 
-function createQueue(config, callback, setQueueSize) {
+function createQueue(config, callback, setQueueSize, destroy, log) {
     var q = [];
     var r = new Readable({objectMode: true});
     var forQueue = false;
     var empty = config && config.empty;
     var idleTime = config && config.idle;
     var idleTimer;
+    var echoInterval = config && config.echo && config.echo.interval;
+    var echoRetriesLimit = config && config.echo && config.echo.retries;
+    var echoRetries = 0;
+    var echoTimer;
 
     function emitEmpty() {
         callback('empty');
     }
 
     function emitIdle() {
-        if (idleTimer) {
-            clearTimeout(idleTimer);
-            idleTimer = false;
-        }
+        clearTimeout(idleTimer);
         idleTimer = setTimeout(emitIdle, idleTime);
         callback('idle');
     }
 
-    r.clearTimeout = function queueClearTimeout() {
-        if (idleTimer) {
-            clearTimeout(idleTimer);
-            idleTimer = false;
+    function emitEcho() {
+        if (echoRetriesLimit && ++echoRetries > echoRetriesLimit) {
+            log && log.error && log.error(errors.echoTimeout());
+            destroy();
+        } else {
+            clearTimeout(echoTimer);
+            echoTimer = echoInterval && setTimeout(emitEcho, echoInterval);
+            callback('echo');
         }
+    }
+
+    r.clearTimeout = function queueClearTimeout() {
+        clearTimeout(idleTimer);
+    };
+
+    r.clearEcho = function queueClearEcho() {
+        clearTimeout(echoTimer);
     };
 
     r.resetTimeout = function queueResetTimeout() {
-        if (idleTimer) {
-            clearTimeout(idleTimer);
-        }
-        if (idleTime) {
-            idleTimer = setTimeout(emitIdle, idleTime);
-        }
+        clearTimeout(idleTimer);
+        idleTimer = idleTime && setTimeout(emitIdle, idleTime);
+    };
+
+    r.resetEcho = function queueResetEcho() {
+        echoRetries = 0;
+        clearTimeout(echoTimer);
+        echoTimer = echoInterval && setTimeout(emitEcho, echoInterval);
     };
 
     r._read = function readQueue() {
@@ -95,10 +110,12 @@ function createQueue(config, callback, setQueueSize) {
         r.push(null);
         r.unpipe();
         r.clearTimeout();
+        r.clearEcho();
         r = q = undefined;
     };
 
     r.resetTimeout();
+    r.resetEcho();
 
     return r;
 };
@@ -119,6 +136,7 @@ function Port() {
     this.activeExecCount = null;
     this.activeSendCount = null;
     this.activeReceiveCount = null;
+    this.isReady = false;
 }
 
 Port.prototype.init = function init() {
@@ -170,33 +188,50 @@ Port.prototype.messageDispatch = function messageDispatch() {
 };
 
 Port.prototype.start = function start() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.start'}, id: this.config.id, config: this.config});
-    var startList = this.config.start ? [this.config.start] : [];
-    this.config.imports && this.config.imports.forEach(function foreachImports(imp) {
-        imp.match(/\.start$/) && startList.push(this.config[imp]);
-        this.config[imp + '.start'] && startList.push(this.config[imp + '.start']);
-    }.bind(this));
-    var promise = Promise.resolve();
-    startList.forEach((start) => {
-        promise = promise.then(() => start.call(this));
+    return this.fireEvent('start');
+};
+
+Port.prototype.ready = function ready() {
+    return this.fireEvent('ready')
+        .then((result) => {
+            this.isReady = true;
+            return result;
+        });
+};
+
+Port.prototype.fireEvent = function fireEvent(event) {
+    this.log.info && this.log.info({
+        $meta: {
+            mtid: 'event',
+            opcode: `port.${event}`
+        },
+        id: this.config.id,
+        config: this.config
     });
-    return promise
-        .then(result =>
-            Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('start', this))
-                .then(() => result)
-        );
+
+    var eventHandlers = this.config[event] ? [this.config[event]] : [];
+    if (Array.isArray(this.config.imports) && this.config.imports.length) {
+        var regExp = new RegExp(`\\.${event}$`);
+        this.config.imports.forEach((imp) => {
+            imp.match(regExp) && eventHandlers.push(this.config[imp]);
+            this.config[`${imp}.${event}`] && eventHandlers.push(this.config[`${imp}.${event}`]);
+        });
+    }
+
+    return eventHandlers.reduce((promise, eventHandler) => {
+        promise = promise.then(() => eventHandler.call(this));
+        return promise;
+    }, Promise.resolve()).then(result => Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent(event, this)).then(() => result);
 };
 
 Port.prototype.stop = function stop() {
-    this.log.info && this.log.info({$meta: {mtid: 'event', opcode: 'port.stop'}, id: this.config.id});
-    this.config.stop && this.config.stop.call(this);
-    this.streams.forEach(function streamEnd(stream) {
-        stream.end();
-    });
-
-    this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('start', this);
-
-    return true;
+    return this.fireEvent('stop')
+        .then(() => {
+            this.streams.forEach(function streamEnd(stream) {
+                stream.end();
+            });
+            return true;
+        });
 };
 
 Port.prototype.request = function request() {
@@ -508,7 +543,9 @@ Port.prototype.pipe = function pipe(stream, context) {
     }
     var queue = createQueue(this.config.queue, function queueEvent(name) {
         return port.receive(decode, [{}, {mtid: 'notification', opcode: name}], context);
-    }, queueSize);
+    }, queueSize, function queueDestroy() {
+        stream.end();
+    }, this.log);
     var streamSequence = [queue, encode, stream, decode];
     function unpipe() {
         return streamSequence.reduce(function unpipeStream(prev, next) {
@@ -518,15 +555,30 @@ Port.prototype.pipe = function pipe(stream, context) {
     if (context && conId) {
         this.queues[conId] = queue;
         if (this.socketTimeOut) {
+            // TODO: This can be moved to ut-port-tcp as it is net.Socket specific functionality
             stream.setTimeout(this.socketTimeOut, handleStreamClose.bind(this, stream, conId, unpipe));
         }
     } else {
         this.queue = queue;
     }
+    let receiveTimer;
+    let resetReceiveTimer = () => {
+        clearTimeout(receiveTimer);
+        let receiveTimeout = this.config && this.config.receiveTimeout;
+        if (receiveTimeout > 0) {
+            receiveTimer = setTimeout(() => {
+                this.log && this.log.error && this.log.error(errors.receiveTimeout());
+                stream.end();
+            }, receiveTimeout);
+        }
+    };
+    resetReceiveTimer();
     stream
         .on('end', handleStreamClose.bind(this, undefined, conId, unpipe))
-        .on('error', handleStreamClose.bind(this, stream, conId, unpipe));
-
+        .on('end', () => clearTimeout(receiveTimer))
+        .on('error', handleStreamClose.bind(this, stream, conId, unpipe))
+        .on('data', resetReceiveTimer)
+        .on('data', queue.resetEcho);
     streamSequence
         .reduce(function pipeStream(prev, next) {
             return next ? prev.pipe(next) : prev;

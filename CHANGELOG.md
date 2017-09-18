@@ -1,3 +1,38 @@
+<a name="5.16.0"></a>
+# [5.16.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.15.0...v5.16.0) (2017-08-31)
+
+
+### Bug Fixes
+
+* stop ports properly ([5a26c48](https://github.com/softwaregroup-bg/ut-bus/commit/5a26c48))
+
+
+### Features
+
+* add this.isReady flag to indicate whether the port is ready - useful for asynchronous actions. e.g. httpserver health check ([7477eaa](https://github.com/softwaregroup-bg/ut-bus/commit/7477eaa))
+
+
+
+<a name="5.15.0"></a>
+# [5.15.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.14.0...v5.15.0) (2017-08-30)
+
+
+### Features
+
+* added echo.interval, echo.retries and receiveTimeout in configuration([#31](https://github.com/softwaregroup-bg/ut-bus/issues/31)) ([3ebecbe](https://github.com/softwaregroup-bg/ut-bus/commit/3ebecbe))
+
+
+
+<a name="5.14.0"></a>
+# [5.14.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.3...v5.14.0) (2017-08-22)
+
+
+### Features
+
+* port events implementation ([#30](https://github.com/softwaregroup-bg/ut-bus/issues/30)) ([bd9c40b](https://github.com/softwaregroup-bg/ut-bus/commit/bd9c40b))
+
+
+
 <a name="5.13.3"></a>
 ## [5.13.3](https://github.com/softwaregroup-bg/ut-bus/compare/v5.13.2...v5.13.3) (2017-08-18)
 
