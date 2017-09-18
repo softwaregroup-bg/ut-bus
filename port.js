@@ -221,7 +221,10 @@ Port.prototype.fireEvent = function fireEvent(event) {
     return eventHandlers.reduce((promise, eventHandler) => {
         promise = promise.then(() => eventHandler.call(this));
         return promise;
-    }, Promise.resolve()).then(result => Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent(event, this)).then(() => result);
+    }, Promise.resolve())
+        .then(result =>
+            Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent(event, this)).then(() => result)
+        );
 };
 
 Port.prototype.stop = function stop() {
