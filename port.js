@@ -153,7 +153,12 @@ Port.prototype.init = function init() {
         prev.pub[next + '.publish'] = this.publish.bind(this);
         return prev;
     }.bind(this), methods);
-    return this.bus && Promise.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
+
+    return this.bus && Promise.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')])
+        .then(result =>
+            Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('init', this))
+                .then(() => result)
+        );
 };
 
 Port.prototype.messageDispatch = function messageDispatch() {
@@ -175,7 +180,11 @@ Port.prototype.start = function start() {
     startList.forEach((start) => {
         promise = promise.then(() => start.call(this));
     });
-    return promise;
+    return promise
+        .then(result =>
+            Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('start', this))
+                .then(() => result)
+        );
 };
 
 Port.prototype.stop = function stop() {
@@ -184,6 +193,9 @@ Port.prototype.stop = function stop() {
     this.streams.forEach(function streamEnd(stream) {
         stream.end();
     });
+
+    this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('start', this);
+
     return true;
 };
 
@@ -301,6 +313,9 @@ Port.prototype.decode = function decode(context, concurrency) {
                 })
                 .catch(function decodeConvertError(error) {
                     port.error(error);
+                    if (!error || !error.keepConnection) {
+                        port.receive(stream, [errors.disconnect(error), $meta], context);
+                    }
                 });
         } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
             port.receive(stream, [{payload: msg}, {mtid: 'notification', opcode: 'payload', conId: context && context.conId}], context);
