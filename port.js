@@ -172,11 +172,11 @@ Port.prototype.init = function init() {
         return prev;
     }.bind(this), methods);
 
-    return this.bus && Promise.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')])
-        .then(result =>
-            Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('init', this))
-                .then(() => result)
-        );
+    return this.bus && Promise.all([
+        this.bus.register(methods.req, 'ports'),
+        this.bus.subscribe(methods.pub, 'ports'),
+        this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('init', this)
+    ]);
 };
 
 Port.prototype.messageDispatch = function messageDispatch() {
