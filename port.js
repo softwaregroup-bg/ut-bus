@@ -171,7 +171,12 @@ Port.prototype.init = function init() {
         prev.pub[next + '.publish'] = this.publish.bind(this);
         return prev;
     }.bind(this), methods);
-    return this.bus && Promise.all([this.bus.register(methods.req, 'ports'), this.bus.subscribe(methods.pub, 'ports')]);
+
+    return this.bus && Promise.all([
+        this.bus.register(methods.req, 'ports'),
+        this.bus.subscribe(methods.pub, 'ports'),
+        this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent('init', this)
+    ]);
 };
 
 Port.prototype.messageDispatch = function messageDispatch() {
@@ -203,6 +208,7 @@ Port.prototype.fireEvent = function fireEvent(event) {
         id: this.config.id,
         config: this.config
     });
+
     var eventHandlers = this.config[event] ? [this.config[event]] : [];
     if (Array.isArray(this.config.imports) && this.config.imports.length) {
         var regExp = new RegExp(`\\.${event}$`);
@@ -215,7 +221,10 @@ Port.prototype.fireEvent = function fireEvent(event) {
     return eventHandlers.reduce((promise, eventHandler) => {
         promise = promise.then(() => eventHandler.call(this));
         return promise;
-    }, Promise.resolve());
+    }, Promise.resolve())
+        .then(result =>
+            Promise.resolve(this.bus && typeof this.bus.portEvent === 'function' && this.bus.portEvent(event, this)).then(() => result)
+        );
 };
 
 Port.prototype.stop = function stop() {
@@ -342,6 +351,9 @@ Port.prototype.decode = function decode(context, concurrency) {
                 })
                 .catch(function decodeConvertError(error) {
                     port.error(error);
+                    if (!error || !error.keepConnection) {
+                        port.receive(stream, [errors.disconnect(error), $meta], context);
+                    }
                 });
         } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
             port.receive(stream, [{payload: msg}, {mtid: 'notification', opcode: 'payload', conId: context && context.conId}], context);
