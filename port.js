@@ -191,7 +191,7 @@ Port.prototype.request = function request() {
             } else if ($meta && $meta.conId && this.queues[$meta.conId]) {
                 this.queues[$meta.conId].add(args);
             } else if (Object.keys(this.queues).length && port.connRouter && typeof port.connRouter === 'function') {
-                var queue = this.queues[port.connRouter(this.queues, args)];
+                var queue = this.queues[port.connRouter(this.queues, Array.prototype.slice.call(arguments))];
                 queue && queue.add(args);
             } else {
                 reject(errors.notConnected(this.config.id));
@@ -285,13 +285,19 @@ Port.prototype.decode = function decode(context) {
         port.msgReceived && port.msgReceived(1);
         if (port.codec) {
             $meta = {conId: context && context.conId};
-            when(port.codec.decode(msg, $meta, context))
+            return Promise.resolve()
+                .then(function decodeConvert() {
+                    return port.codec.decode(msg, $meta, context);
+                })
                 .then(function decodeConvertResolved(message) {
                     port.receive(stream, [message, $meta], context);
                     return message;
                 })
                 .catch(function decodeConvertError(error) {
                     port.error(error);
+                    if (!error || !error.keepConnection) {
+                        port.receive(stream, [errors.disconnect(error), $meta], context);
+                    }
                 });
         } else if (msg && msg.constructor && msg.constructor.name === 'Buffer') {
             port.receive(stream, [{payload: msg}, {mtid: 'notification', opcode: 'payload', conId: context && context.conId}], context);
