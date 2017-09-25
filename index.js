@@ -291,15 +291,15 @@ module.exports = function Bus() {
                 var net = require('net');
                 var utRPC = require('ut-rpc');
                 function connectionHandler(socket) {
-                    var context = {
+                    var connection = {
                         localAddress: socket.localAddress,
                         localPort: socket.localPort,
                         remoteAddress: socket.remoteAddress,
                         remotePort: socket.remotePort
                     };
-                    log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, context});
+                    log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, connection});
                     socket.on('close', () => {
-                        log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, context});
+                        log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, connection});
                     }).on('error', (err) => {
                         log && log.error && log.error(err);
                     }).on('data', function(msg) {
