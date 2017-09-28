@@ -148,13 +148,13 @@ Port.prototype.init = function init() {
             host: os.hostname(),
             impl: this.bus.performance.config.id || this.bus.config.implementation
         };
-        this.counter = function initCounters(fieldType, fieldCode, fieldName) {
-            return this.bus.performance.register(measurementName, fieldType, fieldCode, fieldName, 'standard', tags);
+        this.counter = function initCounters(fieldType, fieldCode, fieldName, interval) {
+            return this.bus.performance.register(measurementName, fieldType, fieldCode, fieldName, 'standard', tags, interval);
         }.bind(this);
-        this.latency = this.counter('average', 'lt', 'Latency');
-        this.msgSent = this.counter('counter', 'ms', 'Messages sent');
-        this.msgReceived = this.counter('counter', 'mr', 'Messages received');
-        this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count');
+        this.latency = this.counter('average', 'lt', 'Latency', 300);
+        this.msgSent = this.counter('counter', 'ms', 'Messages sent', 300);
+        this.msgReceived = this.counter('counter', 'mr', 'Messages received', 300);
+        this.activeExecCount = this.counter('gauge', 'ae', 'Active exec count', 300);
         this.activeSendCount = this.counter('gauge', 'as', 'Active send count');
         this.activeReceiveCount = this.counter('gauge', 'ar', 'Active receive count');
         if (this.bus.performance.measurements) {
