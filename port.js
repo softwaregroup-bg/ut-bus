@@ -378,7 +378,7 @@ Port.prototype.decode = function decode(context, concurrency) {
     }
 
     return this.createStream(function decodePacket(packet) {
-        port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: packet});
+        port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: packet, logName: context && context.session && context.session.logName});
         try {
             if (port.framePattern) {
                 port.bytesReceived && port.bytesReceived(packet.length);
@@ -514,7 +514,7 @@ Port.prototype.encode = function encode(context, concurrency) {
                 }
                 if (buffer) {
                     port.msgSent && port.msgSent(1);
-                    port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'out'}, message: buffer});
+                    port.log.trace && port.log.trace({$meta: {mtid: 'frame', opcode: 'out'}, message: buffer, logName: context && context.session && context.session.logName});
                     return buffer;
                 }
                 return discardChunk;
