@@ -1,3 +1,13 @@
+<a name="5.17.0"></a>
+# [5.17.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.16.0...v5.17.0) (2017-09-19)
+
+
+### Bug Fixes
+
+* disconnect on decode error ([6af7ecb](https://github.com/softwaregroup-bg/ut-bus/commit/6af7ecb))
+
+
+
 <a name="5.16.0"></a>
 # [5.16.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.15.0...v5.16.0) (2017-08-31)
 
