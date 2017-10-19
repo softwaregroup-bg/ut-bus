@@ -1,33 +1,7 @@
 'use strict';
 
 var assign = require('lodash.assign');
-var capitalize = require('lodash.capitalize');
 var errors = require('./errors');
-
-function createFieldError(errType, module, validation) {
-    var joiErrors = validation.error.details || [];
-    var fieldErrors = {};
-    var fieldErrorType = '';
-    var fieldErrorTypePieces = [];
-    module = module.split('.');
-    var errorCode = capitalize(module[0]) + errType;
-    var error = errors.bus(errorCode); // todo define validation errors hierarchy rules
-    error.code = errorCode;
-    joiErrors.forEach(function(err) {
-        fieldErrorType = 'Joi';
-        fieldErrorTypePieces = err.type.split('.');
-        fieldErrorTypePieces.forEach(function(errorPiece) {
-            fieldErrorType += capitalize(errorPiece);
-        });
-        fieldErrors[err.path] = {
-            code: fieldErrorType,
-            message: err.message,
-            errorPrint: err.message
-        };
-    });
-    error.fieldErrors = fieldErrors;
-    throw error;
-}
 
 function flattenAPI(data) {
     var result = {};
@@ -51,17 +25,12 @@ function flattenAPI(data) {
     return result;
 }
 
-function getOpcode(methodName) {
-    return methodName.split('.').pop() || 'request';
-}
-
 module.exports = function Bus() {
     // private fields
     var remotes = [];
     var locals = [];
     var log = {};
-    var cacheNotBound = {};
-    var cacheBound = {};
+    var importCache = {};
     var listReq = [];
     var listPub = [];
     var mapLocal = {};
@@ -196,14 +165,14 @@ module.exports = function Bus() {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {
                     methodNames.push(namespace + '.' + fn.name);
-                    localRegister(namespace, fn.name, adapt ? adapt(null, fn) : fn, adapt);
+                    localRegister(namespace, fn.name, fn, adapt);
                 }
             });
         } else {
             Object.keys(methods).forEach(function(key) {
                 if (methods[key] instanceof Function) {
                     methodNames.push(namespace + '.' + key);
-                    localRegister(namespace, key, adapt ? adapt(methods, methods[key]) : methods[key].bind(methods), adapt);
+                    localRegister(namespace, key, methods[key].bind(methods), adapt);
                 }
             });
         }
@@ -262,10 +231,11 @@ module.exports = function Bus() {
         // properties
         id: null,
         socket: 'bus',
+        canSkipSocket: true,
         server: false,
         req: {},
         pub: {},
-        local: {},
+        modules: {},
         last: {},
         decay: {},
         logLevel: 'warn',
@@ -385,7 +355,7 @@ module.exports = function Bus() {
                 });
         },
 
-        registerRemote: function(index, type, methods, cb) {
+        registerRemote: function(index, type, methods) {
             var id = this.id;
             var server = this.server;
             var adapt = {
@@ -417,7 +387,7 @@ module.exports = function Bus() {
                 root[method] = adapt(remote.createRemote(method, type));
             });
 
-            cb(undefined, 'remotes registered in ' + this.id);
+            return 'remotes registered in ' + this.id;
         },
 
         /**
@@ -428,25 +398,7 @@ module.exports = function Bus() {
          * @returns {promise}
          */
         register: function(methods, namespace) {
-            function adapt(self, f) {
-                return function() {
-                    var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
-                    var callback = arguments[arguments.length - 1];
-                    return Promise.resolve()
-                        .then(function() {
-                            return f.apply(self, args);
-                        })
-                        .then(function(result) {
-                            callback(undefined, result);
-                            return result;
-                        })
-                        .catch(function(error) {
-                            callback(error);
-                        });
-                };
-            }
-
-            return serverRegister(methods, namespace || this.id, this.socket ? adapt : false);
+            return serverRegister(methods, namespace || this.id, true);
         },
 
         /**
@@ -457,13 +409,13 @@ module.exports = function Bus() {
          * @returns {promise}
          */
         subscribe: function(methods, namespace) {
-            return serverRegister(methods, namespace || this.id);
+            return serverRegister(methods, namespace || this.id, false);
         },
 
         registerLocal: function(methods, namespace) {
             var x = {};
             x[namespace] = methods;
-            assign(this.local, flattenAPI(x));
+            assign(this.modules, flattenAPI(x));
         },
 
         start: function() {
@@ -476,7 +428,7 @@ module.exports = function Bus() {
         getMethod: function(typeName, methodType, methodName, validate) {
             var bus = this;
             var fn = null;
-            var local = false;
+            var unpack = false;
 
             function busMethod() {
                 var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
@@ -484,83 +436,60 @@ module.exports = function Bus() {
                 if (!$meta) {
                     applyArgs.push($meta = {method: methodName});
                 }
-                if (!methodName && $meta && typeof $meta.callback === 'function') {
-                    var cb = $meta.callback;
-                    delete $meta.callback;
-                    return cb.apply(this, applyArgs);
-                } else if (!fn) {
+                if (!fn) {
                     if (methodName) {
-                        fn = bus.local[methodName];
-                        if (fn) {
-                            local = true;
-                        } else if (!bus.socket) {
-                            fn = findMethod(mapLocal, mapLocal, methodName, methodType);
-                        }
+                        bus.canSkipSocket && (fn = findMethod(mapLocal, mapLocal, methodName, methodType));
+                        fn && (unpack = true);
                     }
                     if (!fn && bus[typeName]) {
                         fn = bus[typeName]['master.' + methodType];
                     }
                 }
                 if (fn) {
-                    if (!local) {
-                        if (!bus.socket) {
-                            throw errors.bus('Invalid use of getMethod when not using socket');
-                        }
-
-                        if (methodName) {
-                            if (!$meta) {
-                                applyArgs.push({
-                                    opcode: methodName.split('.').pop(),
-                                    mtid: 'request',
-                                    method: methodName
-                                });
-                            } else {
-                                $meta.opcode = methodName.split('.').pop();
-                                $meta.mtid = 'request';
-                                $meta.method = methodName;
-                            }
-                        }
-                        // else {applyArgs.push({});}
-                    }
-                    if (local && validate && bus.local[methodName]) {
-                        var requestSchema = validate.request && bus.local[methodName].request;
-                        var responseSchema = validate.response && bus.local[methodName].response;
-                        var joi = (requestSchema || responseSchema) && require('joi');
-                        if (requestSchema) {
-                            var requestValidation = joi.validate(applyArgs[0], requestSchema, {abortEarly: false});
-                            if (requestValidation.error) {
-                                return createFieldError('RequestFieldError', methodName, requestValidation);
-                            }
-                        }
-                        if (responseSchema) {
-                            var response = fn.apply(this, applyArgs);
-                            var validateResult = function(result) {
-                                var responseValidation = joi.validate(result, responseSchema, {abortEarly: false});
-                                if (responseValidation.error) {
-                                    return createFieldError('ResponseFieldError', methodName, responseValidation);
-                                } else {
-                                    return result;
-                                }
-                            };
-                            return Promise.resolve(response).then(validateResult).catch(validateResult);
+                    if (methodName) {
+                        if (!$meta) {
+                            applyArgs.push({
+                                opcode: methodName.split('.').pop(),
+                                mtid: 'request',
+                                method: methodName
+                            });
+                        } else {
+                            $meta.opcode = methodName.split('.').pop();
+                            $meta.mtid = 'request';
+                            $meta.method = methodName;
                         }
                     }
-                    return Promise.resolve().then(() => fn.apply(this, applyArgs));
+                    return Promise.resolve()
+                        .then(() => {
+                            return fn.apply(this, applyArgs);
+                        })
+                        .then(result => {
+                            if (!unpack) {
+                                return result;
+                            }
+                            result.length > 1 && $meta && assign($meta, result[result.length - 1]);
+                            return result[0];
+                        }, error => {
+                            if (!unpack) {
+                                return Promise.reject(error);
+                            }
+                            $meta.mtid = 'error';
+                            return Promise.reject(processError(error, $meta));
+                        });
                 } else {
                     return Promise.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
                 }
             }
 
-            if (bus.local[methodName]) {
-                assign(busMethod, bus.local[methodName]);
+            if (bus.modules[methodName]) {
+                assign(busMethod, bus.modules[methodName]);
             }
             return busMethod;
         },
 
         importMethods: function(target, methods, validate, binding, single) {
-            var local = this.local;
+            var modules = this.modules;
             var self = this;
-            var cache = binding ? cacheNotBound : cacheBound;
 
             function startRetry(fn, {timeout, retry}) {
                 return new Promise((resolve, reject) => {
@@ -578,52 +507,12 @@ module.exports = function Bus() {
             };
 
             function importMethod(methodName) {
-                if (cache[methodName]) {
-                    if (target !== cache) {
-                        target[methodName] = binding ? cache[methodName].bind(binding) : cache[methodName];
-                    }
+                if (!binding && importCache !== target && importCache[methodName]) {
+                    target[methodName] = importCache[methodName];
                     return;
                 }
                 var method;
-                if (self.socket) {
-                    method = self.getMethod('req', 'request', methodName, validate);
-                } else {
-                    method = function imported(msg) {
-                        var fn = local[methodName];
-                        var stackInfo = {};
-                        var setStack = error => {
-                            error.stack = error.stack + '-- imported ' + methodName + ' ' + stackInfo.stack;
-                            throw error;
-                        };
-
-                        if (fn) {
-                            if (Error.captureStackTrace) {
-                                Error.captureStackTrace(stackInfo, imported);
-                            } else {
-                                stackInfo = new Error();
-                            }
-                            return Promise
-                                .resolve(fn.apply(this, Array.prototype.slice.call(arguments)))
-                                .catch(setStack);
-                        }
-
-                        fn = findMethod(mapLocal, mapLocal, methodName, 'request');
-                        if (fn) {
-                            if (Error.captureStackTrace) {
-                                Error.captureStackTrace(stackInfo, imported);
-                            } else {
-                                stackInfo = new Error();
-                            }
-                            return fn(msg, {mtid: 'request', opcode: getOpcode(methodName), method: methodName})
-                                .then(result => result[0])
-                                .catch(setStack);
-                        } else {
-                            throw errors.methodNotFound({params: {method: methodName}});
-                        }
-                    };
-                }
-
-                // target[methodName] = binding ? assign(method.bind(binding), method) : method;
+                method = self.getMethod('req', 'request', methodName, validate);
                 target[methodName] = assign(function(msg, $meta) {
                     if ($meta && $meta.timeout) {
                         return startRetry(() => method.apply(binding, arguments), $meta);
@@ -632,9 +521,8 @@ module.exports = function Bus() {
                     }
                 }, method);
 
-                if (target !== cacheBound) {
-                    cacheBound[methodName] = target[methodName];
-                    cacheNotBound[methodName] = method;
+                if (target !== importCache) {
+                    importCache[methodName] = target[methodName];
                 }
             }
 
@@ -643,12 +531,16 @@ module.exports = function Bus() {
                 // create regular expression matching all listed methods as passed or as prefixes
                 var exp = new RegExp(methods.map(function(m) { return '(^' + m.replace(/\./g, '\\.') + (single ? '$)' : '(?:\\.(?!\\.).+)?$)'); }).join('|'), 'i');
 
-                Object.keys(local).forEach(function(name) {
+                Object.keys(modules).forEach(function(name) {
                     var match = name.match(exp);
                     if (match) {
-                        var x = local[name];
+                        var x = modules[name];
                         if (typeof x === 'function') {
-                            importMethod(name);
+                            if (!binding) {
+                                importMethod(name);
+                            } else {
+                                target[name] = assign((...params) => x.apply(binding, params), x);
+                            }
                         } else {
                             target[name] = x;
                         }
@@ -667,10 +559,10 @@ module.exports = function Bus() {
         },
 
         importMethod: function(methodName, validate) {
-            var result = cacheBound[methodName];
+            var result = importCache[methodName];
             if (!result) {
-                this.importMethods(cacheBound, [methodName], validate, undefined, true);
-                result = cacheBound[methodName];
+                this.importMethods(importCache, [methodName], validate, undefined, true);
+                result = importCache[methodName];
             }
 
             return result;
@@ -725,11 +617,6 @@ module.exports = function Bus() {
                         return this.masterPublish.apply(this, Array.prototype.slice.call(arguments));
                     }
                 } else {
-                    if ($meta && typeof $meta.callback === 'function') {
-                        var cb = $meta.callback;
-                        delete $meta.callback;
-                        return cb.apply(this, Array.prototype.slice.call(arguments));
-                    }
                     var f = findMethod(mapLocal, mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
                     if (f) {
                         return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)))
