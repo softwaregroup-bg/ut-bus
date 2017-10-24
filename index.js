@@ -430,11 +430,13 @@ module.exports = function Bus() {
             var fn = null;
             var unpack = false;
 
-            function busMethod() {
-                var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
-                var applyArgs = Array.prototype.slice.call(arguments);
+            function busMethod(...params) {
+                var $meta = (params.length > 1 && params[params.length - 1]);
+                var $applyMeta;
                 if (!$meta) {
-                    applyArgs.push($meta = {method: methodName});
+                    params.push($applyMeta = {method: methodName});
+                } else {
+                    $applyMeta = params[params.length - 1] = Object.assign({}, $meta);
                 }
                 if (!fn) {
                     if (methodName) {
@@ -447,21 +449,13 @@ module.exports = function Bus() {
                 }
                 if (fn) {
                     if (methodName) {
-                        if (!$meta) {
-                            applyArgs.push({
-                                opcode: methodName.split('.').pop(),
-                                mtid: 'request',
-                                method: methodName
-                            });
-                        } else {
-                            $meta.opcode = methodName.split('.').pop();
-                            $meta.mtid = 'request';
-                            $meta.method = methodName;
-                        }
+                        $applyMeta.opcode = methodName.split('.').pop();
+                        $applyMeta.mtid = 'request';
+                        $applyMeta.method = methodName;
                     }
                     return Promise.resolve()
                         .then(() => {
-                            return fn.apply(this, applyArgs);
+                            return fn.apply(this, params);
                         })
                         .then(result => {
                             if (!unpack) {
@@ -473,7 +467,7 @@ module.exports = function Bus() {
                             if (!unpack) {
                                 return Promise.reject(error);
                             }
-                            $meta.mtid = 'error';
+                            $meta && ($meta.mtid = 'error');
                             return Promise.reject(processError(error, $meta));
                         });
                 } else {
