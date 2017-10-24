@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "6.0.0-ut6.0",
+  "version": "6.0.0-ut6.1",
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
