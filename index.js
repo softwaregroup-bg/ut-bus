@@ -236,6 +236,7 @@ module.exports = function Bus() {
         req: {},
         pub: {},
         modules: {},
+        local: {}, // todo remove
         last: {},
         decay: {},
         logLevel: 'warn',
