@@ -1,3 +1,16 @@
+<a name="5.11.13"></a>
+## [5.11.13](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.10...v5.11.13) (2017-11-06)
+
+
+### Bug Fixes
+
+* decay ([4bc6db4](https://github.com/softwaregroup-bg/ut-bus/commit/4bc6db4))
+* deps ([0167a93](https://github.com/softwaregroup-bg/ut-bus/commit/0167a93))
+* emails decay ([432e96e](https://github.com/softwaregroup-bg/ut-bus/commit/432e96e))
+* timeout ([c8a6941](https://github.com/softwaregroup-bg/ut-bus/commit/c8a6941))
+
+
+
 <a name="5.11.12"></a>
 ## [5.11.12](https://github.com/softwaregroup-bg/ut-bus/compare/v5.11.10...v5.11.12) (2017-09-25)
 
