@@ -465,10 +465,10 @@ module.exports = function Bus() {
                             result.length > 1 && $meta && assign($meta, result[result.length - 1]);
                             return result[0];
                         }, error => {
+                            $meta && ($meta.mtid = 'error');
                             if (!unpack) {
                                 return Promise.reject(error);
                             }
-                            $meta && ($meta.mtid = 'error');
                             return Promise.reject(processError(error, $meta));
                         });
                 } else {
