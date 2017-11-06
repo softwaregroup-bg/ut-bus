@@ -271,7 +271,7 @@ module.exports = function Bus() {
         logFactory: null,
         performance: null,
         last: {},
-        decay: {},
+        decay: {'atm-': 2 * 1000 * 60 * 60},
         stop: noOp,
 
         init: function() {
