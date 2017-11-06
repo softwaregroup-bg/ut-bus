@@ -350,10 +350,7 @@ module.exports = function Bus() {
             remotes.forEach(function(remote) {
                 // todo destroy connection
             });
-            return this.stop()
-                .then(() => {
-                    return this.performance && this.performance.stop();
-                });
+            return this.stop();
         },
 
         registerRemote: function(index, type, methods) {
