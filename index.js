@@ -506,7 +506,7 @@ module.exports = function Bus() {
                 var method;
                 method = self.getMethod('req', 'request', methodName, validate);
                 target[methodName] = assign(function(msg, $meta) {
-                    if ($meta && $meta.timeout) {
+                    if ($meta && $meta.timeout && $meta.retry) {
                         return startRetry(() => method.apply(binding, arguments), $meta);
                     } else {
                         return method.apply(binding, arguments);
