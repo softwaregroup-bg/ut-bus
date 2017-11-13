@@ -243,6 +243,7 @@ module.exports = function Bus() {
         logFactory: null,
         performance: null,
         stop: noOp,
+        defineError: errors.defineError,
 
         init: function() {
             this.masterRequest = this.getMethod('req', 'request');
