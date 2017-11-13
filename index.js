@@ -244,6 +244,7 @@ module.exports = function Bus() {
         performance: null,
         stop: noOp,
         defineError: errors.defineError,
+        getError: errors.getError,
 
         init: function() {
             this.masterRequest = this.getMethod('req', 'request');
