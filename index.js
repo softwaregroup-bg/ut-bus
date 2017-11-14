@@ -300,6 +300,14 @@ module.exports = function Bus() {
                     log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, connection});
                     socket.on('close', () => {
                         log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, connection});
+
+                        locals.splice(locals.indexOf(rpc), 1);
+                        rpc.remotes.forEach((remote) => {
+                            remotes.splice(remotes.indexOf(remote), 1);
+                        });
+
+                        cacheBound = {};
+                        cacheNotBound = {};
                     }).on('error', (err) => {
                         log && log.error && log.error(err);
                     }).on('data', function(msg) {
@@ -308,8 +316,24 @@ module.exports = function Bus() {
                     var rpc = utRPC({
                         registerRemote: self.registerRemote.bind(self, locals.length)
                     }, self.server, log);
+                    rpc.methods = [];
+                    rpc.remotes = [];
                     locals.push(rpc);
+
+                    self.server && rpc.on('close', function() {
+                        var root = self['req'];
+
+                        rpc.methods.forEach(remote => {
+                            Object.keys(root).filter(local => {
+                                return local.match(remote.match(/^([^.]+).([^.]+)/)[0]);
+                            }).forEach(key => {
+                                delete root[key]
+                            });
+                        });
+                    });
+
                     rpc.on('remote', function(remote) {
+                        rpc.remotes.push(remote);
                         remotes.push(remote);
                         var methods = [
                             registerRemoteMethods([remote], listReq, true),
@@ -415,6 +439,7 @@ module.exports = function Bus() {
             var remote = locals[index];
             methods.forEach(function(method) {
                 root[method] = adapt(remote.createRemote(method, type));
+                remote.methods.push(method);
             });
 
             cb(undefined, 'remotes registered in ' + this.id);
