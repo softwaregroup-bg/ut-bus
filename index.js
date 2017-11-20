@@ -545,7 +545,7 @@ module.exports = function Bus() {
                                 target[name] = Object.assign((...params) => {
                                     x.super = newSuper;
                                     return x.apply(binding, params);
-                                }, x);
+                                }, x, {super: newSuper});
                             }
                         } else {
                             target[name] = x;
