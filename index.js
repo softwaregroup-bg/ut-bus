@@ -1,6 +1,4 @@
 'use strict';
-
-var assign = require('lodash.assign');
 var errors = require('./errors');
 
 function flattenAPI(data) {
@@ -80,7 +78,17 @@ module.exports = function Bus() {
                 delete $meta.destination;
                 return fn.apply(undefined, Array.prototype.slice.call(arguments));
             } else {
-                return Promise.reject($meta.destination ? errors.destinationNotFound({params: {destination: {method: $meta.destination}}}) : errors.methodNotFound({params: {method}}));
+                return Promise.reject(
+                    $meta.destination ? errors.destinationNotFound({
+                        params: {
+                            destination: {
+                                method: $meta.destination
+                            }
+                        }
+                    }) : errors.methodNotFound({
+                        params: {method}
+                    })
+                );
             }
         }
 
@@ -212,7 +220,7 @@ module.exports = function Bus() {
                     }
                 } else {
                     if (res.length > 1) {
-                        assign($meta, res[res.length - 1]);
+                        Object.assign($meta, res[res.length - 1]);
                         resolve(res[0]);
                     } else {
                         resolve(res);
@@ -415,7 +423,7 @@ module.exports = function Bus() {
         registerLocal: function(methods, namespace) {
             var x = {};
             x[namespace] = methods;
-            assign(this.modules, flattenAPI(x));
+            Object.assign(this.modules, flattenAPI(x));
         },
 
         start: function() {
@@ -461,7 +469,7 @@ module.exports = function Bus() {
                             if (!unpack) {
                                 return result;
                             }
-                            result.length > 1 && $meta && assign($meta, result[result.length - 1]);
+                            result.length > 1 && $meta && Object.assign($meta, result[result.length - 1]);
                             return result[0];
                         }, error => {
                             $meta && ($meta.mtid = 'error');
@@ -476,7 +484,7 @@ module.exports = function Bus() {
             }
 
             if (bus.modules[methodName]) {
-                assign(busMethod, bus.modules[methodName]);
+                Object.assign(busMethod, bus.modules[methodName]);
             }
             return busMethod;
         },
@@ -507,7 +515,7 @@ module.exports = function Bus() {
                 }
                 var method;
                 method = self.getMethod('req', 'request', methodName, validate);
-                target[methodName] = assign(function(msg, $meta) {
+                target[methodName] = Object.assign(function(msg, $meta) {
                     if ($meta && $meta.timeout && $meta.retry) {
                         return startRetry(() => method.apply(binding, arguments), $meta);
                     } else {
@@ -533,7 +541,11 @@ module.exports = function Bus() {
                             if (!binding) {
                                 importMethod(name);
                             } else {
-                                target[name] = assign((...params) => x.apply(binding, params), x);
+                                var newSuper = target[name];
+                                target[name] = Object.assign((...params) => {
+                                    x.super = newSuper;
+                                    return x.apply(binding, params);
+                                }, x);
                             }
                         } else {
                             target[name] = x;

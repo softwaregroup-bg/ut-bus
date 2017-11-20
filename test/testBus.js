@@ -1,9 +1,8 @@
 /* eslint no-console:0, no-process-exit:0 */
 
-var assign = require('lodash.assign');
 var Bus = require('../');
 
-var master = assign(new Bus(), {
+var master = Object.assign(new Bus(), {
     server: true,
     logLevel: 'trace',
     socket: 'test',
@@ -11,7 +10,7 @@ var master = assign(new Bus(), {
     logFactory: null
 });
 
-var worker1 = assign(new Bus(), {
+var worker1 = Object.assign(new Bus(), {
     server: false,
     logLevel: 'trace',
     socket: 'test',
@@ -19,7 +18,7 @@ var worker1 = assign(new Bus(), {
     logFactory: null
 });
 
-var worker2 = assign(new Bus(), {
+var worker2 = Object.assign(new Bus(), {
     server: false,
     logLevel: 'trace',
     socket: 'test',
