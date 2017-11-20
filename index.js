@@ -541,11 +541,10 @@ module.exports = function Bus() {
                             if (!binding) {
                                 importMethod(name);
                             } else {
-                                var newSuper = target[name];
-                                target[name] = Object.assign((...params) => {
-                                    x.super = newSuper;
+                                var f = target[name] = Object.assign((...params) => {
+                                    x.super = f.super;
                                     return x.apply(binding, params);
-                                }, x, {super: newSuper});
+                                }, x, {super: target[name]});
                             }
                         } else {
                             target[name] = x;
