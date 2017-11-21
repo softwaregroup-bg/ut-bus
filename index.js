@@ -251,8 +251,7 @@ module.exports = function Bus() {
         logFactory: null,
         performance: null,
         stop: noOp,
-        defineError: errors.defineError,
-        getError: errors.getError,
+        errors,
 
         init: function() {
             this.masterRequest = this.getMethod('req', 'request');
@@ -433,10 +432,11 @@ module.exports = function Bus() {
             ]);
         },
 
-        getMethod: function(typeName, methodType, methodName, validate) {
+        getMethod: function(typeName, methodType, methodName, options) {
             var bus = this;
             var fn = null;
             var unpack = false;
+            var fallback = options && options.fallback;
 
             function busMethod(...params) {
                 var $meta = (params.length > 1 && params[params.length - 1]);
@@ -472,6 +472,12 @@ module.exports = function Bus() {
                             result.length > 1 && $meta && Object.assign($meta, result[result.length - 1]);
                             return result[0];
                         }, error => {
+                            if (fallback && error instanceof errors.methodNotFound) {
+                                fn = fallback;
+                                fallback = false;
+                                unpack = false;
+                                return fn.apply(this, params);
+                            }
                             $meta && ($meta.mtid = 'error');
                             if (!unpack) {
                                 return Promise.reject(error);
@@ -489,7 +495,7 @@ module.exports = function Bus() {
             return busMethod;
         },
 
-        importMethods: function(target, methods, validate, binding, single) {
+        importMethods: function(target, methods, options, binding, single) {
             var modules = this.modules;
             var self = this;
 
@@ -514,7 +520,7 @@ module.exports = function Bus() {
                     return;
                 }
                 var method;
-                method = self.getMethod('req', 'request', methodName, validate);
+                method = self.getMethod('req', 'request', methodName, options);
                 target[methodName] = Object.assign(function(msg, $meta) {
                     if ($meta && $meta.timeout && $meta.retry) {
                         return startRetry(() => method.apply(binding, arguments), $meta);
@@ -563,10 +569,10 @@ module.exports = function Bus() {
             }
         },
 
-        importMethod: function(methodName, validate) {
+        importMethod: function(methodName, options) {
             var result = importCache[methodName];
             if (!result) {
-                this.importMethods(importCache, [methodName], validate, undefined, true);
+                this.importMethods(importCache, [methodName], options, undefined, true);
                 result = importCache[methodName];
             }
 
