@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "glob": "7.1.2",
-    "ut-tools": "^5.29.14"
+    "ut-tools": "^5.30.0"
   },
   "repository": {
     "type": "git",
