@@ -33,9 +33,9 @@ module.exports = function Bus() {
     var listPub = [];
     var mapLocal = {};
 
-    function findMethod(where, cache, methodName, type) {
+    function findMethod(where, methodName, type) {
         var key = ['ports', methodName, type].join('.');
-        var result = cache[key] || where[key] || where[methodName];
+        var result = where[key] || where[methodName];
         if (!result) {
             var names = methodName.split('.');
             while (names.length) {
@@ -50,17 +50,9 @@ module.exports = function Bus() {
         return result;
     }
 
-    /**
-     * Get publishing method
-     *
-     * @returns {function()} publish(msg) that publishes message
-     *
-     */
-    function _publish(thisPub) {
-        var pub = {};
-
-        function publish() {
-            var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
+    function findMethodIn(where, type) {
+        function search() {
+            var $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             var method = $meta.method;
             if (!method) {
                 if ($meta.mtid === 'error') {
@@ -73,7 +65,7 @@ module.exports = function Bus() {
                 }
                 return Promise.reject(errors.missingMethod());
             }
-            var fn = findMethod(thisPub, pub, $meta.destination || method, 'publish');
+            var fn = findMethod(where, $meta.destination || method, type);
             if (fn) {
                 delete $meta.destination;
                 return fn.apply(undefined, Array.prototype.slice.call(arguments));
@@ -81,9 +73,7 @@ module.exports = function Bus() {
                 return Promise.reject(
                     $meta.destination ? errors.destinationNotFound({
                         params: {
-                            destination: {
-                                method: $meta.destination
-                            }
+                            destination: $meta.destination
                         }
                     }) : errors.methodNotFound({
                         params: {method}
@@ -92,41 +82,7 @@ module.exports = function Bus() {
             }
         }
 
-        return publish;
-    }
-
-    /**
-     * Get rpc method
-     *
-     * @returns {function()} request(msg) that executes remote procedure
-     *
-     */
-    function _request(thisRPC) {
-        var RPC = {};
-
-        function request() {
-            var $meta = (arguments.length && arguments[arguments.length - 1]) || {};
-            var method = $meta.method;
-            if (!method) {
-                return Promise.reject(errors.missingMethod());
-            }
-            var fn = findMethod(thisRPC, RPC, $meta.destination || method, 'request');
-            if (fn) {
-                delete $meta.destination;
-                return fn.apply(undefined, Array.prototype.slice.call(arguments))
-                    .then(function(result) {
-                        return [result, $meta];
-                    })
-                    .catch(function(error) {
-                        $meta.mtid = 'error';
-                        throw error;
-                    });
-            } else {
-                return Promise.reject($meta.destination ? errors.destinationNotFound({params: {destination: $meta.destination}}) : errors.methodNotFound({params: {method}}));
-            }
-        }
-
-        return request;
+        return search;
     }
 
     function registerRemoteMethods(where, methodNames, adapt) {
@@ -207,7 +163,7 @@ module.exports = function Bus() {
     }
 
     function handleRPCResponse(obj, fn, args, server) {
-        var $meta = (args.length && args[args.length - 1]);
+        var $meta = (args.length > 1 && args[args.length - 1]);
         return new Promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
@@ -219,12 +175,7 @@ module.exports = function Bus() {
                         reject(server ? err : processError(err, $meta));
                     }
                 } else {
-                    if (res.length > 1) {
-                        Object.assign($meta, res[res.length - 1]);
-                        resolve(res[0]);
-                    } else {
-                        resolve(res);
-                    }
+                    resolve(res);
                 }
             });
             fn.apply(obj, args);
@@ -254,8 +205,8 @@ module.exports = function Bus() {
         errors,
 
         init: function() {
-            this.masterRequest = this.getMethod('req', 'request');
-            this.masterPublish = this.getMethod('pub', 'publish');
+            this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
+            this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             var self = this;
             return new Promise(function(resolve, reject) {
@@ -427,8 +378,8 @@ module.exports = function Bus() {
 
         start: function() {
             return Promise.all([
-                this.register([_request(this.req)]),
-                this.subscribe([_publish(this.pub)])
+                this.register({request: findMethodIn(this.req, 'request')}),
+                this.subscribe({publish: findMethodIn(this.pub, 'publish')})
             ]);
         },
 
@@ -448,7 +399,7 @@ module.exports = function Bus() {
                 }
                 if (!fn) {
                     if (methodName) {
-                        bus.canSkipSocket && (fn = findMethod(mapLocal, mapLocal, methodName, methodType));
+                        bus.canSkipSocket && (fn = findMethod(mapLocal, methodName, methodType));
                         fn && (unpack = true);
                     }
                     if (!fn && bus[typeName]) {
@@ -466,10 +417,9 @@ module.exports = function Bus() {
                             return fn.apply(this, params);
                         })
                         .then(result => {
-                            if (!unpack) {
+                            if (!unpack || (options && options.returnMeta)) {
                                 return result;
                             }
-                            result.length > 1 && $meta && Object.assign($meta, result[result.length - 1]);
                             return result[0];
                         }, error => {
                             if (fallback && error instanceof errors.methodNotFound) {
@@ -478,11 +428,7 @@ module.exports = function Bus() {
                                 unpack = false;
                                 return fn.apply(this, params);
                             }
-                            $meta && ($meta.mtid = 'error');
-                            if (!unpack) {
-                                return Promise.reject(error);
-                            }
-                            return Promise.reject(processError(error, $meta));
+                            return Promise.reject(processError(error, $applyMeta));
                         });
                 } else {
                     return Promise.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
@@ -589,7 +535,7 @@ module.exports = function Bus() {
         },
 
         dispatch: function() {
-            var $meta = (arguments.length && arguments[arguments.length - 1]);
+            var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
             var mtid;
             if ($meta) {
                 mtid = $meta.mtid;
@@ -628,12 +574,9 @@ module.exports = function Bus() {
                         return this.masterPublish.apply(this, Array.prototype.slice.call(arguments));
                     }
                 } else {
-                    var f = findMethod(mapLocal, mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
+                    var f = findMethod(mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
                     if (f) {
-                        return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)))
-                            .then(function(result) {
-                                return result[0];
-                            });
+                        return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
                     } else {
                         throw errors.methodNotFound({params: {method: $meta.method}});
                     }
