@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "6.0.0-ut6.12",
+  "version": "6.0.0-ut6.13",
   "description": "UT bus module",
   "dependencies": {
     "reconnect-core": "1.3.0",
