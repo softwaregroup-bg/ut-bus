@@ -1,9 +1,8 @@
 /* eslint no-console:0, no-process-exit:0 */
 
-var assign = require('lodash.assign');
 var Bus = require('../');
 
-var master = assign(new Bus(), {
+var master = Object.assign(new Bus(), {
     server: true,
     logLevel: 'trace',
     socket: 'test',
@@ -11,7 +10,7 @@ var master = assign(new Bus(), {
     logFactory: null
 });
 
-var worker1 = assign(new Bus(), {
+var worker1 = Object.assign(new Bus(), {
     server: false,
     logLevel: 'trace',
     socket: 'test',
@@ -19,7 +18,7 @@ var worker1 = assign(new Bus(), {
     logFactory: null
 });
 
-var worker2 = assign(new Bus(), {
+var worker2 = Object.assign(new Bus(), {
     server: false,
     logLevel: 'trace',
     socket: 'test',
@@ -54,11 +53,11 @@ function test() {
         return worker2.register({
             'test.m1': function(test) {
                 console.log('test.m1 argument ' + test);
-                return 'test.m1 invoked with argument ' + test;
+                return Promise.resolve('test.m1 invoked with argument ' + test);
             },
             m2: function(test) {
                 console.log('m2 argument ' + test);
-                return 'm2 invoked with argument ' + test;
+                return Promise.resolve('m2 invoked with argument ' + test);
             }
         })
         .then(function(r) {
@@ -66,7 +65,7 @@ function test() {
             return worker1.register({
                 m3: function(test) {
                     console.log('m3 argument ' + test);
-                    return 'm3 invoked with argument ' + test;
+                    return Promise.resolve('m3 invoked with argument ' + test);
                 }
             });
         })
