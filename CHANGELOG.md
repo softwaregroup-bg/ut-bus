@@ -1,3 +1,18 @@
+<a name="6.0.0"></a>
+# [6.0.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.18.0...v6.0.0) (2017-12-06)
+
+
+### Features
+
+* stop using callbacks ([a45e90d](https://github.com/softwaregroup-bg/ut-bus/commit/a45e90d))
+
+
+### BREAKING CHANGES
+
+* ports need to be based on ut-port
+
+
+
 <a name="5.18.0"></a>
 # [5.18.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.17.0...v5.18.0) (2017-10-26)
 
