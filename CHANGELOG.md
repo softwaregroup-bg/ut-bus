@@ -1,3 +1,22 @@
+<a name="5.18.0"></a>
+# [5.18.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.17.0...v5.18.0) (2017-10-26)
+
+
+### Bug Fixes
+
+* context property is already used for other purpose ([b1176f8](https://github.com/softwaregroup-bg/ut-bus/commit/b1176f8))
+* disconnect on decode error ([f470800](https://github.com/softwaregroup-bg/ut-bus/commit/f470800))
+* init is not handled as promise ([0e68bb6](https://github.com/softwaregroup-bg/ut-bus/commit/0e68bb6))
+* prepare for loging in different files ([#37](https://github.com/softwaregroup-bg/ut-bus/issues/37)) ([f65db52](https://github.com/softwaregroup-bg/ut-bus/commit/f65db52))
+* syntax ([4d08f95](https://github.com/softwaregroup-bg/ut-bus/commit/4d08f95))
+
+
+### Features
+
+* allow calculation of average metrics for the last 5 minutes ([#35](https://github.com/softwaregroup-bg/ut-bus/issues/35)) ([6e5cb19](https://github.com/softwaregroup-bg/ut-bus/commit/6e5cb19))
+
+
+
 <a name="5.17.0"></a>
 # [5.17.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.16.0...v5.17.0) (2017-09-19)
 
