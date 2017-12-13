@@ -1,3 +1,13 @@
+<a name="6.1.0"></a>
+# [6.1.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.0.0...v6.1.0) (2017-12-13)
+
+
+### Features
+
+* allow passing of timeout to importMethod options ([791a94b](https://github.com/softwaregroup-bg/ut-bus/commit/791a94b))
+
+
+
 <a name="6.0.0"></a>
 # [6.0.0](https://github.com/softwaregroup-bg/ut-bus/compare/v5.18.0...v6.0.0) (2017-12-06)
 
