@@ -1,5 +1,6 @@
 'use strict';
 var errors = require('./errors');
+var hrtime = require('browser-process-hrtime');
 
 function flattenAPI(data) {
     var result = {};
@@ -388,6 +389,8 @@ module.exports = function Bus() {
             var fn = null;
             var unpack = false;
             var fallback = options && options.fallback;
+            var timeoutSec = options && options.timeout && (Math.floor(options.timeout / 1000));
+            var timeoutNSec = options && options.timeout && (options.timeout % 1000 * 1000000);
 
             function busMethod(...params) {
                 var $meta = (params.length > 1 && params[params.length - 1]);
@@ -396,6 +399,15 @@ module.exports = function Bus() {
                     params.push($applyMeta = {method: methodName});
                 } else {
                     $applyMeta = params[params.length - 1] = Object.assign({}, $meta);
+                }
+                if (options && options.timeout && !$applyMeta.timeout) {
+                    $applyMeta.timeout = hrtime();
+                    $applyMeta.timeout[1] += timeoutNSec;
+                    $applyMeta.timeout[0] += timeoutSec;
+                    if ($applyMeta.timeout[1] >= 1000000000) {
+                        $applyMeta.timeout[0]++;
+                        $applyMeta.timeout[1] -= 1000000000;
+                    }
                 }
                 if (!fn) {
                     if (methodName) {
