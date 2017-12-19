@@ -429,6 +429,10 @@ module.exports = function Bus() {
                             return fn.apply(this, params);
                         })
                         .then(result => {
+                            if ($meta.timer) {
+                                let $resultMeta = (result.length > 1 && result[result.length - 1]);
+                                $resultMeta && $resultMeta.calls && $meta.timer($resultMeta.calls);
+                            }
                             if (!unpack || (options && options.returnMeta)) {
                                 return result;
                             }
@@ -538,7 +542,7 @@ module.exports = function Bus() {
         },
 
         notification: function(method) {
-            return (msg, $meta) => this.dispatch(msg, Object.assign($meta || {}, {mtid: 'notification', method}));
+            return (msg, $meta) => this.dispatch(msg, Object.assign({}, $meta, {mtid: 'notification', method}));
         },
 
         decayTime: function(key) {
