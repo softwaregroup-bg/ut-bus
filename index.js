@@ -600,6 +600,49 @@ module.exports = function Bus() {
             } else {
                 return false;
             }
+        },
+
+        get publicApi() {
+            let bus = this;
+            return {
+                get config() {
+                    return bus.config;
+                },
+                get local() {
+                    log && log.warn && log.warn('Calling bus.local directly is deprecated and will be removed in the next major version!');
+                    return bus.local;
+                },
+                get errors() {
+                    return bus.errors;
+                },
+                get performance() {
+                    return bus.performance;
+                },
+                registerLocal(methods, namespace) {
+                    return bus.registerLocal(methods, namespace);
+                },
+                importMethod(methodName, options) {
+                    return bus.importMethod(methodName, options);
+                },
+                importMethods(target, methods, options, binding, single) {
+                    return bus.importMethods(target, methods, options, binding, single);
+                },
+                notification(method) {
+                    return bus.notification(method);
+                },
+                register(methods, namespace) {
+                    return bus.register(methods, namespace);
+                },
+                subscribe(methods, namespace) {
+                    return bus.subscribe(methods, namespace);
+                },
+                dispatch(...params) {
+                    return bus.dispatch(...params);
+                },
+                portEventtypeof: bus.portEvent !== 'function' ? bus.portEvent : (...params) => {
+                    return bus.portEvent(...params);
+                }
+            };
         }
     };
 };
