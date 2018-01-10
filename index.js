@@ -609,7 +609,7 @@ module.exports = function Bus() {
                     return bus.config;
                 },
                 get local() {
-                    log && log.warn && log.warn('Calling bus.local directly is deprecated and will be removed in the next major version!');
+                    log && log.warn && log.warn('Accessing bus.local directly is deprecated and will be removed in the next major version!');
                     return bus.local;
                 },
                 get errors() {
