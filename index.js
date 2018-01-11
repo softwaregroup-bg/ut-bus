@@ -638,9 +638,6 @@ module.exports = function Bus() {
                 },
                 dispatch(...params) {
                     return bus.dispatch(...params);
-                },
-                portEventtypeof: bus.portEvent !== 'function' ? bus.portEvent : (...params) => {
-                    return bus.portEvent(...params);
                 }
             };
         }
