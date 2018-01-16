@@ -387,7 +387,7 @@ module.exports = function Bus() {
         getMethod: function(typeName, methodType, methodName, options) {
             var bus = this;
             var fn = null;
-            var unpack = false;
+            var unpack = true;
             var fallback = options && options.fallback;
             var timeoutSec = options && options.timeout && (Math.floor(options.timeout / 1000));
             var timeoutNSec = options && options.timeout && (options.timeout % 1000 * 1000000);
