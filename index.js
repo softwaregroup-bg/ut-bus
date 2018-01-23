@@ -618,6 +618,9 @@ module.exports = function Bus() {
                 get performance() {
                     return bus.performance;
                 },
+                set performance(performance) {
+                    bus.performance = performance;
+                },
                 registerLocal(methods, namespace) {
                     return bus.registerLocal(methods, namespace);
                 },
