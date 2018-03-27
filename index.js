@@ -1,5 +1,6 @@
 'use strict';
-var errors = require('./errors');
+var errors;
+var errorsFactory = require('./errors');
 var hrtime = require('browser-process-hrtime');
 
 function flattenAPI(data) {
@@ -203,12 +204,11 @@ module.exports = function Bus() {
         logFactory: null,
         performance: null,
         stop: noOp,
-        errors,
-
         init: function() {
             this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
             this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
+            this.errors = errors = errorsFactory(this);
             var self = this;
             return new Promise(function(resolve, reject) {
                 var pipe;
