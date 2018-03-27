@@ -23,4 +23,4 @@ module.exports = (bus) => {
             return err;
         }
     };
-}
+};
