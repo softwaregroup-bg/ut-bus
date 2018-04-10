@@ -464,14 +464,14 @@ module.exports = function Bus() {
             function startRetry(fn, {timeout, retry}) {
                 return new Promise((resolve, reject) => {
                     const attempt = () => fn()
-                    .then(resolve)
-                    .catch(error => { // todo maybe log these errors
-                        if (Date.now() > timeout) {
-                            reject(errors.timeout(error));
-                        } else {
-                            setTimeout(attempt, retry);
-                        }
-                    });
+                        .then(resolve)
+                        .catch(error => { // todo maybe log these errors
+                            if (Date.now() > timeout) {
+                                reject(errors.timeout(error));
+                            } else {
+                                setTimeout(attempt, retry);
+                            }
+                        });
                     attempt();
                 });
             };
