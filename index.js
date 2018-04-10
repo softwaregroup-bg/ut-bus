@@ -509,10 +509,11 @@ module.exports = function Bus() {
                             if (!binding) {
                                 importMethod(name);
                             } else {
-                                var f = target[name] = Object.assign((...params) => {
+                                var local = name.split('/').pop();
+                                var f = target[local] = Object.assign((...params) => {
                                     x.super = f.super;
                                     return x.apply(binding, params);
-                                }, x, {super: target[name]});
+                                }, x, {super: target[local]});
                             }
                         } else {
                             target[name] = x;
