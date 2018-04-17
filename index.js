@@ -1,5 +1,6 @@
 'use strict';
-var errors = require('./errors');
+var errors;
+var errorsFactory = require('./errors');
 var hrtime = require('browser-process-hrtime');
 
 function flattenAPI(data) {
@@ -203,12 +204,11 @@ module.exports = function Bus() {
         logFactory: null,
         performance: null,
         stop: noOp,
-        errors,
-
         init: function() {
             this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
             this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
+            this.errors = errors = errorsFactory(this);
             var self = this;
             return new Promise(function(resolve, reject) {
                 var pipe;
@@ -464,14 +464,14 @@ module.exports = function Bus() {
             function startRetry(fn, {timeout, retry}) {
                 return new Promise((resolve, reject) => {
                     const attempt = () => fn()
-                    .then(resolve)
-                    .catch(error => { // todo maybe log these errors
-                        if (Date.now() > timeout) {
-                            reject(errors.timeout(error));
-                        } else {
-                            setTimeout(attempt, retry);
-                        }
-                    });
+                        .then(resolve)
+                        .catch(error => { // todo maybe log these errors
+                            if (Date.now() > timeout) {
+                                reject(errors.timeout(error));
+                            } else {
+                                setTimeout(attempt, retry);
+                            }
+                        });
                     attempt();
                 });
             };
@@ -509,10 +509,11 @@ module.exports = function Bus() {
                             if (!binding) {
                                 importMethod(name);
                             } else {
-                                var f = target[name] = Object.assign((...params) => {
+                                var local = name.split('/').pop();
+                                var f = target[local] = Object.assign((...params) => {
                                     x.super = f.super;
                                     return x.apply(binding, params);
-                                }, x, {super: target[name]});
+                                }, x, {super: target[local]});
                             }
                         } else {
                             target[name] = x;
