@@ -1,5 +1,4 @@
 'use strict';
-var errors;
 var errorsFactory = require('./errors');
 var hrtime = require('browser-process-hrtime');
 
@@ -34,6 +33,7 @@ module.exports = function Bus() {
     var listReq = [];
     var listPub = [];
     var mapLocal = {};
+    var errors;
 
     function findMethod(where, methodName, type) {
         var key = ['ports', methodName, type].join('.');
