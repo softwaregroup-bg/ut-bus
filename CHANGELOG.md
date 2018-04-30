@@ -1,3 +1,13 @@
+<a name="6.4.0"></a>
+# [6.4.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.3.0...v6.4.0) (2018-04-30)
+
+
+### Features
+
+* add fetchErrors method ([2c865ae](https://github.com/softwaregroup-bg/ut-bus/commit/2c865ae))
+
+
+
 <a name="6.3.0"></a>
 # [6.3.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.3.0-rc-cubalibre.2...v6.3.0) (2018-04-18)
 
