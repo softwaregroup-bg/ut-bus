@@ -14,8 +14,10 @@ module.exports = (bus) => {
         fetchErrors: utError.fetch,
         timeout: create('timeout', Bus, 'Time out'),
         methodNotFound: create('methodNotFound', Bus, 'Method {method} not found'),
+        remoteMethodNotFound: create('remoteMethodNotFound', Bus, 'Remote method not found for "{bus}"'),
         destinationNotFound: create('destinationNotFound', Bus, 'Destination {destination} not found'),
         missingMethod: create('missingMethod', Bus),
+        notInitialized: create('notInitialized', Bus),
         unhandledError: function($meta) {
             var context = {
                 params: {

@@ -26,12 +26,8 @@ function flattenAPI(data) {
 
 module.exports = function Bus() {
     // private fields
-    var remotes = [];
-    var locals = [];
     var log = {};
     var importCache = {};
-    var listReq = [];
-    var listPub = [];
     var mapLocal = {};
     var errors;
 
@@ -87,70 +83,6 @@ module.exports = function Bus() {
         return search;
     }
 
-    function registerRemoteMethods(where, methodNames, adapt) {
-        return Promise.all(
-            where.reduce(function(prev, remote) {
-                prev.push(new Promise(function(resolve, reject) {
-                    remote.registerRemote(adapt ? 'req' : 'pub', methodNames, function(err, res) {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(res);
-                        }
-                    });
-                }));
-                return prev;
-            }, [])
-        );
-    }
-
-    function registerLocalMethods(where, methods) {
-        where.forEach(function(rpc) {
-            Object.keys(methods).forEach(function(name) {
-                rpc.createLocalCall(name, methods[name]);
-            });
-        });
-    }
-
-    function localRegister(nameSpace, name, fn, adapted) {
-        adapted ? listReq.push(nameSpace + '.' + name) : listPub.push(nameSpace + '.' + name);
-        mapLocal[nameSpace + '.' + name] = fn;
-    }
-
-    /**
-     * Register methods available to the bus and notify each remote to reload the bus methods
-     *
-     * @param {object} methods object containing methods to be registered
-     * @param {string} namespace to use when registering
-     * @param {function()} [adapt] function to adapt a promise method to callback suitable for RPC
-     * @returns {promise|object}
-     */
-    function serverRegister(methods, namespace, adapt) {
-        var methodNames = [];
-        if (methods instanceof Array) {
-            methods.forEach(function(fn) {
-                if (fn instanceof Function && fn.name) {
-                    methodNames.push(namespace + '.' + fn.name);
-                    localRegister(namespace, fn.name, fn, adapt);
-                }
-            });
-        } else {
-            Object.keys(methods).forEach(function(key) {
-                if (methods[key] instanceof Function) {
-                    methodNames.push(namespace + '.' + key);
-                    localRegister(namespace, key, methods[key].bind(methods), adapt);
-                }
-            });
-        }
-
-        if (!methodNames.length) {
-            return 0;
-        }
-        registerLocalMethods(locals, mapLocal);
-
-        return registerRemoteMethods(remotes, methodNames, adapt);
-    }
-
     function processError(obj, $meta) {
         if (obj && $meta && $meta.method) {
             if (Array.isArray(obj.method)) {
@@ -164,38 +96,18 @@ module.exports = function Bus() {
         return obj;
     }
 
-    function handleRPCResponse(obj, fn, args, server) {
-        var $meta = (args.length > 1 && args[args.length - 1]);
-        return new Promise(function(resolve, reject) {
-            args.push(function(err, res) {
-                if (err) {
-                    if (err.length > 1) {
-                        $meta.mtid = 'error';
-                        reject(server ? err[0] : processError(err[0], $meta));
-                    } else {
-                        $meta.mtid = 'error';
-                        reject(server ? err : processError(err, $meta));
-                    }
-                } else {
-                    resolve(res);
-                }
-            });
-            fn.apply(obj, args);
-        });
-    }
-
-    function noOp() {
-        return Promise.resolve();
-    };
-
     return {
         // properties
         id: null,
         socket: 'bus',
         canSkipSocket: true,
         server: false,
-        req: {},
-        pub: {},
+        rpc: {
+            start: () => Promise.reject(errors.notInitialized()),
+            exportMethod: () => Promise.reject(errors.notInitialized()),
+            masterMethod: () => Promise.reject(errors.notInitialized()),
+            stop: () => true
+        },
         modules: {},
         local: {}, // todo remove
         last: {},
@@ -203,150 +115,40 @@ module.exports = function Bus() {
         logLevel: 'warn',
         logFactory: null,
         performance: null,
-        stop: noOp,
+        stop: function() {
+            return this.rpc.stop();
+        },
         init: function() {
             this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
             this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             this.errors = errors = errorsFactory(this);
-            var self = this;
-            return new Promise(function(resolve, reject) {
-                var pipe;
-                if (!self.socket) {
-                    resolve();
-                    return;
-                } else if (typeof self.socket === 'string') {
-                    pipe = (process.platform === 'win32') ? '\\\\.\\pipe\\ut5-' + self.socket : '/tmp/ut5-' + self.socket + '.sock';
-                } else {
-                    pipe = self.socket;
-                }
-                var net = require('net');
-                var utRPC = require('ut-rpc');
-                function connectionHandler(socket) {
-                    var connection = {
-                        localAddress: socket.localAddress,
-                        localPort: socket.localPort,
-                        remoteAddress: socket.remoteAddress,
-                        remotePort: socket.remotePort
-                    };
-                    log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, connection});
-                    socket.on('close', () => {
-                        log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, connection});
-                    }).on('error', (err) => {
-                        log && log.error && log.error(err);
-                    }).on('data', function(msg) {
-                        log && log.trace && log.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
-                    });
-                    var rpc = utRPC({
-                        registerRemote: self.registerRemote.bind(self, locals.length)
-                    }, self.server, log);
-                    locals.push(rpc);
-                    rpc.on('remote', function(remote) {
-                        remotes.push(remote);
-                        var methods = [
-                            registerRemoteMethods([remote], listReq, true),
-                            registerRemoteMethods([remote], listPub, false),
-                            registerLocalMethods([rpc], mapLocal)
-                        ];
-                        return self.server ? methods : Promise.all(methods).then(resolve).catch(reject);
-                    });
-                    rpc.pipe(socket).pipe(rpc);
-                }
-                if (self.server) {
-                    if (process.platform !== 'win32') {
-                        var fs = require('fs');
-                        if (fs.existsSync(pipe)) {
-                            fs.unlinkSync(pipe);
-                        }
-                    }
-                    var server = net.createServer(connectionHandler)
-                        .on('close', () => {
-                            log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.close'}, address: pipe});
-                        })
-                        .on('error', err => {
-                            log && log.error && log.error(err);
-                            reject(err);
-                        })
-                        .on('listening', () => {
-                            log && log.info && log.info({$meta: {mtid: 'event', opcode: 'bus.listening'}, address: pipe});
-                            resolve();
-                        })
-                        .listen(pipe);
-                    // todo set on error handler
-                    self.stop = function() {
-                        self.stop = noOp;
-                        return new Promise(function(resolve, reject) {
-                            server.close(function(err) {
-                                server.unref();
-                                if (err) {
-                                    log && log.error && log.error(err);
-                                    reject(err);
-                                }
-                                resolve();
-                            });
-                        });
-                    };
-                } else {
-                    var reconnect = self.ssl ? require('./reconnect-tls') : require('./reconnect-net');
-                    var connection = reconnect(connectionHandler)
-                        .on('error', (err) => {
-                            log && log.error && log.error(err);
-                        })
-                        .connect(pipe);
-                    // todo set on error handler
-                    self.stop = function() {
-                        var emitter = connection.disconnect();
-                        emitter._connection && emitter._connection.unref();
-                        self.stop = noOp;
-                        return Promise.resolve();
-                    };
-                }
-
-                // todo handle out frames
-                // log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
+            var createRpc;
+            if (this.nats) {
+                createRpc = require('./hemera');
+            } else {
+                createRpc = require('./utRpc');
+            }
+            return createRpc({
+                id: this.id,
+                socket: this.nats || this.socket,
+                channel: this.channel,
+                logLevel: this.logLevel,
+                logger: log,
+                isServer: this.server,
+                isTLS: this.ssl,
+                mapLocal,
+                processError,
+                errors,
+                findMethodIn
+            }).then(rpc => {
+                this.rpc = rpc;
+                return rpc;
             });
         },
 
         destroy: function() {
-            remotes.forEach(function(remote) {
-                // todo destroy connection
-            });
-            return this.stop();
-        },
-
-        registerRemote: function(index, type, methods) {
-            var id = this.id;
-            var server = this.server;
-            var adapt = {
-                req: function req(fn) {
-                    return function() {
-                        if (!fn) {
-                            return Promise.reject(errors.bus('Remote method not found for object "' + id + '"'));
-                        }
-                        var args = Array.prototype.slice.call(arguments);
-                        return handleRPCResponse(undefined, fn, args, server);
-                    };
-                },
-                pub: function subscribe(fn) {
-                    return function() {
-                        fn.apply(undefined, Array.prototype.slice.call(arguments));
-                        return true;
-                    };
-                }
-            }[type];
-
-            var root = this[type];
-
-            if (!(methods instanceof Array)) {
-                methods = [methods];
-            }
-
-            var remote = locals[index];
-            methods.forEach(function(method) {
-                root[method] = adapt(remote.createRemote(method, type));
-            });
-
-            return 'remotes registered in ' + this.id;
+            return this.rpc.stop();
         },
 
         /**
@@ -357,7 +159,7 @@ module.exports = function Bus() {
          * @returns {promise}
          */
         register: function(methods, namespace) {
-            return serverRegister(methods, namespace || this.id, true);
+            return this.rpc.exportMethod(methods, namespace || this.id, true);
         },
 
         /**
@@ -368,7 +170,7 @@ module.exports = function Bus() {
          * @returns {promise}
          */
         subscribe: function(methods, namespace) {
-            return serverRegister(methods, namespace || this.id, false);
+            return this.rpc.exportMethod(methods, namespace || this.id, false);
         },
 
         registerLocal: function(methods, namespace) {
@@ -378,10 +180,7 @@ module.exports = function Bus() {
         },
 
         start: function() {
-            return Promise.all([
-                this.register({request: findMethodIn(this.req, 'request')}),
-                this.subscribe({publish: findMethodIn(this.pub, 'publish')})
-            ]);
+            return this.rpc.start();
         },
 
         getMethod: function(typeName, methodType, methodName, options) {
@@ -414,8 +213,8 @@ module.exports = function Bus() {
                         bus.canSkipSocket && (fn = findMethod(mapLocal, methodName, methodType));
                         fn && (unpack = true);
                     }
-                    if (!fn && bus[typeName]) {
-                        fn = bus[typeName]['master.' + methodType];
+                    if (!fn) {
+                        fn = bus.rpc.masterMethod(typeName, methodType);
                     }
                 }
                 if (fn) {
