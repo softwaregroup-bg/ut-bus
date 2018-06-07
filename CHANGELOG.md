@@ -1,3 +1,13 @@
+<a name="6.5.0"></a>
+# [6.5.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.4.0...v6.5.0) (2018-06-07)
+
+
+### Features
+
+* add support for NATS ([8143546](https://github.com/softwaregroup-bg/ut-bus/commit/8143546))
+
+
+
 <a name="6.4.0"></a>
 # [6.4.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.3.0...v6.4.0) (2018-04-30)
 
