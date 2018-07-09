@@ -7,6 +7,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     const broker = new ServiceBroker({
+        namespace: channel,
+        logLevel,
         logger: bindings => ({
             trace: (...params) => logger.trace && logger.trace(bindings, util.format(...params)),
             debug: (...params) => logger.debug && logger.debug(bindings, util.format(...params)),

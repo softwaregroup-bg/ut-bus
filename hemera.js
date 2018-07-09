@@ -3,7 +3,9 @@ const nats = require('nats');
 const util = require('util');
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn}) {
-    const hemera = new Hemera(nats.connect(socket), {
+    var hemeraParams = typeof socket === 'object' ? {...socket} : {};
+    delete hemeraParams.nats;
+    const hemera = new Hemera(nats.connect((socket && socket.nats) || socket), {
         logLevel,
         logger: {
             trace: function(data) {
@@ -40,7 +42,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return this;
             }
         },
-        timeout: 60000
+        timeout: 60000,
+        ...hemeraParams
     });
 
     function masterMethod(typeName, methodType) {
