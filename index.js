@@ -124,14 +124,16 @@ module.exports = function Bus() {
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             this.errors = errors = errorsFactory(this);
             var createRpc;
-            if (this.nats) {
+            if (this.hemera) {
                 createRpc = require('./hemera');
+            } else if (this.moleculer) {
+                createRpc = require('./moleculer');
             } else {
                 createRpc = require('./utRpc');
             }
             return createRpc({
                 id: this.id,
-                socket: this.nats || this.socket,
+                socket: this.hemera || this.moleculer || this.socket,
                 channel: this.channel,
                 logLevel: this.logLevel,
                 logger: log,
@@ -158,8 +160,8 @@ module.exports = function Bus() {
          * @param {string} [namespace] to use when registering
          * @returns {promise}
          */
-        register: function(methods, namespace) {
-            return this.rpc.exportMethod(methods, namespace || this.id, true);
+        register: function(methods, namespace, port) {
+            return this.rpc.exportMethod(methods, namespace || this.id, true, port);
         },
 
         /**
@@ -169,8 +171,8 @@ module.exports = function Bus() {
          * @param {string} [namespace] to use when registering
          * @returns {promise}
          */
-        subscribe: function(methods, namespace) {
-            return this.rpc.exportMethod(methods, namespace || this.id, false);
+        subscribe: function(methods, namespace, port) {
+            return this.rpc.exportMethod(methods, namespace || this.id, false, port);
         },
 
         registerLocal: function(methods, namespace) {
@@ -433,11 +435,11 @@ module.exports = function Bus() {
                 notification(method) {
                     return bus.notification(method);
                 },
-                register(methods, namespace) {
-                    return bus.register(methods, namespace);
+                register(methods, namespace, port) {
+                    return bus.register(methods, namespace, port);
                 },
-                subscribe(methods, namespace) {
-                    return bus.subscribe(methods, namespace);
+                subscribe(methods, namespace, port) {
+                    return bus.subscribe(methods, namespace, port);
                 },
                 dispatch(...params) {
                     return bus.dispatch(...params);
