@@ -126,11 +126,11 @@ module.exports = function Bus() {
             this.errors = errors = errorsFactory(this);
             var createRpc;
             if (this.hemera) {
-                createRpc = require('./hemera');
+                createRpc = serverRequire('./hemera');
             } else if (this.moleculer) {
                 createRpc = serverRequire('./moleculer');
             } else {
-                createRpc = serverRequire('./utRpc');
+                createRpc = require('./utRpc');
             }
             return createRpc({
                 id: this.id,
