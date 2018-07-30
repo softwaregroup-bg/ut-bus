@@ -13,8 +13,8 @@
     "ut-tools": "^5.30.0"
   },
   "optionalDependencies": {
-    "moleculer": "^0.13.0",
-    "nats": "1.0.0",
+    "moleculer": "0.13.1",
+    "nats": "1.0.1",
     "nats-hemera": "5.8.6"
   },
   "repository": {
