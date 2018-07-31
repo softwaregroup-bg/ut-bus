@@ -40,6 +40,8 @@
     "gitlab": "ut-gitlab"
   },
   "browser": {
+    "./hemera": false,
+    "./moleculer": false,
     "fs": "./browser/fs",
     "joi": "./browser/joi",
     "net": "./browser/net"
