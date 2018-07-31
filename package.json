@@ -10,12 +10,10 @@
   },
   "devDependencies": {
     "glob": "7.1.2",
-    "ut-tools": "^5.30.0"
-  },
-  "optionalDependencies": {
     "moleculer": "0.13.1",
     "nats": "1.0.1",
-    "nats-hemera": "5.8.6"
+    "nats-hemera": "5.8.8",
+    "ut-tools": "^5.30.0"
   },
   "repository": {
     "type": "git",
