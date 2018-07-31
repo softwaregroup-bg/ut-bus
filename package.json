@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "6.6.0-rc-einstein.4",
+  "version": "6.6.0-rc-einstein.5",
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
