@@ -1,3 +1,22 @@
+<a name="6.7.0"></a>
+# [6.7.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.5.0...v6.7.0) (2018-09-17)
+
+
+### Bug Fixes
+
+* configurability ([81c4159](https://github.com/softwaregroup-bg/ut-bus/commit/81c4159))
+* deps ([ec706f7](https://github.com/softwaregroup-bg/ut-bus/commit/ec706f7))
+* typo ([a01f510](https://github.com/softwaregroup-bg/ut-bus/commit/a01f510))
+* webpack compatibility ([ae628e8](https://github.com/softwaregroup-bg/ut-bus/commit/ae628e8))
+* webpack compatibility ([5399bfa](https://github.com/softwaregroup-bg/ut-bus/commit/5399bfa))
+
+
+### Features
+
+* support hemera and moleculer ([eb2ff16](https://github.com/softwaregroup-bg/ut-bus/commit/eb2ff16))
+
+
+
 <a name="6.5.0"></a>
 # [6.5.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.4.0...v6.5.0) (2018-06-07)
 
