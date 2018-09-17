@@ -13,7 +13,7 @@ module.exports = (bus) => {
         create('destinationNotFound', Bus, 'Destination {destination} not found');
         create('missingMethod', Bus, 'Missing method');
         create('notInitialized', Bus, 'Not initialized');
-        create('unhandledError', Bus, 'Unhandled error{errorMessage}');
+        create('unhandledError', Bus, 'Unhandled error {errorMessage}');
     }
     function unhandledError($meta) {
         var context = {

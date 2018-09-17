@@ -62,7 +62,7 @@ module.exports = function Bus() {
                     err.cause = arguments[0];
                     return Promise.reject(err);
                 }
-                return Promise.reject(errors['bus.missingMethod']());
+                return Promise.reject(errors['bus.missingMethod']({}));
             }
             var fn = findMethod(where, $meta.destination || method, type);
             if (fn) {
@@ -249,7 +249,7 @@ module.exports = function Bus() {
                             return Promise.reject(processError(error, $applyMeta));
                         });
                 } else {
-                    return Promise.reject(errors['bus']('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
+                    return Promise.reject(errors['bus']({message: 'Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName}));
                 }
             }
 
