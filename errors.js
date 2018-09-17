@@ -31,10 +31,9 @@ module.exports = (bus) => {
     };
     errors = errors || defineErrors();
 
-    return {
+    return Object.assign({
         defineError: create,
         getError: utError.get,
-        fetchErrors: utError.fetch,
-        ...errors
-    };
+        fetchErrors: utError.fetch
+    }, errors);
 };
