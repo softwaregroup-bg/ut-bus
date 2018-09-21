@@ -1,7 +1,6 @@
 'use strict';
 var errorsFactory = require('./errors');
 var hrtime = require('browser-process-hrtime');
-var serverRequire = require;
 
 function flattenAPI(data) {
     var result = {};
@@ -126,15 +125,17 @@ module.exports = function Bus() {
             this.errors = errors = errorsFactory(this);
             var createRpc;
             if (this.hemera) {
-                createRpc = serverRequire('./hemera');
+                createRpc = require('./hemera');
+            } else if (this.jsonrpc) {
+                createRpc = require('./jsonrpc');
             } else if (this.moleculer) {
-                createRpc = serverRequire('./moleculer');
+                createRpc = require('./moleculer');
             } else {
                 createRpc = require('./utRpc');
             }
             return createRpc({
                 id: this.id,
-                socket: this.hemera || this.moleculer || this.socket,
+                socket: this.hemera || this.moleculer || this.jsonrpc || this.socket,
                 channel: this.channel,
                 logLevel: this.logLevel,
                 logger: log,

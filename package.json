@@ -42,6 +42,7 @@
   "browser": {
     "./hemera": false,
     "./moleculer": false,
+    "./jsonrpc": false,
     "fs": "./browser/fs",
     "joi": "./browser/joi",
     "net": "./browser/net"
