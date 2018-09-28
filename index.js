@@ -57,11 +57,11 @@ module.exports = function Bus() {
                     if (arguments[0] instanceof Error) {
                         return Promise.reject(arguments[0]);
                     }
-                    var err = errors.unhandledError($meta);
+                    var err = errors['bus.unhandledError']($meta);
                     err.cause = arguments[0];
                     return Promise.reject(err);
                 }
-                return Promise.reject(errors.missingMethod());
+                return Promise.reject(errors['bus.missingMethod']({}));
             }
             var fn = findMethod(where, $meta.destination || method, type);
             if (fn) {
@@ -69,11 +69,11 @@ module.exports = function Bus() {
                 return fn.apply(undefined, Array.prototype.slice.call(arguments));
             } else {
                 return Promise.reject(
-                    $meta.destination ? errors.destinationNotFound({
+                    $meta.destination ? errors['bus.destinationNotFound']({
                         params: {
                             destination: $meta.destination
                         }
-                    }) : errors.methodNotFound({
+                    }) : errors['bus.methodNotFound']({
                         params: {method}
                     })
                 );
@@ -103,9 +103,9 @@ module.exports = function Bus() {
         canSkipSocket: true,
         server: false,
         rpc: {
-            start: () => Promise.reject(errors.notInitialized()),
-            exportMethod: () => Promise.reject(errors.notInitialized()),
-            masterMethod: () => Promise.reject(errors.notInitialized()),
+            start: () => Promise.reject(errors['bus.notInitialized']()),
+            exportMethod: () => Promise.reject(errors['bus.notInitialized']()),
+            masterMethod: () => Promise.reject(errors['bus.notInitialized']()),
             stop: () => true
         },
         modules: {},
@@ -241,7 +241,7 @@ module.exports = function Bus() {
                             }
                             return result[0];
                         }, error => {
-                            if (fallback && error instanceof errors.methodNotFound) {
+                            if (fallback && error instanceof errors['bus.methodNotFound']) {
                                 fn = fallback;
                                 fallback = false;
                                 unpack = false;
@@ -250,7 +250,7 @@ module.exports = function Bus() {
                             return Promise.reject(processError(error, $applyMeta));
                         });
                 } else {
-                    return Promise.reject(errors.bus('Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName));
+                    return Promise.reject(errors['bus']({message: 'Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName}));
                 }
             }
 
@@ -270,7 +270,7 @@ module.exports = function Bus() {
                         .then(resolve)
                         .catch(error => { // todo maybe log these errors
                             if (Date.now() > timeout) {
-                                reject(errors.timeout(error));
+                                reject(errors['bus.timeout'](error));
                             } else {
                                 setTimeout(attempt, retry);
                             }
@@ -398,7 +398,7 @@ module.exports = function Bus() {
                     if (f) {
                         return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
                     } else {
-                        throw errors.methodNotFound({params: {method: $meta.method}});
+                        throw errors['bus.methodNotFound']({params: {method: $meta.method}});
                     }
                 }
             } else {

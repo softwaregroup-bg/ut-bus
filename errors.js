@@ -1,33 +1,37 @@
 const utError = require('ut-error');
-
 module.exports = (bus) => {
     utError.init(bus);
     const create = utError.define;
-    // error constructors
-    const Bus = create('bus');
-    const UnhandledError = create('unhandledError', Bus, 'Unhandled error{errorMessage}');
+    const get = utError.get;
+    const fetch = utError.fetch;
 
-    return {
-        bus: Bus,
-        defineError: create,
-        getError: utError.get,
-        fetchErrors: utError.fetch,
-        timeout: create('timeout', Bus, 'Time out'),
-        methodNotFound: create('methodNotFound', Bus, 'Method {method} not found'),
-        remoteMethodNotFound: create('remoteMethodNotFound', Bus, 'Remote method not found for "{bus}"'),
-        destinationNotFound: create('destinationNotFound', Bus, 'Destination {destination} not found'),
-        missingMethod: create('missingMethod', Bus),
-        notInitialized: create('notInitialized', Bus),
-        unhandledError: function($meta) {
-            var context = {
-                params: {
-                    errorMessage: $meta.errorMessage ? ': ' + $meta.errorMessage : ''
-                }
-            };
-            if ($meta.errorCode) {
-                context.code = $meta.errorCode;
+    if (!get('bus')) {
+        const Bus = create('bus', undefined, 'Bus generic');
+        create('timeout', Bus, 'Time out');
+        create('methodNotFound', Bus, 'Method {method} not found');
+        create('remoteMethodNotFound', Bus, 'Remote method not found for "{bus}"');
+        create('destinationNotFound', Bus, 'Destination {destination} not found');
+        create('missingMethod', Bus, 'Missing method');
+        create('notInitialized', Bus, 'Not initialized');
+        create('unhandledError', Bus, 'Unhandled error {errorMessage}');
+    }
+    function unhandledError($meta) {
+        var context = {
+            params: {
+                errorMessage: $meta.errorMessage ? ': ' + $meta.errorMessage : ''
             }
-            return new UnhandledError(context);
+        };
+        if ($meta.errorCode) {
+            context.code = $meta.errorCode;
         }
+        const UnhandledError = get('bus.unhandledError');
+        return new UnhandledError(context);
     };
+
+    return Object.assign({}, fetch('bus'), {
+        defineError: create,
+        getError: get,
+        fetchErrors: fetch,
+        'bus.unhandledError': unhandledError
+    });
 };

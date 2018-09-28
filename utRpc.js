@@ -48,7 +48,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
             req: function req(fn) {
                 return function() {
                     if (!fn) {
-                        return Promise.reject(errors.remoteMethodNotFound({
+                        return Promise.reject(errors['bus.remoteMethodNotFound']({
                             params: {bus: id}
                         }));
                     }
