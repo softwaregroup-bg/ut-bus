@@ -17,7 +17,9 @@
   },
   "optionalDependencies": {
     "hapi": "^17.2.0",
-    "joi": "^13.1.2"
+    "joi": "^13.1.2",
+    "request": "^2.83.0",
+    "ut-browser-request": "^1.0.2"
   },
   "repository": {
     "type": "git",
@@ -47,6 +49,7 @@
     "./hemera": false,
     "./moleculer": false,
     "./jsonrpc": false,
+    "request": "ut-browser-request",
     "fs": "./browser/fs",
     "joi": "./browser/joi",
     "net": "./browser/net"
