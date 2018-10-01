@@ -16,6 +16,7 @@
     "ut-tools": "^5.30.0"
   },
   "optionalDependencies": {
+    "consul": "0.34.0",
     "hapi": "^17.2.0",
     "joi": "^13.1.2",
     "request": "^2.83.0",
