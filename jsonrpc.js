@@ -15,6 +15,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         port: socket.port
     });
 
+    server.route({
+        method: 'GET',
+        path: '/health',
+        options: {
+            auth: false,
+            handler: (request, h) => 'ok'
+        }
+    });
+
     const consul = socket.consul && initConsul(socket.consul);
 
     function masterMethod(typeName, methodType) {
