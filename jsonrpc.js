@@ -115,12 +115,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             timeout: joi.number().optional(),
                             id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
                             method: joi.string().required(),
-                            params: joi.any().required()
+                            params: joi.array().required()
                         })
                     }
                 },
                 handler: function(request, h) {
                     request.payload.params[1] = Object.assign({}, request.payload.params[1], {
+                        opcode: request.payload.method.split('.').pop(),
                         forward: ['x-request-id', 'x-b3-traceid', 'x-b3-spanid', 'x-b3-parentspanid', 'x-b3-sampled', 'x-b3-flags', 'x-ot-span-context']
                             .reduce(function(object, key) {
                                 var value = request.headers[key];
