@@ -227,8 +227,10 @@ module.exports = function Bus() {
                         $applyMeta.mtid = 'request';
                         $applyMeta.method = methodName;
                     }
+                    let applyFn;
                     return Promise.resolve()
                         .then(() => {
+                            applyFn = fn;
                             return fn.apply(this, params);
                         })
                         .then(result => {
@@ -241,9 +243,8 @@ module.exports = function Bus() {
                             }
                             return result[0];
                         }, error => {
-                            if (fallback && error instanceof errors['bus.methodNotFound']) {
+                            if (fallback && (fallback !== applyFn) && error instanceof errors['bus.methodNotFound']) {
                                 fn = fallback;
-                                fallback = false;
                                 unpack = false;
                                 return fn.apply(this, params);
                             }
