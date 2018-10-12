@@ -17,7 +17,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     server.route({
         method: 'GET',
-        path: '/health',
+        path: '/healthz',
         options: {
             auth: false,
             handler: (request, h) => 'ok'
@@ -33,7 +33,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 .then(params => {
                     if (consul) {
                         return consul.health.service({
-                            service
+                            service,
+                            passing: true
                         })
                             .then(services => {
                                 if (!services || !services.length) {
@@ -99,7 +100,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return Promise.resolve()
             .then(() => consul && consul.agent.service.register({
                 name: name.split('.').shift(),
-                port: server.info.port
+                port: server.info.port,
+                check: {
+                    http: `http://${server.info.host}:${server.info.port}/healthz`,
+                    interval: '5s',
+                    deregistercriticalserviceafter: '1m'
+                }
             }))
             .then(() => server.route({
                 method: 'POST',
