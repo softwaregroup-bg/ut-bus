@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "6.8.0-rc-godfather.4",
+  "version": "6.8.0-rc-godfather.5",
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "0.1.2",
