@@ -388,19 +388,17 @@ module.exports = function Bus() {
                 if (mtid === 'discard') {
                     return true;
                 }
-                if (this.socket) {
+                var f = findMethod(mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
+                if (f) {
+                    return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
+                } else if (this.socket) {
                     if (mtid === 'request') {
                         return this.masterRequest.apply(this, Array.prototype.slice.call(arguments));
                     } else {
                         return this.masterPublish.apply(this, Array.prototype.slice.call(arguments));
                     }
                 } else {
-                    var f = findMethod(mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
-                    if (f) {
-                        return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
-                    } else {
-                        throw errors['bus.methodNotFound']({params: {method: $meta.method}});
-                    }
+                    throw errors['bus.methodNotFound']({params: {method: $meta.method}});
                 }
             } else {
                 return false;
