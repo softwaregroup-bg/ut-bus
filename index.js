@@ -388,7 +388,7 @@ module.exports = function Bus() {
                 if (mtid === 'discard') {
                     return true;
                 }
-                var f = findMethod(mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
+                var f = this.canSkipSocket && findMethod(mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
                 if (f) {
                     return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
                 } else if (this.socket) {
