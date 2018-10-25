@@ -10,16 +10,16 @@
   },
   "devDependencies": {
     "glob": "7.1.2",
-    "moleculer": "0.13.1",
-    "nats": "1.0.1",
-    "nats-hemera": "5.8.8",
     "ut-tools": "^5.30.0"
   },
   "optionalDependencies": {
-    "consul": "0.34.0",
-    "hapi": "^17.2.0",
+    "consul": "^0.34.0",
+    "hapi": "^17.6.0",
     "joi": "^13.7.0",
-    "request": "^2.83.0",
+    "moleculer": "^0.13.3",
+    "nats-hemera": "^6.1.0",
+    "nats": "^1.0.1",
+    "request": "^2.88.0",
     "ut-browser-request": "^1.0.2"
   },
   "repository": {
