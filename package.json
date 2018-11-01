@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "glob": "7.1.2",
-    "ut-tools": "^6.3.8"
+    "ut-tools": "^6.4.5"
   },
   "optionalDependencies": {
     "ut-rpc": "^6.0.0",
