@@ -25,6 +25,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     });
 
     const consul = socket.consul && initConsul(socket.consul);
+    const discover = socket.domain && require('dns-discovery')({
+        domain: socket.domain
+    });
+    const resolver = socket.domain && require('mdns-resolver');
 
     function masterMethod(typeName, methodType) {
         return function(msg, $meta) {
@@ -44,6 +48,18 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                                     host: services[0].Node.Address,
                                     port: services[0].Service.Port
                                 };
+                            });
+                    } else {
+                        return params;
+                    }
+                })
+                .then(params => {
+                    if (resolver) {
+                        return resolver.resolveSrv(params.host + '.' + socket.domain)
+                            .then(result => {
+                                params.host = result.target;
+                                params.port = result.port;
+                                return params;
                             });
                     } else {
                         return params;
@@ -107,6 +123,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     deregistercriticalserviceafter: '1m'
                 }
             }))
+            .then(() => discover && discover.announce(name.split('.').shift().replace(/\//g, '-'), server.info.port))
             .then(() => server.route({
                 method: 'POST',
                 path: '/rpc/' + namespace + '/' + name.split('.').join('/'),
