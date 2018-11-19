@@ -24,10 +24,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     });
 
+    const domain = (socket.domain === true) ? require('os').hostname : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
-    const discover = socket.domain && require('dns-discovery')({
-        domain: socket.domain
-    });
+    const discover = socket.domain && require('dns-discovery')();
     const resolver = socket.domain && require('mdns-resolver');
 
     function masterMethod(typeName, methodType) {
@@ -55,7 +54,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 })
                 .then(params => {
                     if (resolver) {
-                        return resolver.resolveSrv(params.host + '.' + socket.domain)
+                        return resolver.resolveSrv(params.host + '-' + domain + '.dns-discovery.local')
                             .then(result => {
                                 params.host = result.target;
                                 params.port = result.port;
@@ -123,7 +122,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     deregistercriticalserviceafter: '1m'
                 }
             }))
-            .then(() => discover && discover.announce(name.split('.').shift().replace(/\//g, '-'), server.info.port))
+            .then(() => discover && discover.announce(name.split('.').shift().replace(/\//g, '-') + '-' + domain, server.info.port))
             .then(() => server.route({
                 method: 'POST',
                 path: '/rpc/' + namespace + '/' + name.split('.').join('/'),
