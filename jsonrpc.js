@@ -24,7 +24,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     });
 
-    const domain = (socket.domain === true) ? require('os').hostname : socket.domain;
+    const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
     const discover = socket.domain && require('dns-discovery')();
     const resolver = socket.domain && require('mdns-resolver');
