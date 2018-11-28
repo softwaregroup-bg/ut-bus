@@ -5,7 +5,10 @@ var optionalRequire = require;
 
 function flattenAPI(data) {
     var result = {};
-    function recurse(cur, prop) {
+    function recurse(cur, prop, depth) {
+        if (!depth) {
+            throw new Error('API exceeds max depth');
+        }
         if (Object(cur) !== cur) {
             result[prop] = cur;
         } else if (Array.isArray(cur) || typeof cur === 'function') {
@@ -14,14 +17,14 @@ function flattenAPI(data) {
             var isEmpty = true;
             Object.keys(cur).forEach(function(p) {
                 isEmpty = false;
-                recurse(cur[p], prop ? prop + '.' + p : p);
+                recurse(cur[p], prop ? prop + '.' + p : p, depth - 1);
             });
             if (isEmpty && prop) {
                 result[prop] = {};
             }
         }
     }
-    recurse(data, '');
+    recurse(data, '', 4);
     return result;
 }
 
