@@ -181,10 +181,8 @@ module.exports = function Bus() {
             return this.rpc.exportMethod(methods, namespace || this.id, false, port);
         },
 
-        registerLocal: function(methods, namespace) {
-            var x = {};
-            x[namespace] = methods;
-            Object.assign(this.modules, flattenAPI(x));
+        registerLocal: function(methods, moduleName) {
+            this.modules[moduleName] = flattenAPI(methods);
         },
 
         start: function() {
@@ -259,15 +257,32 @@ module.exports = function Bus() {
                 }
             }
 
-            if (bus.modules[methodName]) {
-                Object.assign(busMethod, bus.modules[methodName]);
-            }
             return busMethod;
         },
 
-        importMethods: function(target, methods, options, binding, single) {
-            var modules = this.modules;
-            var self = this;
+        attachHandlers: function(target, patterns, binding) {
+            if (patterns && patterns.length) {
+                // create regular expression matching all listed modules
+                var exp = new RegExp(patterns.map(m => m instanceof RegExp ? '(' + m.source + ')' : '(^' + m.replace(/\./g, '\\.') + '$)').join('|'), 'i');
+
+                target.imported = target.imported || {};
+                Object.entries(this.modules).forEach(function([moduleName, mod]) {
+                    if (exp.test(moduleName)) {
+                        target.imported[moduleName] = {};
+                        Object.entries(mod).forEach(([handlerName, handler]) => {
+                            if (typeof handler === 'function') {
+                                target.imported[moduleName][handlerName] = (...params) => handler.apply(binding, params);
+                            } else {
+                                target.imported[moduleName][handlerName] = handler;
+                            }
+                        });
+                    };
+                });
+            }
+        },
+
+        importMethod: function(methodName, options) {
+            var result = importCache[methodName];
 
             function startRetry(fn, {timeout, retry}) {
                 return new Promise((resolve, reject) => {
@@ -284,68 +299,15 @@ module.exports = function Bus() {
                 });
             };
 
-            function importMethod(methodName) {
-                if (!binding && importCache !== target && importCache[methodName]) {
-                    target[methodName] = importCache[methodName];
-                    return;
-                }
-                var method;
-                method = self.getMethod('req', 'request', methodName, options);
-                target[methodName] = Object.assign(function(msg, $meta) {
+            if (!result) {
+                var method = this.getMethod('req', 'request', methodName, options);
+                result = importCache[methodName] = Object.assign(function(msg, $meta) {
                     if ($meta && $meta.timeout && $meta.retry) {
-                        return startRetry(() => method.apply(binding, arguments), $meta);
+                        return startRetry(() => method.apply(undefined, arguments), $meta);
                     } else {
-                        return method.apply(binding, arguments);
+                        return method.apply(undefined, arguments);
                     }
                 }, method);
-
-                if (target !== importCache) {
-                    importCache[methodName] = target[methodName];
-                }
-            }
-
-            if (methods && methods.length) {
-                var unmatched = methods.slice();
-                // create regular expression matching all listed methods as passed or as prefixes
-                var exp = new RegExp(methods.map(function(m) { return m instanceof RegExp ? '(' + m.source + ')' : '(?:^(' + m.replace(/\./g, '\\.') + (single ? ')$)' : ')(?:\\.(?!\\.).+)?$)'); }).join('|'), 'i');
-
-                Object.keys(modules).forEach(function(name) {
-                    var match = name.match(exp);
-                    if (match) {
-                        var x = modules[name];
-                        if (typeof x === 'function') {
-                            if (!binding) {
-                                importMethod(name);
-                            } else {
-                                var local = name.split('/').pop();
-                                var f = target[local] = Object.assign((...params) => {
-                                    x.super = f.super;
-                                    return x.apply(binding, params);
-                                }, x, {super: target[local]});
-                                if (binding.imported instanceof Set) binding.imported.add(match.find((value, index) => value && index)); // find what we imported
-                            }
-                        } else {
-                            target[name] = x;
-                        }
-                        match.forEach(function(value, index) {
-                            if (index > 0 && value) { // clear all methods that exists in local e.g. abc, a.b, a.b.c .. etc.
-                                unmatched[index - 1] = null;
-                            }
-                        });
-                    }
-                });
-                // import all nonexisting
-                unmatched.forEach(function(name) {
-                    name && importMethod(name);
-                });
-            }
-        },
-
-        importMethod: function(methodName, options) {
-            var result = importCache[methodName];
-            if (!result) {
-                this.importMethods(importCache, [methodName], options, undefined, true);
-                result = importCache[methodName];
             }
 
             return result;
@@ -435,8 +397,8 @@ module.exports = function Bus() {
                 importMethod(methodName, options) {
                     return bus.importMethod(methodName, options);
                 },
-                importMethods(target, methods, options, binding, single) {
-                    return bus.importMethods(target, methods, options, binding, single);
+                attachHandlers(target, methods, binding) {
+                    return bus.attachHandlers(target, methods, binding);
                 },
                 notification(method) {
                     return bus.notification(method);
