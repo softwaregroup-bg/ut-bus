@@ -7,7 +7,7 @@ function flattenAPI(data) {
     var result = {};
     function recurse(cur, prop, depth) {
         if (!depth) {
-            throw new Error('API exceeds max depth');
+            throw new Error('API exceeds max depth: ' + prop);
         }
         if (Object(cur) !== cur) {
             result[prop] = cur;
