@@ -169,6 +169,9 @@ module.exports = function Bus() {
         register: function(methods, namespace, port) {
             return this.rpc.exportMethod(methods, namespace || this.id, true, port);
         },
+        unregister: function(methods, namespace, port) {
+            return this.rpc.removeMethod(methods, namespace || this.id, true, port);
+        },
 
         /**
          * Register subscribe methods available to the server and notify each client to reload the server's methods
@@ -181,8 +184,16 @@ module.exports = function Bus() {
             return this.rpc.exportMethod(methods, namespace || this.id, false, port);
         },
 
+        unsubscribe: function(methods, namespace, port) {
+            return this.rpc.removeMethod(methods, namespace || this.id, false, port);
+        },
+
         registerLocal: function(methods, moduleName) {
             this.modules[moduleName] = flattenAPI(methods);
+        },
+
+        unregisterLocal: function(moduleName) {
+            delete this.modules[moduleName];
         },
 
         start: function() {
@@ -379,8 +390,7 @@ module.exports = function Bus() {
                     return bus.config;
                 },
                 get local() {
-                    log && log.warn && log.warn('Accessing bus.local directly is deprecated and will be removed in the next major version!');
-                    return bus.local;
+                    throw new Error('Accessing bus.local directly is forbidden');
                 },
                 get errors() {
                     return bus.errors;
@@ -394,6 +404,9 @@ module.exports = function Bus() {
                 registerLocal(methods, namespace) {
                     return bus.registerLocal(methods, namespace);
                 },
+                unregisterLocal(methods, namespace) {
+                    return bus.unregisterLocal(methods, namespace);
+                },
                 importMethod(methodName, options) {
                     return bus.importMethod(methodName, options);
                 },
@@ -406,8 +419,14 @@ module.exports = function Bus() {
                 register(methods, namespace, port) {
                     return bus.register(methods, namespace, port);
                 },
+                unregister(methods, namespace, port) {
+                    return bus.unregister(methods, namespace, port);
+                },
                 subscribe(methods, namespace, port) {
                     return bus.subscribe(methods, namespace, port);
+                },
+                unsubscribe(methods, namespace, port) {
+                    return bus.unsubscribe(methods, namespace, port);
                 },
                 dispatch(...params) {
                     return bus.dispatch(...params);
