@@ -28,6 +28,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const consul = socket.consul && initConsul(socket.consul);
     const discover = socket.domain && require('dns-discovery')();
     const resolver = socket.domain && require('mdns-resolver');
+    const deleted = (request, h) => {
+        return h.response('Method was deleted').code(404);
+    };
 
     function masterMethod(typeName, methodType) {
         return function(msg, $meta) {
@@ -112,6 +115,36 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function registerRoute(namespace, name, fn, object) {
+        let path = '/rpc/' + namespace + '/' + name.split('.').join('/');
+        let handler = function(request, h) {
+            request.payload.params[1] = Object.assign({}, request.payload.params[1], {
+                opcode: request.payload.method.split('.').pop(),
+                forward: ['x-request-id', 'x-b3-traceid', 'x-b3-spanid', 'x-b3-parentspanid', 'x-b3-sampled', 'x-b3-flags', 'x-ot-span-context']
+                    .reduce(function(object, key) {
+                        var value = request.headers[key];
+                        if (value !== undefined) object[key] = value;
+                        return object;
+                    }, {})
+            });
+            return Promise.resolve(fn.apply(object, request.payload.params))
+                .then(result => h.response({
+                    jsonrpc: request.payload.jsonrpc,
+                    id: request.payload.id,
+                    result
+                }).header('x-envoy-decorator-operation', request.payload.method))
+                .catch(error => h.response({
+                    jsonrpc: request.payload.jsonrpc,
+                    id: request.payload.id,
+                    error
+                }).header('x-envoy-decorator-operation', request.payload.method));
+        };
+
+        let route = server.match('POST', path);
+        if (route && route.settings.handler === deleted) {
+            route.settings.handler = handler;
+            return route;
+        }
+
         return Promise.resolve()
             .then(() => consul && consul.agent.service.register({
                 name: name.split('.').shift(),
@@ -125,7 +158,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             .then(() => discover && discover.announce(name.split('.').shift().replace(/\//g, '-') + '-' + domain, server.info.port))
             .then(() => server.route({
                 method: 'POST',
-                path: '/rpc/' + namespace + '/' + name.split('.').join('/'),
+                path,
                 options: {
                     payload: {
                         output: 'data',
@@ -141,29 +174,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         })
                     }
                 },
-                handler: function(request, h) {
-                    request.payload.params[1] = Object.assign({}, request.payload.params[1], {
-                        opcode: request.payload.method.split('.').pop(),
-                        forward: ['x-request-id', 'x-b3-traceid', 'x-b3-spanid', 'x-b3-parentspanid', 'x-b3-sampled', 'x-b3-flags', 'x-ot-span-context']
-                            .reduce(function(object, key) {
-                                var value = request.headers[key];
-                                if (value !== undefined) object[key] = value;
-                                return object;
-                            }, {})
-                    });
-                    return Promise.resolve(fn.apply(object, request.payload.params))
-                        .then(result => h.response({
-                            jsonrpc: request.payload.jsonrpc,
-                            id: request.payload.id,
-                            result
-                        }).header('x-envoy-decorator-operation', request.payload.method))
-                        .catch(error => h.response({
-                            jsonrpc: request.payload.jsonrpc,
-                            id: request.payload.id,
-                            error
-                        }).header('x-envoy-decorator-operation', request.payload.method));
-                }
+                handler
             }));
+    }
+
+    function unregisterRoute(namespace, name) {
+        let route = server.match('POST', '/rpc/' + namespace + '/' + name.split('.').join('/'));
+        if (route) route.settings.handler = deleted;
     }
 
     function exportMethod(methods, namespace, reqrep) {
@@ -187,10 +204,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return Promise.all(methodNames);
     }
 
+    function removeMethod(names, namespace, reqrep) {
+        names.forEach(name => {
+            unregisterRoute(namespace, name);
+        });
+    }
+
     return {
         stop,
         start,
         exportMethod,
+        removeMethod,
         masterMethod
     };
 };
