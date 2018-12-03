@@ -111,7 +111,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function localRegister(nameSpace, name, fn) {
-        mapLocal[nameSpace + '.' + name] = fn;
+        let local = mapLocal[nameSpace + '.' + name];
+        if (local) {
+            local.method = fn;
+        } else {
+            mapLocal[nameSpace + '.' + name] = {method: fn};
+        }
     }
 
     function registerRoute(namespace, name, fn, object) {
@@ -207,6 +212,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function removeMethod(names, namespace, reqrep) {
         names.forEach(name => {
             unregisterRoute(namespace, name);
+            let local = mapLocal[namespace + '.' + name];
+            if (local) delete local.method;
         });
     }
 
