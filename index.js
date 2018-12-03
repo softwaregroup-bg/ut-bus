@@ -49,7 +49,7 @@ module.exports = function Bus() {
                 names.pop();
             }
         }
-        return result;
+        return result && result.method;
     }
 
     function findMethodIn(where, type) {
@@ -170,6 +170,7 @@ module.exports = function Bus() {
             return this.rpc.exportMethod(methods, namespace || this.id, true, port);
         },
         unregister: function(methods, namespace, port) {
+            importCache = {}; // todo do not loose whole cache
             return this.rpc.removeMethod(methods, namespace || this.id, true, port);
         },
 
@@ -189,11 +190,13 @@ module.exports = function Bus() {
         },
 
         registerLocal: function(methods, moduleName) {
-            this.modules[moduleName] = flattenAPI(methods);
+            this.modules[moduleName] = this.modules[moduleName] || {};
+            Object.assign(this.modules[moduleName], flattenAPI(methods));
         },
 
         unregisterLocal: function(moduleName) {
-            delete this.modules[moduleName];
+            let mod = this.modules[moduleName];
+            if (mod) for (let key in mod) { delete mod[key]; };
         },
 
         start: function() {
@@ -271,7 +274,7 @@ module.exports = function Bus() {
             return busMethod;
         },
 
-        attachHandlers: function(target, patterns, binding) {
+        attachHandlers: function(target, patterns) {
             if (patterns && patterns.length) {
                 // create regular expression matching all listed modules
                 var exp = new RegExp(patterns.map(m => m instanceof RegExp ? '(' + m.source + ')' : '(^' + m.replace(/\./g, '\\.') + '$)').join('|'), 'i');
@@ -279,14 +282,7 @@ module.exports = function Bus() {
                 target.imported = target.imported || {};
                 Object.entries(this.modules).forEach(function([moduleName, mod]) {
                     if (exp.test(moduleName)) {
-                        target.imported[moduleName] = {};
-                        Object.entries(mod).forEach(([handlerName, handler]) => {
-                            if (typeof handler === 'function') {
-                                target.imported[moduleName][handlerName] = (...params) => handler.apply(binding, params);
-                            } else {
-                                target.imported[moduleName][handlerName] = handler;
-                            }
-                        });
+                        target.imported[moduleName] = mod;
                     };
                 });
             }
@@ -410,8 +406,8 @@ module.exports = function Bus() {
                 importMethod(methodName, options) {
                     return bus.importMethod(methodName, options);
                 },
-                attachHandlers(target, methods, binding) {
-                    return bus.attachHandlers(target, methods, binding);
+                attachHandlers(target, methods) {
+                    return bus.attachHandlers(target, methods);
                 },
                 notification(method) {
                     return bus.notification(method);
