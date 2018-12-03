@@ -33,7 +33,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
     }
 
     function masterMethod(typeName, methodType) {
-        return map[typeName] && map[typeName]['master.' + methodType];
+        return map[typeName] && map[typeName]['master.' + methodType] && map[typeName]['master.' + methodType].method;
     }
 
     function start() {
@@ -72,7 +72,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
 
         var remote = rpcLocal[index];
         methods.forEach(function(method) {
-            root[method] = adapt(remote.createRemote(method, type));
+            root[method] = {method: adapt(remote.createRemote(method, type))};
         });
 
         return 'remotes registered in ' + id;
@@ -98,14 +98,19 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
     function registerLocalMethods(where, methods) {
         where.forEach(function(rpc) {
             Object.keys(methods).forEach(function(name) {
-                rpc.createLocalCall(name, methods[name]);
+                rpc.createLocalCall(name, methods[name].method);
             });
         });
     }
 
     function localRegister(nameSpace, name, fn, adapted) {
         adapted ? listReq.push(nameSpace + '.' + name) : listPub.push(nameSpace + '.' + name);
-        mapLocal[nameSpace + '.' + name] = fn;
+        let local = mapLocal[nameSpace + '.' + name];
+        if (local) {
+            local.method = fn;
+        } else {
+            mapLocal[nameSpace + '.' + name] = {method: fn};
+        }
     }
 
     /**
@@ -142,11 +147,19 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
         return registerRemoteMethods(remotes, methodNames, adapt);
     }
 
+    function removeMethod(names, namespace, reqrep) {
+        names.forEach(name => {
+            let local = mapLocal[namespace + '.' + name];
+            if (local) delete local.method;
+        });
+    }
+
     return new Promise(function(resolve, reject) {
         var result = {
             stop: noOp,
             start: start,
             exportMethod,
+            removeMethod,
             masterMethod
         };
 
