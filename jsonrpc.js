@@ -106,8 +106,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return server.start();
     }
 
-    function stop() {
-        return server.stop();
+    async function stop() {
+        let result = await server.stop();
+        await discover && new Promise(resolve => {
+            discover.destroy(resolve);
+        });
+        return result;
     }
 
     function localRegister(nameSpace, name, fn) {
