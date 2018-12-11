@@ -133,12 +133,12 @@ module.exports = function Bus() {
             this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             errorsApi = utError(this);
-            errors = errorsApi.register(errorsMap);
-            this.errors = Object.assign({}, errors, {
+            this.errors = errors = Object.assign(errorsApi.register(errorsMap), {
                 defineError: errorsApi.define,
                 getError: errorsApi.get,
-                fetchErrors: errorsApi.fetch
-            }); // to be removed (left for backwards compatibility)
+                fetchErrors: errorsApi.fetch,
+                registerErrors: errorsApi.register
+            });
             var createRpc;
             if (this.hemera) {
                 createRpc = optionalRequire('./hemera');
@@ -400,7 +400,7 @@ module.exports = function Bus() {
                 get local() {
                     throw new Error('Accessing bus.local directly is forbidden');
                 },
-                get errors() {  // to be removed (left for backwards compatibility)
+                get errors() { 
                     return bus.errors;
                 },
                 get performance() {
@@ -417,9 +417,6 @@ module.exports = function Bus() {
                 },
                 importMethod(methodName, options) {
                     return bus.importMethod(methodName, options);
-                },
-                utError(errors) {
-                    return errorsApi.register(errors);
                 },
                 attachHandlers(target, methods) {
                     return bus.attachHandlers(target, methods);
