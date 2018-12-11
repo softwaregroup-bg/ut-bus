@@ -28,10 +28,10 @@ module.exports = ({logFactory, logLevel}) => {
     }
     const errors = {};
     const api = {
-        get(type) { // to be removed (left for backwards compatibility)
-            return type ? errors[type] : errors;
+        get(type) {
+            return errors[type];
         },
-        fetch(type) { // to be removed (left for backwards compatibility)
+        fetch(type) {
             const result = {};
             Object.keys(errors).forEach(key => {
                 if (key.startsWith(type)) {
@@ -40,7 +40,7 @@ module.exports = ({logFactory, logLevel}) => {
             });
             return result;
         },
-        define(id, superType, message) { // to be removed (left for backwards compatibility)
+        define(id, superType, message) {
             const type = [
                 superType
                 ? typeof superType === 'string'
@@ -50,14 +50,14 @@ module.exports = ({logFactory, logLevel}) => {
                 id
             ].filter(x => x).join('.');
             deprecationWarning(`Error ${id} is already defined! Type: ${type}`, {args: {id: type}, method: 'utError.define'});
-            return api.register({[type]: message});
+            return api.register({[type]: message})[type];
         },
         register(errorsMap) {
             return Object.keys(errorsMap).reduce((result, type) => {
                 const message = errorsMap[type];
                 const handler = (x, shouldThrow) => {
-                    const error = new Error(interpolate(message, x && x.params));
-                    Object.assign(error, {...x, type});
+                    const error = new Error();
+                    Object.assign(error, {...x, type, message: interpolate(message, x && x.params)});
                     if (shouldThrow) {
                         throw error;
                     }

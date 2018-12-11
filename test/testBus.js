@@ -85,12 +85,12 @@ function test() {
                 'error.simple': 'simple error text',
                 'error.interpolation': 'interpolation {placeholder}'
             };
-            const errors = worker1.publicApi.utError(errorsMap);
+            const errors = worker1.publicApi.errors.registerErrors(errorsMap);
             const indent = '    ';
             const inspect = (type, params) => {
                 const print = (what, obj) => {
                     console.log(`${indent.repeat(3)}${what} properties`);
-                    console.log(`${indent.repeat(4)}${Object.keys(obj).map(key => `${key}: ${obj[key]}`).join(`\n${indent.repeat(4)}`)}`);
+                    console.log(`${indent.repeat(4)}${Object.keys(obj).map(key => `${key}: ${JSON.stringify(obj[key])}`).join(`\n${indent.repeat(4)}`)}`);
                 };
                 const errorHandler = errors[type];
                 const error = errors[type](params);
