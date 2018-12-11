@@ -5,7 +5,27 @@ const interpolate = (msg, params) => {
     });
 };
 
-module.exports = bus => {
+module.exports = ({logFactory, logLevel}) => {
+    var deprecationWarning = () => {};
+    if (logFactory) {
+        var log = logFactory.createLog(logLevel, {name: 'utError', context: 'utError'});
+        if (log.warn) {
+            deprecationWarning = (msg, context) => {
+                var e = new Error();
+                log.warn(msg, {
+                    $meta: {
+                        mtid: 'deprecation',
+                        method: context.method
+                    },
+                    args: context.args,
+                    error: {
+                        type: 'utError.deprecation',
+                        stack: e.stack.split('\n').splice(3).join('\n')
+                    }
+                });
+            };
+        }
+    }
     const errors = {};
     const api = {
         get(type) { // to be removed (left for backwards compatibility)
@@ -29,6 +49,7 @@ module.exports = bus => {
                 : null,
                 id
             ].filter(x => x).join('.');
+            deprecationWarning(`Error ${id} is already defined! Type: ${type}`, {args: {id: type}, method: 'utError.define'});
             return api.register({[type]: message});
         },
         register(errorsMap) {
