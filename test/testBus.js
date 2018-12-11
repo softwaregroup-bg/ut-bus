@@ -32,6 +32,7 @@ function test() {
         .then(worker2.init.bind(worker2))
         .then(master.start.bind(master))
         .then(function(ports) {
+            // test method imports
             var fn1 = function() {
                 return worker1.importMethod('worker2.test.m1')('worker1').then(function(result) {
                     console.log(result);
@@ -76,6 +77,30 @@ function test() {
                         return true;
                     });
                 });
+        })
+        .then(() => {
+            // test errors
+            console.log('\nerror tests:');
+            const errorsMap = {
+                'error.simple': 'simple error text',
+                'error.interpolation': 'interpolation {placeholder}'
+            };
+            const errors = worker1.publicApi.utError(errorsMap);
+            const indent = '    ';
+            const inspect = (type, params) => {
+                const print = (what, obj) => {
+                    console.log(`${indent.repeat(3)}${what} properties`);
+                    console.log(`${indent.repeat(4)}${Object.keys(obj).map(key => `${key}: ${obj[key]}`).join(`\n${indent.repeat(4)}`)}`);
+                };
+                const errorHandler = errors[type];
+                const error = errors[type](params);
+                console.log(`${indent.repeat(2)}key: ${type}`);
+                print('errorHandler', errorHandler);
+                print('error', error);
+            };
+            console.log(`${indent}errors object`);
+            inspect('error.simple');
+            inspect('error.interpolation', {params: {placeholder: 'test'}});
         })
         .then(function() {
             worker1.destroy();
