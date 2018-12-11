@@ -1,5 +1,6 @@
 'use strict';
-var errorsFactory = require('./errors');
+var utError = require('./utError');
+var errorsMap = require('./errors');
 var hrtime = require('browser-process-hrtime');
 var optionalRequire = require;
 
@@ -33,8 +34,8 @@ module.exports = function Bus() {
     var log = {};
     var importCache = {};
     var mapLocal = {};
+    var errorsApi;
     var errors;
-
     function findMethod(where, methodName, type) {
         var key = ['ports', methodName, type].join('.');
         var result = where[key] || where[methodName];
@@ -61,7 +62,12 @@ module.exports = function Bus() {
                     if (arguments[0] instanceof Error) {
                         return Promise.reject(arguments[0]);
                     }
-                    var err = errors['bus.unhandledError']($meta);
+                    var err = errors['bus.unhandledError']({
+                        errorCode: $meta.errorCode,
+                        params: {
+                            errorMessage: $meta.errorMessage ? ': ' + $meta.errorMessage : ''
+                        }
+                    });
                     err.cause = arguments[0];
                     return Promise.reject(err);
                 }
@@ -126,7 +132,13 @@ module.exports = function Bus() {
             this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
             this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
-            this.errors = errors = errorsFactory(this);
+            errorsApi = utError(this);
+            errors = errorsApi.register(errorsMap);
+            this.errors = Object.assign({}, errors, {
+                defineError: errorsApi.define,
+                getError: errorsApi.get,
+                fetchErrors: errorsApi.fetch
+            }); // to be removed (left for backwards compatibility)
             var createRpc;
             if (this.hemera) {
                 createRpc = optionalRequire('./hemera');
@@ -259,7 +271,7 @@ module.exports = function Bus() {
                             }
                             return result[0];
                         }, error => {
-                            if (fallback && (fallback !== applyFn) && error instanceof errors['bus.methodNotFound']) {
+                            if (fallback && (fallback !== applyFn) && error.type === 'bus.methodNotFound') {
                                 fn = fallback;
                                 unpack = false;
                                 return fn.apply(this, params);
@@ -388,7 +400,7 @@ module.exports = function Bus() {
                 get local() {
                     throw new Error('Accessing bus.local directly is forbidden');
                 },
-                get errors() {
+                get errors() {  // to be removed (left for backwards compatibility)
                     return bus.errors;
                 },
                 get performance() {
@@ -405,6 +417,9 @@ module.exports = function Bus() {
                 },
                 importMethod(methodName, options) {
                     return bus.importMethod(methodName, options);
+                },
+                utError(errors) {
+                    return errorsApi.register(errors);
                 },
                 attachHandlers(target, methods) {
                     return bus.attachHandlers(target, methods);

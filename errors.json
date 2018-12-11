@@ -1,0 +1,10 @@
+{
+    "bus": "Bus generic",
+    "bus.timeout": "Time out",
+    "bus.methodNotFound": "Method {method} not found",
+    "bus.remoteMethodNotFound": "Remote method not found for \"{bus}\"",
+    "bus.destinationNotFound": "Destination {destination} not found",
+    "bus.missingMethod": "Missing method",
+    "bus.notInitialized": "Not initialized",
+    "bus.unhandledError": "Unhandled error {errorMessage}"
+}
