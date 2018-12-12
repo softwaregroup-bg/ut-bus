@@ -1,16 +1,14 @@
-const regExp = /\{([^}]*)\}/g;
-const interpolate = (msg, params) => {
+const interpolate = (regExp => (msg, params = {}) => {
     return msg.replace(regExp, (placeholder, label) => {
-        return !params || typeof params[label] === 'undefined' ? `?${label}?` : params[label];
+        return typeof params[label] === 'undefined' ? `?${label}?` : params[label];
     });
-};
+})(/\{([^}]*)\}/g);
 
-module.exports = ({logFactory, logLevel}) => {
-    var deprecationWarning = () => {};
+const getWarnHandler = ({logFactory, logLevel}) => {
     if (logFactory) {
         var log = logFactory.createLog(logLevel, {name: 'utError', context: 'utError'});
         if (log.warn) {
-            deprecationWarning = (msg, context) => {
+            return (msg, context) => {
                 var e = new Error();
                 log.warn(msg, {
                     $meta: {
@@ -26,10 +24,15 @@ module.exports = ({logFactory, logLevel}) => {
             };
         }
     }
+    return () => {};
+};
+
+module.exports = bus => {
+    const warn = getWarnHandler(bus);
     const errors = {};
     const api = {
         get(type) {
-            return errors[type];
+            return type ? errors[type] : errors;
         },
         fetch(type) {
             const result = {};
@@ -49,19 +52,21 @@ module.exports = ({logFactory, logLevel}) => {
                 : null,
                 id
             ].filter(x => x).join('.');
-            deprecationWarning(`Error ${id} is already defined! Type: ${type}`, {args: {id: type}, method: 'utError.define'});
+            if (errors[type]) {
+                warn(`Error ${id} is already defined! Type: ${type}`, {
+                    args: {id: type},
+                    method: 'utError.define'
+                });
+            }
             return api.register({[type]: message})[type];
         },
         register(errorsMap) {
             return Object.keys(errorsMap).reduce((result, type) => {
                 const message = errorsMap[type];
-                const handler = (x, shouldThrow) => {
+                const handler = (x = {}, $meta) => {
                     const error = new Error();
-                    Object.assign(error, {...x, type, message: interpolate(message, x && x.params)});
-                    if (shouldThrow) {
-                        throw error;
-                    }
-                    return error;
+                    Object.assign(error, { ...x, type, message: interpolate(message, x.params) });
+                    return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
                 result[type] = errors[type] = Object.assign(handler, {type, message});
                 return result;
