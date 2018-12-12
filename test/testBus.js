@@ -72,21 +72,20 @@ function test() {
                 })
                 .then(function(r) {
                     console.log(r);
-                    return Promise.all([fn1(), fn2(), fn3()]).then(function() {
-                        console.log('done');
-                        return true;
-                    });
+                    return Promise.all([fn1(), fn2(), fn3()]);
                 });
         })
         .then(() => {
             // test errors
             console.log('\nerror tests:');
+            const indent = '    ';
+
+            console.log(`${indent}inspect errors' properties`);
             const errorsMap = {
                 'error.simple': 'simple error text',
                 'error.interpolation': 'interpolation {placeholder}'
             };
-            const errors = worker1.publicApi.errors.registerErrors(errorsMap);
-            const indent = '    ';
+            const errors = worker1.publicApi.registerErrors(errorsMap);
             const inspect = (type, params) => {
                 const print = (what, obj) => {
                     console.log(`${indent.repeat(3)}${what} properties`);
@@ -98,17 +97,38 @@ function test() {
                 print('errorHandler', errorHandler);
                 print('error', error);
             };
-            console.log(`${indent}errors object`);
             inspect('error.simple');
             inspect('error.interpolation', {params: {placeholder: 'test'}});
+
+            console.log(`${indent}register error handlers in bus`);
+            return worker1.register(errors, 'test')
+                .then(result => {
+                    console.log('call ');
+                    return Promise.all([
+                        worker1.importMethod('test.error.simple')({})
+                            .then(function(result) {
+                                console.log(result);
+                                return result;
+                            }),
+                        worker1.importMethod('test.error.interpolation')({params: {placeholder: 'test'}})
+                            .then(function(result) {
+                                console.log(result);
+                                return result;
+                            })
+                    ]);
+                });
         })
         .then(function() {
             worker1.destroy();
             worker2.destroy();
             master.destroy();
+            console.log('done');
             return true;
         })
-        .catch(() => process.exit(1));
+        .catch(e => {
+            console.error(e);
+            process.exit(1);
+        });
 }
 
 test();
