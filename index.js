@@ -1,6 +1,6 @@
 'use strict';
 var utError = require('./utError');
-var errorsMap = require('./errors');
+var errorsMap = require('./errors.json');
 var hrtime = require('browser-process-hrtime');
 var optionalRequire = require;
 
@@ -133,7 +133,8 @@ module.exports = function Bus() {
             this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
             this.logFactory && (log = this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}));
             errorsApi = utError(this);
-            errors = errorsApi.register(errorsMap);
+            // errors = errorsApi.register(errorsMap);
+            const utError = require('ut-error'); utError.init(this); if (!utError.get('bus')) errorsMap.forEach(e => utError.define(e, null, errorsMap[e], 'error')); errors = utError.fetch('bus');
             this.errors = Object.assign({}, errors, { // to be removed (left for backward compatibility)
                 defineError: errorsApi.define,
                 getError: errorsApi.get,

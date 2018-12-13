@@ -1,4 +1,4 @@
-const typeRegex = /^[a-z]\w+(\.\w)*$/;
+const typeRegex = /^[a-z]\w*(\.\w+)*$/;
 
 const interpolate = (regExp => (msg, params = {}) => {
     return msg.replace(regExp, (placeholder, label) => {
@@ -59,8 +59,8 @@ module.exports = bus => {
         register(errorsMap) {
             return Object.keys(errorsMap).reduce((result, type) => {
                 if (!typeRegex.test(type)) {
-                    warn(`Invalid type: '${type}'!`, {
-                        args: {actual: type, expected: typeRegex},
+                    warn(`Invalid error type format: '${type}'!`, {
+                        args: {actual: type, expectedPattern: typeRegex.toString()},
                         method: 'utError.register'
                     });
                 }
