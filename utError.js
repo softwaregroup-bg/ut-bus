@@ -1,3 +1,5 @@
+const typeRegex = /^[a-z]\w+(\.\w)*$/;
+
 const interpolate = (regExp => (msg, params = {}) => {
     return msg.replace(regExp, (placeholder, label) => {
         return typeof params[label] === 'undefined' ? `?${label}?` : params[label];
@@ -52,16 +54,22 @@ module.exports = bus => {
                 : null,
                 id
             ].filter(x => x).join('.');
-            if (errors[type]) {
-                warn(`Error ${id} is already defined! Type: ${type}`, {
-                    args: {id: type},
-                    method: 'utError.define'
-                });
-            }
             return api.register({[type]: message})[type];
         },
         register(errorsMap) {
             return Object.keys(errorsMap).reduce((result, type) => {
+                if (!typeRegex.test(type)) {
+                    warn(`Invalid type: '${type}'!`, {
+                        args: {actual: type, expected: typeRegex},
+                        method: 'utError.register'
+                    });
+                }
+                if (errors[type]) {
+                    warn(`Error '${type}' is already defined!`, {
+                        args: {type},
+                        method: 'utError.register'
+                    });
+                }
                 const message = errorsMap[type];
                 const handler = (x = {}, $meta) => {
                     const error = new Error();
