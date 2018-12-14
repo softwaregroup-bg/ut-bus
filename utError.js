@@ -1,4 +1,4 @@
-const typeRegex = /^[a-z]\w*(\.\w+)*$/;
+const typeRegex = /^[a-z]\w*(\.!?\w+)*$/;
 
 const interpolate = (regExp => (msg, params = {}) => {
     return msg.replace(regExp, (placeholder, label) => {
