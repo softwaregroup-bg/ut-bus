@@ -76,7 +76,7 @@ module.exports = bus => {
                     if (x instanceof Error) {
                         error.cause = x;
                     } else {
-                        Object.assign(error, {...x});
+                        Object.assign(error, x);
                     }
                     error.type = type;
                     error.message = interpolate(message, x.params);
