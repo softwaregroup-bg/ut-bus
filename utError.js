@@ -73,7 +73,13 @@ module.exports = bus => {
                 const message = errorsMap[type];
                 const handler = (x = {}, $meta) => {
                     const error = new Error();
-                    Object.assign(error, { ...x, type, message: interpolate(message, x.params) });
+                    if (x instanceof Error) {
+                        error.cause = x;
+                    } else {
+                        Object.assign(error, ...x);
+                    }
+                    error.type = type;
+                    error.message = interpolate(message, x.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
                 result[type] = errors[type] = Object.assign(handler, {type, message});
