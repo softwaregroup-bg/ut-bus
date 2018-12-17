@@ -8,10 +8,10 @@ const interpolate = (regExp => (msg, params = {}) => {
 
 const getWarnHandler = ({logFactory, logLevel}) => {
     if (logFactory) {
-        var log = logFactory.createLog(logLevel, {name: 'utError', context: 'utError'});
+        const log = logFactory.createLog(logLevel, {name: 'utError', context: 'utError'});
         if (log.warn) {
             return (msg, context) => {
-                var e = new Error();
+                const e = new Error();
                 log.warn(msg, {
                     $meta: {
                         mtid: 'deprecation',
@@ -57,10 +57,11 @@ module.exports = bus => {
             return api.register({[type]: message})[type];
         },
         register(errorsMap) {
-            return Object.keys(errorsMap).reduce((result, type) => {
+            const result = {};
+            Object.keys(errorsMap).forEach(type => {
                 if (!typeRegex.test(type)) {
                     warn(`Invalid error type format: '${type}'!`, {
-                        args: {actual: type, expectedPattern: typeRegex.toString()},
+                        args: {type, expectedFormat: typeRegex.toString()},
                         method: 'utError.register'
                     });
                 }
@@ -82,9 +83,11 @@ module.exports = bus => {
                     error.message = interpolate(message, x.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
-                result[type] = errors[type] = Object.assign(handler, {type, message});
-                return result;
-            }, {});
+                handler.type = type;
+                handler.message = message;
+                result[type] = errors[type] = handler;
+            });
+            return result;
         }
     };
     return api;
