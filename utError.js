@@ -48,10 +48,10 @@ module.exports = bus => {
         define(id, superType, message) {
             const type = [
                 superType
-                ? typeof superType === 'string'
-                    ? superType
-                    : superType.type
-                : null,
+                    ? typeof superType === 'string'
+                        ? superType
+                        : superType.type
+                    : null,
                 id
             ].filter(x => x).join('.');
             return api.register({[type]: message})[type];
