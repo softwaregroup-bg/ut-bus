@@ -1,22 +1,25 @@
 /* eslint no-console:0, no-process-exit:0 */
 
-const {Master, Worker} = require('..');
+var Bus = require('../index_old');
 
-var master = new Master({
+var master = Object.assign(new Bus(), {
+    server: true,
     logLevel: 'trace',
     socket: 'test',
     id: 'master',
     logFactory: null
 });
 
-var worker1 = new Worker({
+var worker1 = Object.assign(new Bus(), {
+    server: false,
     logLevel: 'trace',
     socket: 'test',
     id: 'worker1',
     logFactory: null
 });
 
-var worker2 = new Worker({
+var worker2 = Object.assign(new Bus(), {
+    server: false,
     logLevel: 'trace',
     socket: 'test',
     id: 'worker2',
@@ -31,7 +34,7 @@ function test() {
         .then(function(ports) {
             // test method imports
             var fn1 = function() {
-                return worker1.importMethod('worker2.test.m1')({x: 'worker1'}).then(function(result) {
+                return worker1.importMethod('worker2.test.m1')('worker1').then(function(result) {
                     console.log(result);
                     return result;
                 });
