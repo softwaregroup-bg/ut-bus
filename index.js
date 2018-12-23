@@ -2,7 +2,6 @@
 var utError = require('./utError');
 var errorsMap = require('./errors.json');
 var hrtime = require('browser-process-hrtime');
-var optionalRequire = require;
 
 function flattenAPI(data) {
     var result = {};
@@ -141,13 +140,13 @@ module.exports = function Bus() {
             });
             var createRpc;
             if (this.hemera) {
-                createRpc = optionalRequire('./hemera');
+                createRpc = require('./hemera');
             } else if (this.jsonrpc) {
                 createRpc = require('./jsonrpc');
             } else if (this.moleculer) {
-                createRpc = optionalRequire('./moleculer');
+                createRpc = require('./moleculer');
             } else {
-                createRpc = optionalRequire('./utRpc');
+                createRpc = require('./utRpc');
             }
             return createRpc({
                 id: this.id,
