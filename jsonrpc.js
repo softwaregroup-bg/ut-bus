@@ -108,9 +108,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function stop() {
         let result = await server.stop();
-        await discover && new Promise(resolve => {
+        await (discover && new Promise(resolve => {
             discover.destroy(resolve);
-        });
+        }));
         return result;
     }
 
