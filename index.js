@@ -1,4 +1,4 @@
-module.exports = {
-    Worker: require('./bus/worker'),
-    Master: require('./bus/master')
-};
+const MasterBus = require('./bus/master');
+const WorkerBus = require('./bus/worker');
+const busFactory = (config = {}) => config.server ? new MasterBus(config) : new WorkerBus(config);
+module.exports = Object.assign(busFactory, {MasterBus, WorkerBus});

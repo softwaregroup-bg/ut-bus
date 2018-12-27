@@ -1,22 +1,22 @@
 /* eslint no-console:0, no-process-exit:0 */
 
-const {Master, Worker} = require('..');
+const {MasterBus, WorkerBus} = require('..');
 
-var master = new Master({
+var master = new MasterBus({
     logLevel: 'trace',
     socket: 'test',
     id: 'master',
     logFactory: null
 });
 
-var worker1 = new Worker({
+var worker1 = new WorkerBus({
     logLevel: 'trace',
     socket: 'test',
     id: 'worker1',
     logFactory: null
 });
 
-var worker2 = new Worker({
+var worker2 = new WorkerBus({
     logLevel: 'trace',
     socket: 'test',
     id: 'worker2',
