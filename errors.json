@@ -6,5 +6,6 @@
     "bus.destinationNotFound": "Destination {destination} not found",
     "bus.missingMethod": "Missing method",
     "bus.notInitialized": "Not initialized",
-    "bus.unhandledError": "Unhandled error {errorMessage}"
+    "bus.unhandledError": "Unhandled error {errorMessage}",
+    "bus.bindingFailed": "Method binding failed for {typeName} {methodType} {methodName}"
 }

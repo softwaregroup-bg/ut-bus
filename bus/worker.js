@@ -1,6 +1,5 @@
 const Bus = require('./bus');
 const hrtime = require('browser-process-hrtime');
-const optionalRequire = require;
 const flattenAPI = data => {
     var result = {};
     function recurse(cur, prop, depth) {
@@ -26,9 +25,19 @@ const flattenAPI = data => {
     return result;
 };
 
+const defaultConfig = {
+    canSkipSocket: true,
+    // transports
+    hemera: null,
+    moleculer: null,
+    jsonrpc: null,
+    // transport channel in case hemera or moleculer transport is enabled
+    channel: ''
+};
+
 class WorkerBus extends Bus {
     constructor(config) {
-        super(config);
+        super(Object.assign({}, defaultConfig, config));
         this.server = false;
         this.importCache = {};
         this.modules = {};
@@ -36,18 +45,19 @@ class WorkerBus extends Bus {
         this.decay = {};
         this.performance = null;
     }
+
     async init() {
         this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
         this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
         let rpc;
         if (this.hemera) {
-            rpc = optionalRequire('../hemera');
+            rpc = require('../hemera');
         } else if (this.jsonrpc) {
             rpc = require('../jsonrpc');
         } else if (this.moleculer) {
-            rpc = optionalRequire('../moleculer');
+            rpc = require('../moleculer');
         } else {
-            rpc = optionalRequire('../utRpc');
+            rpc = require('../utRpc');
         }
         this.rpc = await rpc({
             socket: this.hemera || this.moleculer || this.jsonrpc || this.socket,
@@ -71,6 +81,14 @@ class WorkerBus extends Bus {
         this.importCache = {}; // todo do not loose whole cache
         return this.rpc.removeMethod(methods, namespace || this.id, true, port);
     }
+
+    /**
+     * Register subscribe methods available to the server and notify each client to reload the server's methods
+     *
+     * @param {object} methods object containing methods to be registered
+     * @param {string} [namespace] to use when registering
+     * @returns {promise}
+     */
     subscribe(methods, namespace, port) {
         return this.rpc.exportMethod(methods, namespace || this.id, false, port);
     }
@@ -93,7 +111,7 @@ class WorkerBus extends Bus {
         var timeoutSec = options && options.timeout && (Math.floor(options.timeout / 1000));
         var timeoutNSec = options && options.timeout && (options.timeout % 1000 * 1000000);
 
-        const busMethod = (...params) => {
+        function busMethod(...params) {
             var $meta = (params.length > 1 && params[params.length - 1]);
             var $applyMeta;
             if (!$meta) {
@@ -112,7 +130,7 @@ class WorkerBus extends Bus {
             }
             if (!fn) {
                 if (methodName) {
-                    bus.canSkipSocket && (fn = this.findMethod(this.mapLocal, methodName, methodType));
+                    bus.canSkipSocket && (fn = bus.findMethod(bus.mapLocal, methodName, methodType));
                     fn && (unpack = true);
                 }
                 if (!fn) {
@@ -146,14 +164,16 @@ class WorkerBus extends Bus {
                             unpack = false;
                             return fn.apply(this, params);
                         }
-                        return Promise.reject(this.processError(error, $applyMeta));
+                        return Promise.reject(bus.processError(error, $applyMeta));
                     });
             } else {
-                return Promise.reject(this.errors['bus']({
-                    message: 'Method binding failed for ' + typeName + ' ' + methodType + ' ' + methodName
+                return Promise.reject(bus.errors['bus.bindingFailed']({
+                    params: {
+                        typeName, methodType, methodName
+                    }
                 }));
             }
-        };
+        }
 
         return busMethod;
     }

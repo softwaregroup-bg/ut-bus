@@ -1,26 +1,15 @@
 const utError = require('../utError');
 const errorsMap = require('../errors.json');
-// list all properties for reference
 const defaultConfig = {
     id: null,
     socket: 'bus',
-    canSkipSocket: true,
     logLevel: 'warn',
     logFactory: null,
-    // transports
-    hemera: null, // for workerBus only
-    moleculer: null, // for workerBus only
-    jsonrpc: null, // for workerBus only
-    // transport channel in case hemera or moleculer transport is enabled
-    channel: '' // for workerBus only
+    ssl: undefined
 };
-
 class Bus {
-    constructor(config = {}) {
-        // Override a predefined set of configuration properties only (dont use Object.assign(this, defaultConfig, config))
-        Object.keys(defaultConfig).forEach(key => {
-            this[key] = typeof config[key] === 'undefined' ? defaultConfig[key] : config[key];
-        });
+    constructor(config) {
+        Object.assign(this, defaultConfig, config);
         this.log = this.logFactory ? this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}) : {};
         this.mapLocal = {};
         this.errorsApi = utError(this);
@@ -33,6 +22,7 @@ class Bus {
         this.rpc = {
             start: () => Promise.reject(this.errors['bus.notInitialized']()),
             exportMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
+            removeMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
             masterMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
             stop: () => true
         };
@@ -106,7 +96,7 @@ class Bus {
             var fn = this.findMethod(where, $meta.destination || method, type);
             if (fn) {
                 delete $meta.destination;
-                return fn.apply(...args);
+                return fn(...args);
             } else {
                 return Promise.reject(
                     $meta.destination ? this.errors['bus.destinationNotFound']({

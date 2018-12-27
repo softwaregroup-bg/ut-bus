@@ -9,12 +9,6 @@
             "request": "launch",
             "name": "Test",
             "program": "${workspaceFolder}/test/testBus.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Test_old",
-            "program": "${workspaceFolder}/test/testBus_old.js"
         }
     ]
 }

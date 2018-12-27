@@ -4,13 +4,13 @@
   "description": "UT bus module",
   "dependencies": {
     "browser-process-hrtime": "1.0.0",
-    "dns-discovery": "6.2.2",
+    "dns-discovery": "6.2.3",
     "mdns-resolver": "0.0.3",
     "reconnect-core": "1.3.0"
   },
   "devDependencies": {
     "glob": "7.1.2",
-    "ut-tools": "^6.6.0"
+    "ut-tools": "^6.6.2"
   },
   "optionalDependencies": {
     "ut-rpc": "^6.0.0",
