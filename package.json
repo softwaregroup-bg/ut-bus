@@ -9,7 +9,7 @@
     "reconnect-core": "1.3.0"
   },
   "devDependencies": {
-    "glob": "7.1.3",
+    "glob": "7.1.2",
     "ut-tools": "^6.6.2"
   },
   "optionalDependencies": {
