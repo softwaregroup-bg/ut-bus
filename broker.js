@@ -1,5 +1,5 @@
-const utError = require('../utError');
-const errorsMap = require('../errors.json');
+const utError = require('./utError');
+const errorsMap = require('./errors.json');
 const defaultConfig = {
     id: null,
     socket: 'bus',
@@ -7,7 +7,7 @@ const defaultConfig = {
     logFactory: null,
     ssl: undefined
 };
-class Bus {
+class Broker {
     constructor(config) {
         Object.assign(this, defaultConfig, config);
         this.log = this.logFactory ? this.logFactory.createLog(this.logLevel, {name: this.id, context: 'bus'}) : {};
@@ -18,44 +18,42 @@ class Bus {
             getError: this.errorsApi.get,
             fetchErrors: this.errorsApi.fetch
         });
-        // abstract rpc implementation
         this.rpc = {
             start: () => Promise.reject(this.errors['bus.notInitialized']()),
             exportMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
             removeMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
-            masterMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
+            brokerMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
             stop: () => true
         };
     }
-    init() {
-        throw new Error('bus init method must be overridden');
+    async init() {
+        let rpc;
+        if (this.hemera) {
+            rpc = require('./hemera');
+        } else if (this.jsonrpc) {
+            rpc = require('./jsonrpc');
+        } else if (this.moleculer) {
+            rpc = require('./moleculer');
+        } else {
+            rpc = require('./utRpc');
+        }
+        this.rpc = await rpc({
+            socket: this.hemera || this.moleculer || this.jsonrpc || this.socket,
+            id: this.id,
+            channel: this.channel,
+            logLevel: this.logLevel,
+            logger: this.log,
+            isServer: this.constructor === Broker,
+            isTLS: this.ssl,
+            mapLocal: this.mapLocal,
+            processError: this.processError,
+            errors: this.errors,
+            findMethodIn: (...params) => this.findMethodIn(...params)
+        });
+        return this.rpc;
     }
     start() {
         return this.rpc.start();
-    }
-    flattenAPI(data) {
-        var result = {};
-        function recurse(cur, prop, depth) {
-            if (!depth) {
-                throw new Error('API exceeds max depth: ' + prop);
-            }
-            if (Object(cur) !== cur) {
-                result[prop] = cur;
-            } else if (Array.isArray(cur) || typeof cur === 'function') {
-                result[prop] = cur;
-            } else {
-                var isEmpty = true;
-                Object.keys(cur).forEach(function(p) {
-                    isEmpty = false;
-                    recurse(cur[p], prop ? prop + '.' + p : p, depth - 1);
-                });
-                if (isEmpty && prop) {
-                    result[prop] = {};
-                }
-            }
-        }
-        recurse(data, '', 4);
-        return result;
     }
     findMethod(where, methodName, type) {
         var key = ['ports', methodName, type].join('.');
@@ -130,4 +128,4 @@ class Bus {
     }
 }
 
-module.exports = Bus;
+module.exports = Broker;

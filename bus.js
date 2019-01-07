@@ -1,4 +1,4 @@
-const Bus = require('./bus');
+const Broker = require('./broker');
 const hrtime = require('browser-process-hrtime');
 const flattenAPI = data => {
     var result = {};
@@ -35,44 +35,19 @@ const defaultConfig = {
     channel: ''
 };
 
-class WorkerBus extends Bus {
+class Bus extends Broker {
     constructor(config) {
         super(Object.assign({}, defaultConfig, config));
-        this.server = false;
         this.importCache = {};
         this.modules = {};
         this.last = {};
         this.decay = {};
         this.performance = null;
     }
-
-    async init() {
-        this.masterRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
-        this.masterPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
-        let rpc;
-        if (this.hemera) {
-            rpc = require('../hemera');
-        } else if (this.jsonrpc) {
-            rpc = require('../jsonrpc');
-        } else if (this.moleculer) {
-            rpc = require('../moleculer');
-        } else {
-            rpc = require('../utRpc');
-        }
-        this.rpc = await rpc({
-            socket: this.hemera || this.moleculer || this.jsonrpc || this.socket,
-            id: this.id,
-            channel: this.channel,
-            logLevel: this.logLevel,
-            logger: this.log,
-            isServer: this.server,
-            isTLS: this.ssl,
-            mapLocal: this.mapLocal,
-            processError: this.processError,
-            errors: this.errors,
-            findMethodIn: (...params) => this.findMethodIn(...params)
-        });
-        return this.rpc;
+    init(...params) {
+        this.brokerRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
+        this.brokerPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
+        return super.init(...params);
     }
     register(methods, namespace, port) {
         return this.rpc.exportMethod(methods, namespace || this.id, true, port);
@@ -134,7 +109,7 @@ class WorkerBus extends Bus {
                     fn && (unpack = true);
                 }
                 if (!fn) {
-                    fn = bus.rpc.masterMethod(typeName, methodType);
+                    fn = bus.rpc.brokerMethod(typeName, methodType);
                 }
             }
             if (fn) {
@@ -266,9 +241,9 @@ class WorkerBus extends Bus {
                 return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
             } else if (this.socket) {
                 if (mtid === 'request') {
-                    return this.masterRequest.apply(this, Array.prototype.slice.call(arguments));
+                    return this.brokerRequest.apply(this, Array.prototype.slice.call(arguments));
                 } else {
-                    return this.masterPublish.apply(this, Array.prototype.slice.call(arguments));
+                    return this.brokerPublish.apply(this, Array.prototype.slice.call(arguments));
                 }
             } else {
                 throw this.errors['bus.methodNotFound']({params: {method: $meta.method}});
@@ -332,4 +307,4 @@ class WorkerBus extends Bus {
     }
 }
 
-module.exports = WorkerBus;
+module.exports = Bus;

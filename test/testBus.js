@@ -1,54 +1,54 @@
 /* eslint no-console:0, no-process-exit:0 */
 
-const {MasterBus, WorkerBus} = require('..');
+const {Broker, Bus} = require('..');
 
-var master = new MasterBus({
+var broker = new Broker({
     logLevel: 'trace',
     socket: 'test',
-    id: 'master',
+    id: 'broker',
     logFactory: null
 });
 
-var worker1 = new WorkerBus({
+var bus1 = new Bus({
     logLevel: 'trace',
     socket: 'test',
-    id: 'worker1',
+    id: 'bus1',
     logFactory: null
 });
 
-var worker2 = new WorkerBus({
+var bus2 = new Bus({
     logLevel: 'trace',
     socket: 'test',
-    id: 'worker2',
+    id: 'bus2',
     logFactory: null
 });
 
 function test() {
-    return master.init()
-        .then(worker1.init.bind(worker1))
-        .then(worker2.init.bind(worker2))
-        .then(master.start.bind(master))
+    return broker.init()
+        .then(bus1.init.bind(bus1))
+        .then(bus2.init.bind(bus2))
+        .then(broker.start.bind(broker))
         .then(function(ports) {
             // test method imports
             var fn1 = function() {
-                return worker1.importMethod('worker2.test.m1')({x: 'worker1'}).then(function(result) {
+                return bus1.importMethod('bus2.test.m1')({x: 'bus1'}).then(function(result) {
                     console.log(result);
                     return result;
                 });
             };
             var fn2 = function() {
-                return worker1.importMethod('worker2.m2')('worker1').then(function(result) {
+                return bus1.importMethod('bus2.m2')('bus1').then(function(result) {
                     console.log(result);
                     return result;
                 });
             };
             var fn3 = function() {
-                return worker2.importMethod('worker1.m3')('worker2').then(function(result) {
+                return bus2.importMethod('bus1.m3')('bus2').then(function(result) {
                     console.log(result);
                     return result;
                 });
             };
-            return worker2.register({
+            return bus2.register({
                 'test.m1': function(test) {
                     console.log('test.m1 argument ' + test);
                     return Promise.resolve('test.m1 invoked with argument ' + test);
@@ -60,7 +60,7 @@ function test() {
             })
                 .then(function(r) {
                     console.log(r);
-                    return worker1.register({
+                    return bus1.register({
                         m3: function(test) {
                             console.log('m3 argument ' + test);
                             return Promise.resolve('m3 invoked with argument ' + test);
@@ -82,7 +82,7 @@ function test() {
                 'error.simple': 'simple error text',
                 'error.interpolation': 'interpolation {placeholder}'
             };
-            const errors = worker1.publicApi.registerErrors(errorsMap);
+            const errors = bus1.publicApi.registerErrors(errorsMap);
             const inspect = (type, params) => {
                 const print = (what, obj) => {
                     console.log(`${indent.repeat(3)}${what} properties`);
@@ -98,16 +98,16 @@ function test() {
             inspect('error.interpolation', {params: {placeholder: 'test'}});
 
             console.log(`${indent}register error handlers in bus`);
-            return worker1.register(errors, 'test')
+            return bus1.register(errors, 'test')
                 .then(result => {
                     console.log('call ');
                     return Promise.all([
-                        worker1.importMethod('test.error.simple')({})
+                        bus1.importMethod('test.error.simple')({})
                             .then(function(result) {
                                 console.log(result);
                                 return result;
                             }),
-                        worker1.importMethod('test.error.interpolation')({params: {placeholder: 'test'}})
+                        bus1.importMethod('test.error.interpolation')({params: {placeholder: 'test'}})
                             .then(function(result) {
                                 console.log(result);
                                 return result;
@@ -116,9 +116,9 @@ function test() {
                 });
         })
         .then(function() {
-            worker1.destroy();
-            worker2.destroy();
-            master.destroy();
+            bus1.destroy();
+            bus2.destroy();
+            broker.destroy();
             console.log('done');
             return true;
         })

@@ -29,8 +29,8 @@ const getWarnHandler = ({logFactory, logLevel}) => {
     return () => {};
 };
 
-module.exports = bus => {
-    const warn = getWarnHandler(bus);
+module.exports = ({logFactory, logLevel}) => {
+    const warn = getWarnHandler({logFactory, logLevel});
     const errors = {};
     const api = {
         get(type) {
