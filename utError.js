@@ -66,10 +66,11 @@ module.exports = ({logFactory, logLevel}) => {
                     });
                 }
                 if (errors[type]) {
-                    warn(`Error '${type}' is already defined!`, {
-                        args: {type},
-                        method: 'utError.register'
-                    });
+                    if (errors[type].message !== errorsMap[type]) {
+                        throw new Error(`Error '${type}' is already defined with different message!`);
+                    }
+                    result[type] = errors[type];
+                    return;
                 }
                 const message = errorsMap[type];
                 const handler = (x = {}, $meta) => {
