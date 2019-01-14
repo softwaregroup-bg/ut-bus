@@ -29,8 +29,8 @@ const getWarnHandler = ({logFactory, logLevel}) => {
     return () => {};
 };
 
-module.exports = bus => {
-    const warn = getWarnHandler(bus);
+module.exports = ({logFactory, logLevel}) => {
+    const warn = getWarnHandler({logFactory, logLevel});
     const errors = {};
     const api = {
         get(type) {
@@ -66,10 +66,11 @@ module.exports = bus => {
                     });
                 }
                 if (errors[type]) {
-                    warn(`Error '${type}' is already defined!`, {
-                        args: {type},
-                        method: 'utError.register'
-                    });
+                    if (errors[type].message !== errorsMap[type]) {
+                        throw new Error(`Error '${type}' is already defined with different message!`);
+                    }
+                    result[type] = errors[type];
+                    return;
                 }
                 const message = errorsMap[type];
                 const handler = (x = {}, $meta) => {

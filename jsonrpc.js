@@ -32,7 +32,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return h.response('Method was deleted').code(404);
     };
 
-    function masterMethod(typeName, methodType) {
+    function brokerMethod(typeName, methodType) {
         return function(msg, $meta) {
             var service = $meta.method.split('.').shift();
             return Promise.resolve({host: service.replace(/\//g, '-'), port: socket.port})
@@ -226,6 +226,6 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         start,
         exportMethod,
         removeMethod,
-        masterMethod
+        brokerMethod
     };
 };
