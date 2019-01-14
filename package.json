@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "glob": "7.1.2",
+    "tap": "^12.1.1",
     "ut-tools": "^6.6.2"
   },
   "optionalDependencies": {
@@ -32,7 +33,7 @@
     "release": "ut-release",
     "changelog": "ut-changelog",
     "check": "ut-check",
-    "cover": "ut-cover",
+    "cover": "ut-cover-parallel",
     "lint-js": "ut-lint-js .",
     "postpublish": "ut-postpublish",
     "postversion": "ut-postversion",
@@ -42,7 +43,7 @@
     "pretest": "ut-pretest",
     "precover": "ut-precover",
     "preversion": "ut-preversion",
-    "test": "ut-test",
+    "test": "ut-test-parallel",
     "version": "ut-version",
     "jenkins": "ut-jenkins",
     "gitlab": "ut-gitlab"
