@@ -46,7 +46,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         ...hemeraParams
     });
 
-    function masterMethod(typeName, methodType) {
+    function brokerMethod(typeName, methodType) {
         return function() {
             var $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             return hemera.act({
@@ -103,7 +103,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             stop,
             start,
             exportMethod,
-            masterMethod
+            brokerMethod
         };
     });
 };

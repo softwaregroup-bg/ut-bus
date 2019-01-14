@@ -10,16 +10,17 @@
   },
   "devDependencies": {
     "glob": "7.1.2",
+    "tap": "^12.1.1",
     "ut-tools": "^6.6.2"
   },
   "optionalDependencies": {
     "ut-rpc": "^6.0.0",
-    "consul": "^0.34.0",
+    "consul": "^0.34.1",
     "joi": "13.7.0",
-    "hapi": "^17.6.0",
-    "moleculer": "^0.13.3",
-    "nats-hemera": "^6.1.0",
-    "nats": "^1.0.1",
+    "hapi": "^17.8.1",
+    "moleculer": "^0.13.5",
+    "nats-hemera": "^6.1.1",
+    "nats": "^1.2.2",
     "request": "^2.88.0",
     "ut-browser-request": "^1.0.2"
   },
@@ -32,7 +33,7 @@
     "release": "ut-release",
     "changelog": "ut-changelog",
     "check": "ut-check",
-    "cover": "ut-cover",
+    "cover": "ut-cover-parallel",
     "lint-js": "ut-lint-js .",
     "postpublish": "ut-postpublish",
     "postversion": "ut-postversion",
@@ -42,7 +43,7 @@
     "pretest": "ut-pretest",
     "precover": "ut-precover",
     "preversion": "ut-preversion",
-    "test": "ut-test",
+    "test": "ut-test-parallel",
     "version": "ut-version",
     "jenkins": "ut-jenkins",
     "gitlab": "ut-gitlab"

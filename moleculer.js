@@ -20,7 +20,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         ...socket
     });
 
-    function masterMethod(typeName, methodType) {
+    function brokerMethod(typeName, methodType) {
         return function() {
             var $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             return broker.call(
@@ -85,6 +85,6 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         stop,
         start,
         exportMethod,
-        masterMethod
+        brokerMethod
     });
 };

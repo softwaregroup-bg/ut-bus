@@ -32,8 +32,8 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
         });
     }
 
-    function masterMethod(typeName, methodType) {
-        return map[typeName] && map[typeName]['master.' + methodType] && map[typeName]['master.' + methodType].method;
+    function brokerMethod(typeName, methodType) {
+        return map[typeName] && map[typeName]['broker.' + methodType] && map[typeName]['broker.' + methodType].method;
     }
 
     function start() {
@@ -160,7 +160,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
             start: start,
             exportMethod,
             removeMethod,
-            masterMethod
+            brokerMethod
         };
 
         var pipe;
