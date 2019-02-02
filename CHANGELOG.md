@@ -1,3 +1,63 @@
+# [7.0.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.7.0...v7.0.0) (2019-02-02)
+
+
+### Bug Fixes
+
+* add optional deps ([73bd560](https://github.com/softwaregroup-bg/ut-bus/commit/73bd560))
+* await ([50cb0ec](https://github.com/softwaregroup-bg/ut-bus/commit/50cb0ec))
+* change error type validation pattern to allow an optional exlamation mark after a dot ([42d47fd](https://github.com/softwaregroup-bg/ut-bus/commit/42d47fd))
+* check canSkipSocket ([2ed2e76](https://github.com/softwaregroup-bg/ut-bus/commit/2ed2e76))
+* cleanup ([647d95b](https://github.com/softwaregroup-bg/ut-bus/commit/647d95b))
+* dependency ([f8f47c1](https://github.com/softwaregroup-bg/ut-bus/commit/f8f47c1))
+* destroy dns-discovery on stop ([900eb2f](https://github.com/softwaregroup-bg/ut-bus/commit/900eb2f))
+* errorsMap require and type regexp ([d2e57d6](https://github.com/softwaregroup-bg/ut-bus/commit/d2e57d6))
+* exec os.hostname ([#52](https://github.com/softwaregroup-bg/ut-bus/issues/52)) ([b33d010](https://github.com/softwaregroup-bg/ut-bus/commit/b33d010))
+* first look for local method  when dispatching ([5d86b73](https://github.com/softwaregroup-bg/ut-bus/commit/5d86b73))
+* fix tests and separate new from old error handling logic ([6c5df35](https://github.com/softwaregroup-bg/ut-bus/commit/6c5df35))
+* implement deprecationWarning logic ([d5550d5](https://github.com/softwaregroup-bg/ut-bus/commit/d5550d5))
+* improve code readability ([ab97d97](https://github.com/softwaregroup-bg/ut-bus/commit/ab97d97))
+* improve consul integration ([08bb537](https://github.com/softwaregroup-bg/ut-bus/commit/08bb537))
+* improve hot reload ([8aff010](https://github.com/softwaregroup-bg/ut-bus/commit/8aff010))
+* inspect error type ([422ec93](https://github.com/softwaregroup-bg/ut-bus/commit/422ec93))
+* limit API depth ([b71f525](https://github.com/softwaregroup-bg/ut-bus/commit/b71f525))
+* linting ([3a4bbc7](https://github.com/softwaregroup-bg/ut-bus/commit/3a4bbc7))
+* more dependencies ([0d94639](https://github.com/softwaregroup-bg/ut-bus/commit/0d94639))
+* more dependencies ([604afb0](https://github.com/softwaregroup-bg/ut-bus/commit/604afb0))
+* no need to use spread operator ([1d6c61e](https://github.com/softwaregroup-bg/ut-bus/commit/1d6c61e))
+* optional dependencies ([46a83ee](https://github.com/softwaregroup-bg/ut-bus/commit/46a83ee))
+* race condition when using fallback ([e708c4c](https://github.com/softwaregroup-bg/ut-bus/commit/e708c4c))
+* return more info ([f7b7a4c](https://github.com/softwaregroup-bg/ut-bus/commit/f7b7a4c))
+* separate broker and serviceBus ([1a32ad6](https://github.com/softwaregroup-bg/ut-bus/commit/1a32ad6))
+* set opcode ([6b3cf99](https://github.com/softwaregroup-bg/ut-bus/commit/6b3cf99))
+* simplify publicApi as everything can be accessed throug the errors getter ([3848e36](https://github.com/softwaregroup-bg/ut-bus/commit/3848e36))
+* split importMethod and attachHandler ([44bc788](https://github.com/softwaregroup-bg/ut-bus/commit/44bc788))
+* typo ([44e43ac](https://github.com/softwaregroup-bg/ut-bus/commit/44e43ac))
+* update ut-tools ([32c93dc](https://github.com/softwaregroup-bg/ut-bus/commit/32c93dc))
+* upgrade dependencies ([4396027](https://github.com/softwaregroup-bg/ut-bus/commit/4396027))
+* upgrade ut-tools ([9666e3c](https://github.com/softwaregroup-bg/ut-bus/commit/9666e3c))
+* ut-error deprecations ([7791a9e](https://github.com/softwaregroup-bg/ut-bus/commit/7791a9e))
+* utError - set error argument as a cause ([cdf2c32](https://github.com/softwaregroup-bg/ut-bus/commit/cdf2c32))
+* webpack warning ([549d68e](https://github.com/softwaregroup-bg/ut-bus/commit/549d68e))
+* workaround for dns-discovery bug ([1b7ed75](https://github.com/softwaregroup-bg/ut-bus/commit/1b7ed75))
+
+
+### Features
+
+* add health check handler ([e6fb6ea](https://github.com/softwaregroup-bg/ut-bus/commit/e6fb6ea))
+* add jsonrpc over http ([4efa1c0](https://github.com/softwaregroup-bg/ut-bus/commit/4efa1c0))
+* allow regex when importing ([f434197](https://github.com/softwaregroup-bg/ut-bus/commit/f434197))
+* hot reload ut-rpc ([6791652](https://github.com/softwaregroup-bg/ut-bus/commit/6791652))
+* initial support for unregistering methods ([9839566](https://github.com/softwaregroup-bg/ut-bus/commit/9839566))
+* remove dependency to ut-error and implement error handling locally ([5e720fb](https://github.com/softwaregroup-bg/ut-bus/commit/5e720fb))
+* support discovery with multicast DNS ([ee3e0c6](https://github.com/softwaregroup-bg/ut-bus/commit/ee3e0c6))
+
+
+### BREAKING CHANGES
+
+* requires ut-run upgrade
+
+
+
 <a name="6.7.0"></a>
 # [6.7.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.5.0...v6.7.0) (2018-09-17)
 
