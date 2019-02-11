@@ -148,6 +148,7 @@ class Bus extends Broker {
                             timeout: $applyMeta.timeout,
                             cache: {
                                 key: cache.key,
+                                ttl: cache.ttl,
                                 operation: before
                             }
                         };
@@ -166,6 +167,7 @@ class Bus extends Broker {
                             timeout: $applyMeta.timeout,
                             cache: {
                                 key: cache.key,
+                                ttl: cache.ttl,
                                 operation: after
                             }
                         };
