@@ -11,7 +11,7 @@
   "devDependencies": {
     "glob": "7.1.2",
     "tap": "^12.5.2",
-    "ut-tools": "^6.8.10"
+    "ut-tools": "^6.11.0"
   },
   "optionalDependencies": {
     "ut-rpc": "^6.0.0",
