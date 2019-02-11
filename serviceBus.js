@@ -85,8 +85,10 @@ class Bus extends Broker {
         var fallback = options && options.fallback;
         var timeoutSec = options && options.timeout && (Math.floor(options.timeout / 1000));
         var timeoutNSec = options && options.timeout && (options.timeout % 1000 * 1000000);
+        var fnCache = null;
+        let cache = options && options.cache;
 
-        function busMethod(...params) {
+        async function busMethod(...params) {
             var $meta = (params.length > 1 && params[params.length - 1]);
             var $applyMeta;
             if (!$meta) {
@@ -112,35 +114,98 @@ class Bus extends Broker {
                     fn = bus.rpc.brokerMethod(typeName, methodType);
                 }
             }
+            if (cache && !fnCache) {
+                fnCache = bus.findMethod(bus.mapLocal, `${cache.port || 'cache'}`, methodType) ||
+                    bus.rpc.brokerMethod(typeName, methodType);
+                if (!fnCache && !cache.optional) {
+                    return Promise.reject(bus.errors['bus.cacheFailed']({
+                        params: {
+                            typeName, methodType, methodName
+                        }
+                    }));
+                }
+            }
             if (fn) {
+                let $metaBefore, $metaAfter;
                 if (methodName) {
                     $applyMeta.opcode = methodName.split('.').pop();
                     $applyMeta.mtid = 'request';
                     $applyMeta.method = methodName;
+                    if (cache) {
+                        let op = methodName.split('.').pop();
+                        let before = cache.before || {
+                            get: 'get',
+                            fetch: 'get',
+                            add: false,
+                            create: false,
+                            edit: 'drop',
+                            update: 'drop',
+                            delete: 'drop',
+                            remove: 'drop'
+                        }[op];
+                        $metaBefore = before && {
+                            method: methodName,
+                            timeout: $applyMeta.timeout,
+                            cache: {
+                                key: cache.key,
+                                operation: before
+                            }
+                        };
+                        let after = cache.after || {
+                            get: 'set',
+                            fetch: 'set',
+                            add: 'set',
+                            create: 'set',
+                            edit: 'set',
+                            update: 'set',
+                            delete: false,
+                            remove: false
+                        }[op];
+                        $metaAfter = after && {
+                            method: methodName,
+                            timeout: $applyMeta.timeout,
+                            cache: {
+                                key: cache.key,
+                                operation: after
+                            }
+                        };
+                        if (!$metaBefore && !$metaAfter) {
+                            return Promise.reject(bus.errors['bus.cacheOperationMissing']({
+                                params: {
+                                    typeName, methodType, methodName
+                                }
+                            }));
+                        }
+                        if (typeof cache.key === 'function') {
+                            let key = await cache.key(params[0]);
+                            if ($metaBefore) $metaBefore.cache.key = key;
+                            if ($metaAfter) $metaAfter.cache.key = key;
+                        }
+                    }
                 }
                 let applyFn;
-                return Promise.resolve()
-                    .then(() => {
-                        applyFn = fn;
+                try {
+                    const cached = fnCache && $metaBefore && await fnCache.call(this, params[0], $metaBefore);
+                    if (cached && cached[0] !== null) return cached[0];
+                    applyFn = fn;
+                    const result = await fn.apply(this, params);
+                    if (fnCache && $metaAfter) await fnCache.call(this, result[0], $metaAfter);
+                    if ($meta.timer) {
+                        let $resultMeta = (result.length > 1 && result[result.length - 1]);
+                        $resultMeta && $resultMeta.calls && $meta.timer($resultMeta.calls);
+                    }
+                    if (!unpack || (options && options.returnMeta)) {
+                        return result;
+                    }
+                    return result[0];
+                } catch (error) {
+                    if (fallback && (fallback !== applyFn) && error.type === 'bus.methodNotFound') {
+                        fn = fallback;
+                        unpack = false;
                         return fn.apply(this, params);
-                    })
-                    .then(result => {
-                        if ($meta.timer) {
-                            let $resultMeta = (result.length > 1 && result[result.length - 1]);
-                            $resultMeta && $resultMeta.calls && $meta.timer($resultMeta.calls);
-                        }
-                        if (!unpack || (options && options.returnMeta)) {
-                            return result;
-                        }
-                        return result[0];
-                    }, error => {
-                        if (fallback && (fallback !== applyFn) && error.type === 'bus.methodNotFound') {
-                            fn = fallback;
-                            unpack = false;
-                            return fn.apply(this, params);
-                        }
-                        return Promise.reject(bus.processError(error, $applyMeta));
-                    });
+                    }
+                    return Promise.reject(bus.processError(error, $applyMeta));
+                }
             } else {
                 return Promise.reject(bus.errors['bus.bindingFailed']({
                     params: {
