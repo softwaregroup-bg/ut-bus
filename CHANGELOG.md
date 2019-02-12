@@ -1,3 +1,12 @@
+# [7.1.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.0.0...v7.1.0) (2019-02-12)
+
+
+### Features
+
+* handle options.cache ([#58](https://github.com/softwaregroup-bg/ut-bus/issues/58)) ([84644c8](https://github.com/softwaregroup-bg/ut-bus/commit/84644c8))
+
+
+
 # [7.0.0](https://github.com/softwaregroup-bg/ut-bus/compare/v6.7.0...v7.0.0) (2019-02-02)
 
 
