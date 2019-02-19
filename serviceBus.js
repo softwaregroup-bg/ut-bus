@@ -221,14 +221,13 @@ class Bus extends Broker {
     }
     attachHandlers(target, patterns) {
         if (patterns && patterns.length) {
-            // create regular expression matching all listed modules
-            var exp = new RegExp(patterns.map(m => m instanceof RegExp ? '(' + m.source + ')' : '(^' + m.replace(/\./g, '\\.') + '$)').join('|'), 'i');
-
-            target.imported = target.imported || {};
-            Object.entries(this.modules).forEach(function([moduleName, mod]) {
-                if (exp.test(moduleName)) {
-                    target.imported[moduleName] = mod;
-                };
+            target.importedMap = new Map(); // preserve patterns order
+            patterns.forEach(pattern => {
+                Object.entries(this.modules).forEach(function([moduleName, mod]) {
+                    if ((pattern instanceof RegExp && pattern.test(moduleName)) || (pattern === moduleName)) {
+                        target.importedMap.set(moduleName, mod);
+                    }
+                });
             });
         }
     }
