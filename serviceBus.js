@@ -132,7 +132,7 @@ class Bus extends Broker {
                     $applyMeta.mtid = 'request';
                     $applyMeta.method = methodName;
                     if (cache) {
-                        let op = methodName.split('.').pop();
+                        let op = methodName.split('.').pop().split('[')[0];
                         let before = cache.before || {
                             get: 'get',
                             fetch: 'get',
