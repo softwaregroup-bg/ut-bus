@@ -1,3 +1,12 @@
+# [7.2.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.1.1...v7.2.0) (2019-03-13)
+
+
+### Features
+
+* support method modifiers ([4f3d545](https://github.com/softwaregroup-bg/ut-bus/commit/4f3d545))
+
+
+
 ## [7.1.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.1.0...v7.1.1) (2019-02-19)
 
 
