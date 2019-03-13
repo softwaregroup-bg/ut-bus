@@ -128,11 +128,10 @@ class Bus extends Broker {
             if (fn) {
                 let $metaBefore, $metaAfter;
                 if (methodName) {
-                    $applyMeta.opcode = methodName.split('.').pop();
+                    $applyMeta.opcode = bus.getOpcode(methodName);
                     $applyMeta.mtid = 'request';
                     $applyMeta.method = methodName;
                     if (cache) {
-                        let op = methodName.split('.').pop();
                         let before = cache.before || {
                             get: 'get',
                             fetch: 'get',
@@ -142,7 +141,7 @@ class Bus extends Broker {
                             update: 'drop',
                             delete: 'drop',
                             remove: 'drop'
-                        }[op];
+                        }[$applyMeta.opcode];
                         $metaBefore = before && {
                             method: methodName,
                             timeout: $applyMeta.timeout,
@@ -161,7 +160,7 @@ class Bus extends Broker {
                             update: 'set',
                             delete: false,
                             remove: false
-                        }[op];
+                        }[$applyMeta.opcode];
                         $metaAfter = after && {
                             method: methodName,
                             timeout: $applyMeta.timeout,
@@ -366,6 +365,8 @@ class Bus extends Broker {
             unsubscribe(methods, namespace, port) {
                 return bus.unsubscribe(methods, namespace, port);
             },
+            getPath: name => bus.getPath(name),
+            getOpcode: name => bus.getOpcode(name),
             dispatch(...params) {
                 return bus.dispatch(...params);
             }

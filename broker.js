@@ -7,6 +7,8 @@ const defaultConfig = {
     logFactory: null,
     ssl: undefined
 };
+const METHOD = /^[^[#?]*/;
+
 class Broker {
     constructor(config) {
         Object.assign(this, defaultConfig, config);
@@ -55,7 +57,14 @@ class Broker {
     start() {
         return this.rpc.start();
     }
+    getPath(name) {
+        return name.match(METHOD)[0];
+    }
+    getOpcode(name) {
+        return this.getPath(name).split('.').pop();
+    }
     findMethod(where, methodName, type) {
+        methodName = this.getPath(methodName);
         var key = ['ports', methodName, type].join('.');
         var result = where[key] || where[methodName];
         if (!result) {
