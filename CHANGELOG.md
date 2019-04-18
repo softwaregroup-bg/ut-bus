@@ -1,3 +1,12 @@
+# [7.3.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.2.1...v7.3.0) (2019-04-18)
+
+
+### Features
+
+* support prefix and suffix for kustomize ([4f32a45](https://github.com/softwaregroup-bg/ut-bus/commit/4f32a45))
+
+
+
 ## [7.2.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.2.0...v7.2.1) (2019-03-22)
 
 
