@@ -28,6 +28,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const consul = socket.consul && initConsul(socket.consul);
     const discover = socket.domain && require('dns-discovery')();
     const resolver = socket.domain && require('mdns-resolver');
+    const prefix = socket.prefix || '';
+    const suffix = socket.suffix || '-service';
     const deleted = (request, h) => {
         return h.response('Method was deleted').code(404);
     };
@@ -35,7 +37,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function brokerMethod(typeName, methodType) {
         return function(msg, $meta) {
             var service = $meta.method.split('.').shift();
-            return Promise.resolve({host: service.replace(/\//g, '-'), port: socket.port})
+            return Promise.resolve({host: prefix + service.replace(/\//g, '-') + suffix, port: socket.port})
                 .then(params => {
                     if (consul) {
                         return consul.health.service({
@@ -164,7 +166,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     deregistercriticalserviceafter: '1m'
                 }
             }))
-            .then(() => discover && discover.announce(name.split('.').shift().replace(/\//g, '-') + '-' + domain, server.info.port))
+            .then(() => discover && discover.announce(prefix + name.split('.').shift().replace(/\//g, '-') + suffix + '-' + domain, server.info.port))
             .then(() => server.route({
                 method: 'POST',
                 path,
