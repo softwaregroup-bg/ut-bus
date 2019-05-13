@@ -61,7 +61,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     if (resolver) {
                         return resolver.resolveSrv(params.host + '-' + domain + '.dns-discovery.local')
                             .then(result => {
-                                params.host = result.target;
+                                params.host = (this.config.nameResolving && params.host) || result.target;
                                 params.port = result.port;
                                 return params;
                             });
