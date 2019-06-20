@@ -1,3 +1,12 @@
+# [7.4.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.3.0...v7.4.0) (2019-06-20)
+
+
+### Features
+
+* add rabbitmq support ([4b87daf](https://github.com/softwaregroup-bg/ut-bus/commit/4b87daf))
+
+
+
 # [7.3.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.2.1...v7.3.0) (2019-04-18)
 
 
