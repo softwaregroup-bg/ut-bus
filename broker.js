@@ -34,13 +34,15 @@ class Broker {
             rpc = require('./hemera');
         } else if (this.jsonrpc) {
             rpc = require('./jsonrpc');
+        } else if (this.rabbot) {
+            rpc = require('./rabbot');
         } else if (this.moleculer) {
             rpc = require('./moleculer');
         } else {
             rpc = require('./utRpc');
         }
         this.rpc = await rpc({
-            socket: this.hemera || this.moleculer || this.jsonrpc || this.socket,
+            socket: this.hemera || this.moleculer || this.jsonrpc || this.rabbot || this.socket,
             id: this.id,
             channel: this.channel,
             logLevel: this.logLevel,
