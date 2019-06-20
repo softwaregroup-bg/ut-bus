@@ -8,7 +8,8 @@
             "type": "node",
             "request": "launch",
             "name": "Test",
-            "program": "${workspaceFolder}/test/testBus.js"
+            "outputCapture": "std",
+            "program": "${workspaceFolder}/test/rabbit.test.js"
         }
     ]
 }
