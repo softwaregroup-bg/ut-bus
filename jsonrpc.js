@@ -36,7 +36,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function brokerMethod(typeName, methodType) {
         return function(msg, $meta) {
-            var service = $meta.method.split('.').shift();
+            const [service, op] = $meta.method.split('.', 2);
+            if (['start', 'stop', 'drain'].includes(op)) methodType = op;
             return Promise.resolve({host: prefix + service.replace(/\//g, '-') + suffix, port: socket.port})
                 .then(params => {
                     if (consul) {
