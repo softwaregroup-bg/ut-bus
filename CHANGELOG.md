@@ -1,3 +1,12 @@
+## [7.4.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.4.0...v7.4.1) (2019-07-30)
+
+
+### Bug Fixes
+
+* handle start, stop, drain ([c9fa772](https://github.com/softwaregroup-bg/ut-bus/commit/c9fa772))
+
+
+
 # [7.4.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.3.0...v7.4.0) (2019-06-20)
 
 
