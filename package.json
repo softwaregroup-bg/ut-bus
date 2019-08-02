@@ -55,6 +55,7 @@
     "./hemera": false,
     "./moleculer": false,
     "./jsonrpc": false,
+    "./rabbot": false,
     "request": "ut-browser-request",
     "fs": "./browser/fs",
     "joi": "./browser/joi",
