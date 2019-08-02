@@ -1,3 +1,12 @@
+## [7.4.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.4.1...v7.4.2) (2019-08-02)
+
+
+### Bug Fixes
+
+* webpack optimization ([ba31011](https://github.com/softwaregroup-bg/ut-bus/commit/ba31011))
+
+
+
 ## [7.4.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.4.0...v7.4.1) (2019-07-30)
 
 
