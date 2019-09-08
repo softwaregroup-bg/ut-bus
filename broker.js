@@ -52,7 +52,15 @@ class Broker {
             mapLocal: this.mapLocal,
             processError: this.processError,
             errors: this.errors,
-            findMethodIn: (...params) => this.findMethodIn(...params)
+            findMethodIn: (...params) => this.findMethodIn(...params),
+            metrics: (...params) => {
+                try {
+                    return this.performance && this.performance.prometheus(...params);
+                } catch (error) {
+                    this.log && this.log.error && this.log.error(error);
+                    return '';
+                }
+            }
         });
         return this.rpc;
     }

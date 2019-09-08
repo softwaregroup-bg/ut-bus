@@ -10,19 +10,26 @@ function initConsul(config) {
     return consul;
 }
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn, metrics}) {
     const server = new hapi.Server({
         port: socket.port
     });
 
-    server.route({
+    server.route([{
         method: 'GET',
         path: '/healthz',
         options: {
             auth: false,
             handler: (request, h) => 'ok'
         }
-    });
+    }, socket.metrics && {
+        method: 'GET',
+        path: '/metrics',
+        options: {
+            auth: false,
+            handler: (request, h) => h.response(metrics() || '').type('text/plain; version=0.0.4; charset=utf-8')
+        }
+    }].filter(x => x));
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
