@@ -1,3 +1,12 @@
+# [7.5.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.4.2...v7.5.0) (2019-09-08)
+
+
+### Features
+
+* expose metrics in jsonrpc ([08dc3bb](https://github.com/softwaregroup-bg/ut-bus/commit/08dc3bb))
+
+
+
 ## [7.4.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.4.1...v7.4.2) (2019-08-02)
 
 
