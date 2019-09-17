@@ -1,3 +1,12 @@
+## [7.5.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.5.0...v7.5.1) (2019-09-17)
+
+
+### Bug Fixes
+
+* align event logging ([7b1dab5](https://github.com/softwaregroup-bg/ut-bus/commit/7b1dab5))
+
+
+
 # [7.5.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.4.2...v7.5.0) (2019-09-08)
 
 
