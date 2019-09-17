@@ -181,13 +181,13 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
                 remoteAddress: socket.remoteAddress,
                 remotePort: socket.remotePort
             };
-            logger && logger.info && logger.info({$meta: {mtid: 'event', opcode: 'bus.connected'}, connection});
+            logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'bus.connected'}, connection});
             socket.on('close', () => {
-                logger && logger.info && logger.info({$meta: {mtid: 'event', opcode: 'bus.disconnected'}, connection});
+                logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'bus.disconnected'}, connection});
             }).on('error', (err) => {
                 logger && logger.error && logger.error(err);
             }).on('data', function(msg) {
-                logger && logger.trace && logger.trace({$meta: {mtid: 'frame', opcode: 'in'}, message: msg});
+                logger && logger.trace && logger.trace({$meta: {mtid: 'frame', method: 'in'}, message: msg});
             });
             var rpc = utRPC({
                 registerRemote: registerRemote.bind(null, rpcLocal.length)
@@ -213,14 +213,14 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
             }
             var server = net.createServer(connectionHandler)
                 .on('close', () => {
-                    logger && logger.info && logger.info({$meta: {mtid: 'event', opcode: 'bus.close'}, address: pipe});
+                    logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'bus.close'}, address: pipe});
                 })
                 .on('error', err => {
                     logger && logger.error && logger.error(err);
                     reject(err);
                 })
                 .on('listening', () => {
-                    logger && logger.info && logger.info({$meta: {mtid: 'event', opcode: 'bus.listening'}, address: pipe});
+                    logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'bus.listening'}, address: pipe});
                     resolve(result);
                 })
                 .listen(pipe);
@@ -257,6 +257,6 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
         // remotes.forEach(function(remote) {
         // });
         // todo handle out frames
-        // log.trace && log.trace({$$:{opcode:'frameOut'}, payload:msg});
+        // log.trace && log.trace({$$:{method:'frameOut'}, payload:msg});
     });
 };
