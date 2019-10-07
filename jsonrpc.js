@@ -15,6 +15,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         port: socket.port
     });
 
+    server.events.on('start', () => {
+        logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
+    });
+
     server.route([{
         method: 'GET',
         path: '/healthz',
