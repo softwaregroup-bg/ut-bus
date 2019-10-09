@@ -12,13 +12,13 @@ but relies on having a running isntance of ut-port-cache internally.
     E.g:
 
     ```js
-        module.exports = () => () => ({
-            adapter: [
-                function cache(...params) {
-                    return class cache extends require('ut-port-cache')(...params) {};
-                }
-            ]
-        });
+    module.exports = () => () => ({
+        adapter: [
+            function cache(...params) {
+                return class cache extends require('ut-port-cache')(...params) {};
+            }
+        ]
+    });
     ```
 
 2) Cache configuration must be explicitly provided as part of the options
@@ -27,12 +27,12 @@ when importing a bus method.
     E.g:
 
     ```js
-        const options = {
-            cache: {
-                // cache options
-            }
-        };
-        return bus.importMethod('namespace.entity.action', options)(msg);
+    const options = {
+        cache: {
+            // cache options
+        }
+    };
+    return bus.importMethod('namespace.entity.action', options)(msg);
     ```
 
     Where options.cache allows the following configuration:
