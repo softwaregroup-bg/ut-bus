@@ -10,20 +10,20 @@
     "uuid": "3.3.2"
   },
   "devDependencies": {
+    "consul": "^0.34.1",
     "glob": "7.1.2",
+    "moleculer": "^0.13.5",
+    "nats-hemera": "^6.1.1",
+    "nats": "^1.2.2",
+    "rabbot": "^2.1.0",
     "sort-keys": "2.0.0",
     "tap": "^13.1.0",
     "ut-tools": "^6.11.0"
   },
   "optionalDependencies": {
     "ut-rpc": "^6.0.0",
-    "consul": "^0.34.1",
     "joi": "13.7.0",
     "hapi": "^17.8.1",
-    "moleculer": "^0.13.5",
-    "nats-hemera": "^6.1.1",
-    "nats": "^1.2.2",
-    "rabbot": "^2.1.0",
     "request": "^2.88.0",
     "ut-browser-request": "^1.0.2"
   },
