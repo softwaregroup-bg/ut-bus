@@ -1,3 +1,13 @@
+## [7.5.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.5.1...v7.5.2) (2019-10-09)
+
+
+### Bug Fixes
+
+* limit optional dependencies ([6fcf148](https://github.com/softwaregroup-bg/ut-bus/commit/6fcf148))
+* log jsonrpc server info ([15f405d](https://github.com/softwaregroup-bg/ut-bus/commit/15f405d))
+
+
+
 ## [7.5.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.5.0...v7.5.1) (2019-09-17)
 
 
