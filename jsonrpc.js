@@ -1,4 +1,4 @@
-const hapi = require('hapi');
+const hapi = require('@hapi/hapi');
 const joi = require('joi');
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 
@@ -11,8 +11,10 @@ function initConsul(config) {
 }
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn, metrics}) {
+    const swagger = socket.swagger && await require('./swagger')(socket.swagger);
+
     const server = new hapi.Server({
-        port: socket.port
+        port: 52593 // socket.port
     });
 
     server.events.on('start', () => {
@@ -34,6 +36,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             handler: (request, h) => h.response(metrics() || '').type('text/plain; version=0.0.4; charset=utf-8')
         }
     }].filter(x => x));
+
+    swagger && server.route(swagger.uiRoutes);
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
@@ -198,7 +202,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     }
                 },
                 handler
-            }));
+            }))
+            .then(() => swagger && name.endsWith('.request') && server.route(swagger.getRoutes({
+                namespace: name.split('.')[0],
+                fn,
+                object
+            })));
     }
 
     function unregisterRoute(namespace, name) {
