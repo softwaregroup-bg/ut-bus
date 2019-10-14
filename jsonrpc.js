@@ -14,7 +14,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const swagger = socket.swagger && await require('./swagger')(socket.swagger, errors);
 
     const server = new hapi.Server({
-        port: 52593 // socket.port
+        port: socket.port
     });
 
     server.events.on('start', () => {
