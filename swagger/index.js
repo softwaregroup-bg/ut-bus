@@ -119,7 +119,7 @@ module.exports = async(swagger, errors) => {
                                 if (mtid === 'error') return h.response(body).code((body && body.statusCode) || 500);
                                 const errors = await validate.response({ body });
                                 if (errors.length > 0) return h.response(errors['bus.swagger.responseValidation']({errors})).code(500);
-                                return h.response(body).header('x-envoy-decorator-operation', operationId);
+                                return h.response(body).header('x-envoy-decorator-operation', operationId).code(successCode);
                             } catch (e) {
                                 return h.response(e).header('x-envoy-decorator-operation', operationId).code(e.statusCode || 500);
                             }
