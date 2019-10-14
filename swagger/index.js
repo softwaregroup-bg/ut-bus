@@ -2,7 +2,7 @@ const fs = require('fs');
 const swaggerValidator = require('ut-swagger2-validator');
 const swaggerUIDist = require('swagger-ui-dist');
 
-module.exports = async(swagger) => {
+module.exports = async(swagger, errors) => {
     const routes = {};
 
     const swaggerParser = require('swagger-parser');
@@ -106,7 +106,7 @@ module.exports = async(swagger) => {
                                 headers,
                                 pathParameters: params
                             });
-                            if (errors.length > 0) throw new Error('Request validation');
+                            if (errors.length > 0) return h.response(errors['bus.swagger.requestValidation']({errors})).code(400);
 
                             const msg = {
                                 ...(Array.isArray(payload) ? {list: payload} : payload),
@@ -116,12 +116,12 @@ module.exports = async(swagger) => {
 
                             try {
                                 const [body, {mtid}] = await fn.call(object, msg, $meta);
-                                if (mtid === 'error') throw new Error('mtid error');
+                                if (mtid === 'error') return h.response(body).code((body && body.statusCode) || 500);
                                 const errors = await validate.response({ body });
-                                if (errors.length > 0) throw new Error('Response validation');
+                                if (errors.length > 0) return h.response(errors['bus.swagger.responseValidation']({errors})).code(500);
                                 return h.response(body).header('x-envoy-decorator-operation', operationId);
                             } catch (e) {
-                                return h.response(e).header('x-envoy-decorator-operation', operationId);
+                                return h.response(e).header('x-envoy-decorator-operation', operationId).code(e.statusCode || 500);
                             }
                         }
                     }
