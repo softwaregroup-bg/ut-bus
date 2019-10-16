@@ -11,7 +11,7 @@ function initConsul(config) {
 }
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics}) {
-    const swagger = socket.swagger && await require('./swagger')(socket.swagger, errors);
+    const swagger = socket.swagger && await require('./swagger/routes')(socket.swagger, errors);
 
     const server = new hapi.Server({
         port: socket.port
@@ -37,7 +37,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }].filter(x => x));
 
-    swagger && server.route(swagger.uiRoutes);
+    if (swagger && socket.swaggerUi) server.route(require('./swagger/ui'));
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
@@ -203,7 +203,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 },
                 handler
             }))
-            .then(() => swagger && name.endsWith('.request') && server.route(swagger.getRoutes({
+            .then(() => swagger && name.endsWith('.request') && server.route(swagger({
                 namespace: name.split('.')[0],
                 fn,
                 object
