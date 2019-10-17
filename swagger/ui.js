@@ -106,37 +106,39 @@ window.onload = function() {
 </html>
 `;
 
-module.exports = [
-    {
-        path: uiPath,
-        response: html(uiTitle, uiPath),
-        type: 'text/html'
-    },
-    {
-        path: uiPath + '/api-docs',
-        response: document,
-        type: 'application/json'
-    },
-    {
-        path: uiPath + '/swagger-ui-bundle.js',
-        response: fs.readFileSync(uiDistPath + '/swagger-ui-bundle.js'),
-        type: 'application/json'
-    },
-    {
-        path: uiPath + '/swagger-ui-standalone-preset.js',
-        response: fs.readFileSync(uiDistPath + '/swagger-ui-standalone-preset.js'),
-        type: 'application/json'
-    },
-    {
-        path: uiPath + '/swagger-ui.css',
-        response: fs.readFileSync(uiDistPath + '/swagger-ui.css'),
-        type: 'text/css'
-    }
-].map(({path, response, type}) => ({
-    method: 'GET',
-    path,
-    options: {
-        auth: false,
-        handler: (request, h) => h.response(response).type(type)
-    }
-}));
+module.exports = function swaggerUiRoutes(sweaggerDocument) {
+    return [
+        {
+            path: uiPath,
+            response: html(uiTitle, uiPath),
+            type: 'text/html'
+        },
+        {
+            path: uiPath + '/api-docs',
+            response: sweaggerDocument,
+            type: 'application/json'
+        },
+        {
+            path: uiPath + '/swagger-ui-bundle.js',
+            response: fs.readFileSync(uiDistPath + '/swagger-ui-bundle.js'),
+            type: 'application/json'
+        },
+        {
+            path: uiPath + '/swagger-ui-standalone-preset.js',
+            response: fs.readFileSync(uiDistPath + '/swagger-ui-standalone-preset.js'),
+            type: 'application/json'
+        },
+        {
+            path: uiPath + '/swagger-ui.css',
+            response: fs.readFileSync(uiDistPath + '/swagger-ui.css'),
+            type: 'text/css'
+        }
+    ].map(({path, response, type}) => ({
+        method: 'GET',
+        path,
+        options: {
+            auth: false,
+            handler: (request, h) => h.response(response).type(type)
+        }
+    }));
+};
