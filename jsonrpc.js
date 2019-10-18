@@ -1,6 +1,7 @@
 const hapi = require('@hapi/hapi');
 const joi = require('joi');
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
+const joiToJsonSchema = require('joi-to-json-schema');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -11,8 +12,6 @@ function initConsul(config) {
 }
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics}) {
-    const swagger = socket.swagger && await require('./swagger')(socket.swagger, errors);
-
     const server = new hapi.Server({
         port: socket.port
     });
@@ -20,6 +19,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     server.events.on('start', () => {
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
+
+    const swagger = socket.swagger && await require('./swagger')(socket.swagger, errors);
+    const swaggerUi = swagger && socket.swaggerUi && require('./swagger/ui')(swagger.document);
+
+    if (swaggerUi) server.route(swaggerUi.routes);
 
     server.route([{
         method: 'GET',
@@ -36,8 +40,6 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             handler: (request, h) => h.response(metrics() || '').type('text/plain; version=0.0.4; charset=utf-8')
         }
     }].filter(x => x));
-
-    if (swagger && socket.swaggerUi) server.route(require('./swagger/ui')(swagger.document));
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
@@ -141,6 +143,18 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }
 
+    const validations = {
+        payload: {
+            default: joi.object({
+                jsonrpc: joi.string().valid('2.0').required(),
+                timeout: joi.number().optional(),
+                id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                method: joi.string().required(),
+                params: joi.array().required()
+            })
+        }
+    };
+
     function registerRoute(namespace, name, fn, object) {
         let path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         let handler = function(request, h) {
@@ -192,18 +206,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         parse: true
                     },
                     validate: {
-                        payload: joi.object({
-                            jsonrpc: joi.string().valid('2.0').required(),
-                            timeout: joi.number().optional(),
-                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
-                            method: joi.string().required(),
-                            params: joi.array().required()
-                        })
+                        payload: () => {
+                            const validation = validations.payload.default;
+                            return true;
+                        }
                     }
                 },
                 handler
             }))
-            .then(() => swagger && name.endsWith('.request') && server.route(swagger.routes({
+            .then(() => swagger && name.endsWith('.request') && server.route(swagger.restRoutes({
                 namespace: name.split('.')[0],
                 fn,
                 object
@@ -244,11 +255,36 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
+    function importValidations(validationsMap) {
+        const schemas = [];
+        Object.entries(validationsMap).forEach(([method, validation]) => {
+            const {params, result} = typeof validation === 'function' ? validation() : validation;
+            validations.payload[method] = joi.object({
+                jsonrpc: joi.string().valid('2.0').required(),
+                timeout: joi.number().optional(),
+                id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                method: joi.string().valid(method).required(),
+                params
+            });
+            schemas.push({
+                method,
+                params: joiToJsonSchema(params),
+                result: joiToJsonSchema(result)
+            });
+        });
+        if (swagger && schemas.length) {
+            const routes = swagger.rpcRoutes(schemas);
+            server.route(routes);
+            if (swaggerUi) swaggerUi.update(swagger.document);
+        }
+    }
+
     return {
         stop,
         start,
         exportMethod,
         removeMethod,
-        brokerMethod
+        brokerMethod,
+        importValidations
     };
 };

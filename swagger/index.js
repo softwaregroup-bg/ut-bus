@@ -1,6 +1,5 @@
 const swaggerValidator = require('ut-swagger2-validator');
 const swaggerParser = require('swagger-parser');
-
 module.exports = async(swagger, errors) => {
     const routes = {};
 
@@ -40,7 +39,103 @@ module.exports = async(swagger, errors) => {
 
     return {
         document,
-        routes: function swaggerRoutes({namespace, fn, object}) {
+        rpcRoutes: function swaggerRpcRoutes(schemas) {
+            return schemas.map(({method, params, result}) => {
+                const path = '/rpc/' + method.replace(/\./g, '/');
+                document.paths[path] = {
+                    post: {
+                        operationId: method,
+                        parameters: [{
+                            name: 'body',
+                            in: 'body',
+                            description: 'body',
+                            type: 'object',
+                            additionalProperties: false,
+                            required: ['id', 'jsonrpc', 'method', 'params'],
+                            properties: {
+                                id: {
+                                    schema: {
+                                        oneOf: [
+                                            { type: 'string', example: '1' },
+                                            { type: 'number', example: 1 }
+                                        ]
+                                    },
+                                    example: '1'
+                                },
+                                timeout: {
+                                    type: 'number',
+                                    example: null,
+                                    'x-nullable': true
+                                },
+                                jsonrpc: {
+                                    type: 'string',
+                                    enum: ['2.0'],
+                                    example: '2.0'
+                                },
+                                method: {
+                                    type: 'string',
+                                    enum: [method],
+                                    example: method
+                                },
+                                params
+                            }
+                        }],
+                        responses: {
+                            default: {
+                                description: 'Invalid request',
+                                schema: {}
+                            },
+                            200: {
+                                description: 'Successful response',
+                                schema: {
+                                    type: 'object',
+                                    additionalProperties: false,
+                                    required: ['id', 'jsonrpc', 'method'],
+                                    properties: {
+                                        id: {
+                                            schema: {
+                                                oneOf: [
+                                                    { type: 'string', example: '1' },
+                                                    { type: 'number', example: 1 }
+                                                ]
+                                            },
+                                            example: '1'
+                                        },
+                                        timeout: {
+                                            type: 'number',
+                                            example: null,
+                                            'x-nullable': true
+                                        },
+                                        jsonrpc: {
+                                            type: 'string',
+                                            enum: ['2.0'],
+                                            example: '2.0'
+                                        },
+                                        method: {
+                                            type: 'string',
+                                            enum: [method],
+                                            example: method
+                                        },
+                                        result: result.type ? result : {type: 'object'}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                return {
+                    method: 'POST',
+                    path,
+                    options: {
+                        auth: false,
+                        handler: async(request, h) => {
+                            return h.response({test: true});
+                        }
+                    }
+                };
+            });
+        },
+        restRoutes: function swaggerRestRoutes({namespace, fn, object}) {
             if (!routes[namespace]) return [];
             return routes[namespace].map(({
                 method,
