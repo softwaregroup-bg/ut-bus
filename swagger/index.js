@@ -49,35 +49,38 @@ module.exports = async(swagger, errors) => {
                             name: 'body',
                             in: 'body',
                             description: 'body',
-                            type: 'object',
-                            additionalProperties: false,
-                            required: ['id', 'jsonrpc', 'method', 'params'],
-                            properties: {
-                                id: {
-                                    schema: {
-                                        oneOf: [
-                                            { type: 'string', example: '1' },
-                                            { type: 'number', example: 1 }
-                                        ]
+                            required: true,
+                            schema: {
+                                type: 'object',
+                                additionalProperties: false,
+                                required: ['id', 'jsonrpc', 'method', 'params'],
+                                properties: {
+                                    id: {
+                                        schema: {
+                                            oneOf: [
+                                                { type: 'string', example: '1' },
+                                                { type: 'number', example: 1 }
+                                            ]
+                                        },
+                                        example: '1'
                                     },
-                                    example: '1'
-                                },
-                                timeout: {
-                                    type: 'number',
-                                    example: null,
-                                    'x-nullable': true
-                                },
-                                jsonrpc: {
-                                    type: 'string',
-                                    enum: ['2.0'],
-                                    example: '2.0'
-                                },
-                                method: {
-                                    type: 'string',
-                                    enum: [method],
-                                    example: method
-                                },
-                                params
+                                    timeout: {
+                                        type: 'number',
+                                        example: null,
+                                        'x-nullable': true
+                                    },
+                                    jsonrpc: {
+                                        type: 'string',
+                                        enum: ['2.0'],
+                                        example: '2.0'
+                                    },
+                                    method: {
+                                        type: 'string',
+                                        enum: [method],
+                                        example: method
+                                    },
+                                    params
+                                }
                             }
                         }],
                         responses: {
