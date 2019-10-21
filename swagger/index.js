@@ -91,7 +91,7 @@ module.exports = async(swagger, errors) => {
                                 error.output.headers['x-envoy-decorator-operation'] = operationId;
                                 throw error;
                             }
-                            const responseValidation = await validate.response({status: 200, body});
+                            const responseValidation = await validate.response({status: successCode, body});
                             if (responseValidation.length > 0) {
                                 const error = Boom.boomify(errors['bus.swagger.responseValidation']({responseValidation}), {statusCode: 500});
                                 error.output.headers['x-envoy-decorator-operation'] = operationId;
