@@ -1,6 +1,8 @@
 const swaggerValidator = require('ut-swagger2-validator');
 const swaggerParser = require('swagger-parser');
 const joiToJsonSchema = require('joi-to-json-schema');
+const Boom = require('@hapi/boom');
+
 module.exports = async(swagger, errors) => {
     const routes = {};
 
@@ -26,7 +28,7 @@ module.exports = async(swagger, errors) => {
         Object.entries(methods).forEach(([method, schema]) => {
             const {operationId, responses} = schema;
             if (!operationId) throw new Error('operationId must be defined');
-            const successCodes = Object.keys(responses).filter(code => code >= 200 && code < 300);
+            const successCodes = Object.keys(responses).map(x => +x).filter(code => code >= 200 && code < 300);
             if (successCodes.length !== 1) throw new Error('Exactly 1 successful HTTP status code must be defined');
             const [namespace] = operationId.split('.');
             if (!routes[namespace]) routes[namespace] = [];
@@ -165,13 +167,13 @@ module.exports = async(swagger, errors) => {
                         handler: async(request, h) => {
                             const {params, query, payload, headers} = request;
 
-                            const errors = await validate.request({
+                            const validation = await validate.request({
                                 query,
                                 body: payload,
                                 headers,
                                 pathParameters: params
                             });
-                            if (errors.length > 0) return h.response(errors['bus.swagger.requestValidation']({errors})).code(400);
+                            if (validation.length > 0) throw Boom.boomify(errors['bus.swagger.requestValidation']({validation}), {statusCode: 400});
 
                             const msg = {
                                 ...(Array.isArray(payload) ? {list: payload} : payload),
@@ -179,15 +181,34 @@ module.exports = async(swagger, errors) => {
                                 ...query
                             };
 
+                            let body, mtid;
                             try {
-                                const [body, {mtid}] = await fn.call(object, msg, $meta);
-                                if (mtid === 'error') return h.response(body).code((body && body.statusCode) || 500);
-                                const errors = await validate.response({ body });
-                                if (errors.length > 0) return h.response(errors['bus.swagger.responseValidation']({errors})).code(500);
-                                return h.response(body).header('x-envoy-decorator-operation', operationId).code(successCode);
+                                [body, {mtid}] = await fn.call(object, msg, $meta);
                             } catch (e) {
-                                return h.response(e).header('x-envoy-decorator-operation', operationId).code(e.statusCode || 500);
+                                return h
+                                    .response({
+                                        type: e.type,
+                                        message: e.message,
+                                        ...e
+                                    })
+                                    .header('x-envoy-decorator-operation', operationId)
+                                    .code(e.statusCode || 500);
                             }
+                            if (mtid === 'error') {
+                                const error = Boom.boomify(body instanceof Error ? body : {}, {statusCode: (body && body.statusCode) || 500});
+                                error.output.headers['x-envoy-decorator-operation'] = operationId;
+                                throw error;
+                            }
+                            const responseValidation = await validate.response({status: successCode, body});
+                            if (responseValidation.length > 0) {
+                                const error = Boom.boomify(errors['bus.swagger.responseValidation']({responseValidation}), {statusCode: 500});
+                                error.output.headers['x-envoy-decorator-operation'] = operationId;
+                                throw error;
+                            }
+                            return h
+                                .response(body)
+                                .header('x-envoy-decorator-operation', operationId)
+                                .code(successCode);
                         }
                     }
                 };
