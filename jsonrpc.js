@@ -1,7 +1,6 @@
 const hapi = require('@hapi/hapi');
 const joi = require('joi');
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
-const joiToJsonSchema = require('joi-to-json-schema');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -143,18 +142,6 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }
 
-    const validations = {
-        payload: {
-            default: joi.object({
-                jsonrpc: joi.string().valid('2.0').required(),
-                timeout: joi.number().optional(),
-                id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
-                method: joi.string().required(),
-                params: joi.array().required()
-            })
-        }
-    };
-
     function registerRoute(namespace, name, fn, object) {
         let path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         let handler = function(request, h) {
@@ -206,10 +193,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         parse: true
                     },
                     validate: {
-                        payload: () => {
-                            const validation = validations.payload.default;
-                            return true;
-                        }
+                        payload: joi.object({
+                            jsonrpc: joi.string().valid('2.0').required(),
+                            timeout: joi.number().optional(),
+                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                            method: joi.string().required(),
+                            params: joi.array().required()
+                        })
                     }
                 },
                 handler
@@ -259,17 +249,19 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         const schemas = [];
         Object.entries(validationsMap).forEach(([method, validation]) => {
             const {params, result} = typeof validation === 'function' ? validation() : validation;
-            validations.payload[method] = joi.object({
-                jsonrpc: joi.string().valid('2.0').required(),
-                timeout: joi.number().optional(),
-                id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
-                method: joi.string().valid(method).required(),
-                params
-            });
             schemas.push({
                 method,
-                params: joiToJsonSchema(params),
-                result: joiToJsonSchema(result)
+                params,
+                result,
+                validate: {
+                    payload: joi.object({
+                        jsonrpc: joi.string().valid('2.0').required(),
+                        timeout: joi.number().optional(),
+                        id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                        method: joi.string().valid(method).required(),
+                        params
+                    })
+                }
             });
         });
         if (swagger && schemas.length) {

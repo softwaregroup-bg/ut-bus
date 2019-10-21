@@ -1,5 +1,6 @@
 const swaggerValidator = require('ut-swagger2-validator');
 const swaggerParser = require('swagger-parser');
+const joiToJsonSchema = require('joi-to-json-schema');
 module.exports = async(swagger, errors) => {
     const routes = {};
 
@@ -19,8 +20,9 @@ module.exports = async(swagger, errors) => {
 
     const validator = await swaggerValidator(document);
 
+    const getRoutePath = path => [document.basePath, path].filter(x => x).join('');
+
     Object.entries(document.paths).forEach(([path, methods]) => {
-        const fullPath = [document.basePath, path].filter(x => x).join('');
         Object.entries(methods).forEach(([method, schema]) => {
             const {operationId, responses} = schema;
             if (!operationId) throw new Error('operationId must be defined');
@@ -30,7 +32,7 @@ module.exports = async(swagger, errors) => {
             if (!routes[namespace]) routes[namespace] = [];
             routes[namespace].push({
                 method,
-                path: fullPath,
+                path: getRoutePath(path),
                 operationId,
                 successCode: successCodes[0]
             });
@@ -39,8 +41,10 @@ module.exports = async(swagger, errors) => {
 
     return {
         document,
-        rpcRoutes: function swaggerRpcRoutes(schemas) {
-            return schemas.map(({method, params, result}) => {
+        rpcRoutes: function swaggerRpcRoutes(definitions) {
+            return definitions.map(({method, params, result, validate}) => {
+                const paramsSchema = params.isJoi ? joiToJsonSchema(params) : params;
+                const resultSchema = result.isJoi ? joiToJsonSchema(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
                     post: {
@@ -79,7 +83,7 @@ module.exports = async(swagger, errors) => {
                                         enum: [method],
                                         example: method
                                     },
-                                    params
+                                    params: paramsSchema
                                 }
                             }
                         }],
@@ -119,7 +123,7 @@ module.exports = async(swagger, errors) => {
                                             enum: [method],
                                             example: method
                                         },
-                                        result: result.type ? result : {type: 'object'}
+                                        result: resultSchema.type ? resultSchema : {type: 'object'}
                                     }
                                 }
                             }
@@ -128,10 +132,15 @@ module.exports = async(swagger, errors) => {
                 };
                 return {
                     method: 'POST',
-                    path,
+                    path: getRoutePath(path),
                     options: {
                         auth: false,
-                        handler: async(request, h) => {
+                        payload: {
+                            output: 'data',
+                            parse: true
+                        },
+                        validate,
+                        handler: async(request, h) => { // TODO rpc handler!!!
                             return h.response({test: true});
                         }
                     }
