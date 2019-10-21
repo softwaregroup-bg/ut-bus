@@ -71,8 +71,10 @@ class Bus extends Broker {
         return this.rpc.removeMethod(methods, namespace || this.id, false, port);
     }
     registerLocal(methods, moduleName) {
-        this.modules[moduleName] = this.modules[moduleName] || {};
-        Object.assign(this.modules[moduleName], flattenAPI(methods));
+        if (!this.modules[moduleName]) this.modules[moduleName] = {};
+        const methodsMap = flattenAPI(methods);
+        if (moduleName.endsWith('.validation') && this.rpc.importValidations) this.rpc.importValidations(methodsMap);
+        Object.assign(this.modules[moduleName], methodsMap);
     }
     unregisterLocal(moduleName) {
         let mod = this.modules[moduleName];
