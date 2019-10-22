@@ -64,7 +64,10 @@ module.exports = async(swagger, errors) => {
                 validate,
                 handler
             }) => {
-                const paramsSchema = (params && params.isJoi) ? joiToJsonSchema(params) : params;
+                const paramsSchema = (params && params.isJoi) ? joiToJsonSchema(params, (schema, j) => {
+                    if (schema.type === 'array' && !schema.items) schema.items = {};
+                    return schema;
+                }) : params;
                 const resultSchema = result.isJoi ? joiToJsonSchema(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
