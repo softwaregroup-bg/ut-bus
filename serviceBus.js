@@ -73,7 +73,7 @@ class Bus extends Broker {
     registerLocal(methods, moduleName) {
         if (!this.modules[moduleName]) this.modules[moduleName] = {};
         const methodsMap = flattenAPI(methods);
-        if (moduleName.endsWith('.validation') && this.rpc.importValidations) this.rpc.importValidations(methodsMap);
+        if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName);
         Object.assign(this.modules[moduleName], methodsMap);
     }
     unregisterLocal(moduleName) {

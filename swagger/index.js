@@ -44,12 +44,26 @@ module.exports = async(swagger, errors) => {
     return {
         document,
         rpcRoutes: function swaggerRpcRoutes(definitions) {
-            return definitions.map(({method, params, result, validate}) => {
+            return definitions.map(({
+                tags,
+                app,
+                timeout,
+                method,
+                description = method,
+                notes,
+                params,
+                result,
+                validate,
+                handler
+            }) => {
                 const paramsSchema = params.isJoi ? joiToJsonSchema(params) : params;
                 const resultSchema = result.isJoi ? joiToJsonSchema(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
                     post: {
+                        tags: (tags || []).concat('rpc'),
+                        summary: description,
+                        description: notes && [].concat(notes).join('\n'),
                         operationId: method,
                         parameters: [{
                             name: 'body',
@@ -64,8 +78,8 @@ module.exports = async(swagger, errors) => {
                                     id: {
                                         schema: {
                                             oneOf: [
-                                                { type: 'string', example: '1' },
-                                                { type: 'number', example: 1 }
+                                                {type: 'string'},
+                                                {type: 'number'}
                                             ]
                                         },
                                         example: '1'
@@ -73,7 +87,7 @@ module.exports = async(swagger, errors) => {
                                     timeout: {
                                         type: 'number',
                                         example: null,
-                                        'x-nullable': true
+                                        nullable: true
                                     },
                                     jsonrpc: {
                                         type: 'string',
@@ -104,16 +118,11 @@ module.exports = async(swagger, errors) => {
                                         id: {
                                             schema: {
                                                 oneOf: [
-                                                    { type: 'string', example: '1' },
-                                                    { type: 'number', example: 1 }
+                                                    {type: 'string'},
+                                                    {type: 'number'}
                                                 ]
                                             },
                                             example: '1'
-                                        },
-                                        timeout: {
-                                            type: 'number',
-                                            example: null,
-                                            'x-nullable': true
                                         },
                                         jsonrpc: {
                                             type: 'string',
@@ -137,14 +146,13 @@ module.exports = async(swagger, errors) => {
                     path: getRoutePath(path),
                     options: {
                         auth: false,
-                        payload: {
-                            output: 'data',
-                            parse: true
-                        },
+                        app,
+                        timeout,
+                        description,
+                        notes,
+                        tags,
                         validate,
-                        handler: async(request, h) => { // TODO rpc handler!!!
-                            return h.response({test: true});
-                        }
+                        handler
                     }
                 };
             });
