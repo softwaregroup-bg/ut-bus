@@ -2,6 +2,10 @@ const swaggerValidator = require('ut-swagger2-validator');
 const swaggerParser = require('swagger-parser');
 const joiToJsonSchema = require('joi-to-json-schema');
 const Boom = require('@hapi/boom');
+const convertJoi = joiSchema => joiToJsonSchema(joiSchema, (schema, j) => {
+    if (schema.type === 'array' && !schema.items) schema.items = {};
+    return schema;
+});
 
 module.exports = async(swagger, errors) => {
     const routes = {};
@@ -64,11 +68,8 @@ module.exports = async(swagger, errors) => {
                 validate,
                 handler
             }) => {
-                const paramsSchema = (params && params.isJoi) ? joiToJsonSchema(params, (schema, j) => {
-                    if (schema.type === 'array' && !schema.items) schema.items = {};
-                    return schema;
-                }) : params;
-                const resultSchema = result.isJoi ? joiToJsonSchema(result) : result;
+                const paramsSchema = (params && params.isJoi) ? convertJoi(params) : params;
+                const resultSchema = result.isJoi ? convertJoi(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
                     post: {
