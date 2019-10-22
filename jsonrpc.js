@@ -20,8 +20,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
 
-    const swagger = (socket.swagger || socket.swaggerUi) && await require('./swagger')(socket.swagger, errors);
-    const swaggerUi = swagger && socket.swaggerUi && require('./swagger/ui')(swagger.document);
+    const swagger = socket.swagger && await require('./swagger')(socket.swagger.document, errors);
+    const swaggerUi = swagger && socket.swagger.ui && require('./swagger/ui')(swagger.document, socket.swagger.ui);
 
     if (swaggerUi) server.route(swaggerUi.routes);
 

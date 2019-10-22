@@ -1,7 +1,5 @@
 const fs = require('fs');
 const uiDistPath = require('swagger-ui-dist').getAbsoluteFSPath();
-const uiTitle = 'Swagger UI';
-const uiPath = '/docs';
 const html = (title, path) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -106,31 +104,34 @@ window.onload = function() {
 </html>
 `;
 
-module.exports = swaggerDocument => {
+module.exports = (swaggerDocument, {
+    title = 'Swagger UI',
+    path = '/docs'
+}) => {
     return {
         routes: [
             {
-                path: uiPath,
-                response: html(uiTitle, uiPath),
+                path,
+                response: html(title, path),
                 type: 'text/html'
             },
             {
-                path: uiPath + '/api-docs',
+                path: path + '/api-docs',
                 response: swaggerDocument,
                 type: 'application/json'
             },
             {
-                path: uiPath + '/swagger-ui-bundle.js',
+                path: path + '/swagger-ui-bundle.js',
                 response: fs.readFileSync(uiDistPath + '/swagger-ui-bundle.js'),
                 type: 'application/json'
             },
             {
-                path: uiPath + '/swagger-ui-standalone-preset.js',
+                path: path + '/swagger-ui-standalone-preset.js',
                 response: fs.readFileSync(uiDistPath + '/swagger-ui-standalone-preset.js'),
                 type: 'application/json'
             },
             {
-                path: uiPath + '/swagger-ui.css',
+                path: path + '/swagger-ui.css',
                 response: fs.readFileSync(uiDistPath + '/swagger-ui.css'),
                 type: 'text/css'
             }
