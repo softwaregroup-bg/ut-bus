@@ -15,7 +15,15 @@ module.exports = async(swagger, errors) => {
             document = await swaggerParser.bundle(swagger);
             break;
         default:
-            document = swagger;
+            document = swagger || {
+                swagger: '2.0',
+                info: {
+                    title: 'API',
+                    description: 'API',
+                    version: '1.0.0'
+                },
+                paths: {}
+            };
     }
 
     await swaggerParser.validate(document);
@@ -56,7 +64,7 @@ module.exports = async(swagger, errors) => {
                 validate,
                 handler
             }) => {
-                const paramsSchema = params.isJoi ? joiToJsonSchema(params) : params;
+                const paramsSchema = (params && params.isJoi) ? joiToJsonSchema(params) : params;
                 const resultSchema = result.isJoi ? joiToJsonSchema(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
@@ -99,7 +107,7 @@ module.exports = async(swagger, errors) => {
                                         enum: [method],
                                         example: method
                                     },
-                                    params: paramsSchema
+                                    ...paramsSchema && {params: paramsSchema}
                                 }
                             }
                         }],

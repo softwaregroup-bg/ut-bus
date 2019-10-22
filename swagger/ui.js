@@ -107,12 +107,7 @@ window.onload = function() {
 `;
 
 module.exports = swaggerDocument => {
-    // make swaggerDocument nested property so that it can be updated by reference
-    const context = { swaggerDocument };
     return {
-        update: function swaggerUiUpdate(swaggerDocument) {
-            context.swaggerDocument = swaggerDocument;
-        },
         routes: [
             {
                 path: uiPath,
@@ -121,7 +116,7 @@ module.exports = swaggerDocument => {
             },
             {
                 path: uiPath + '/api-docs',
-                response: context.swaggerDocument,
+                response: swaggerDocument,
                 type: 'application/json'
             },
             {
