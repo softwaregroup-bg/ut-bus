@@ -73,7 +73,7 @@ module.exports = async(swagger, errors) => {
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
                     post: {
-                        tags: (tags || []).concat('rpc'),
+                        tags: ['rpc/' + method.split('.').shift()],
                         summary: description,
                         description: notes && [].concat(notes).join('\n'),
                         operationId: method,
