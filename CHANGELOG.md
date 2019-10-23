@@ -1,3 +1,12 @@
+# [7.6.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.5.2...v7.6.0) (2019-10-23)
+
+
+### Features
+
+* expose swagger API and docs ([eda3791](https://github.com/softwaregroup-bg/ut-bus/commit/eda3791)), closes [#66](https://github.com/softwaregroup-bg/ut-bus/issues/66)
+
+
+
 ## [7.5.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.5.1...v7.5.2) (2019-10-09)
 
 
