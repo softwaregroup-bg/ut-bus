@@ -1,5 +1,5 @@
 const hapi = require('@hapi/hapi');
-const joi = require('joi');
+const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
