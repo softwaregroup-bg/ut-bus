@@ -1,6 +1,8 @@
-const hapi = require('hapi');
-const joi = require('joi');
+const hapi = require('@hapi/hapi');
+const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
+const Boom = require('@hapi/boom');
+const Inert = require('@hapi/inert');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -10,14 +12,21 @@ function initConsul(config) {
     return consul;
 }
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn, metrics}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics}) {
     const server = new hapi.Server({
         port: socket.port
     });
 
+    await server.register(Inert);
+
     server.events.on('start', () => {
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
+
+    const swagger = socket.swagger && await require('./swagger')(socket.swagger.document, errors);
+    const swaggerUi = swagger && socket.swagger.ui && require('./swagger/ui')(swagger.document);
+
+    if (swaggerUi) server.route(swaggerUi.routes);
 
     server.route([{
         method: 'GET',
@@ -101,14 +110,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         }, (error, response, body) => {
                             if (error) {
                                 reject(error);
-                            } else if (response.statusCode < 200 || response.statusCode >= 300) {
-                                reject(new Error());
-                            } else if (body && body.result !== undefined && body.error === undefined) {
-                                resolve(body.result);
                             } else if (body && body.error) {
                                 reject(Object.assign(new Error(), body.error));
+                            } else if (response.statusCode < 200 || response.statusCode >= 300) {
+                                reject(new Error('HTTP error ' + response.statusCode));
+                            } else if (body && body.result !== undefined && body.error === undefined) {
+                                resolve(body.result);
                             } else {
-                                reject(new Error());
+                                reject(new Error('Empty response'));
                             }
                         });
                     });
@@ -140,6 +149,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function registerRoute(namespace, name, fn, object) {
         let path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         let handler = function(request, h) {
+            let unpack = false;
+            if (request.payload.meta || !Array.isArray(request.payload.params)) {
+                unpack = true;
+                request.payload.params = [request.payload.params, request.payload.meta || {mtid: 'request', method: request.payload.method}];
+            }
             request.payload.params[1] = Object.assign({}, request.payload.params[1], {
                 opcode: request.payload.method.split('.').pop(),
                 forward: ['x-request-id', 'x-b3-traceid', 'x-b3-spanid', 'x-b3-parentspanid', 'x-b3-sampled', 'x-b3-flags', 'x-ot-span-context']
@@ -153,13 +167,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 .then(result => h.response({
                     jsonrpc: request.payload.jsonrpc,
                     id: request.payload.id,
-                    result
+                    result: unpack ? result[0] : result
                 }).header('x-envoy-decorator-operation', request.payload.method))
                 .catch(error => h.response({
                     jsonrpc: request.payload.jsonrpc,
                     id: request.payload.id,
                     error
-                }).header('x-envoy-decorator-operation', request.payload.method));
+                }).header('x-envoy-decorator-operation', request.payload.method).code(error.statusCode || 500));
         };
 
         let route = server.match('POST', path);
@@ -198,7 +212,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     }
                 },
                 handler
-            }));
+            }))
+            .then(() => swagger && name.endsWith('.request') && server.route(swagger.restRoutes({
+                namespace: name.split('.')[0],
+                fn,
+                object
+            })));
     }
 
     function unregisterRoute(namespace, name) {
@@ -235,11 +254,42 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
+    function localMethod(methods, namespace) {
+        if (namespace.endsWith('.validation') && swagger && Object.entries(methods).length) {
+            server.route(swagger.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
+                const {params, ...rest} = typeof validation === 'function' ? validation() : validation;
+                let path = '/rpc/ports/' + method.split('.').shift() + '/request';
+                return {
+                    method,
+                    params,
+                    validate: {
+                        options: {abortEarly: false},
+                        query: false,
+                        payload: joi.object({
+                            jsonrpc: '2.0',
+                            timeout: joi.number().optional().allow(null),
+                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                            method,
+                            ...params && {params}
+                        })
+                    },
+                    handler: (request, ...rest) => {
+                        const route = server.match('POST', path);
+                        if (!route || !route.settings || !route.settings.handler) throw Boom.notFound();
+                        return route.settings.handler(request, ...rest);
+                    },
+                    ...rest
+                };
+            })));
+        }
+    }
+
     return {
         stop,
         start,
         exportMethod,
         removeMethod,
-        brokerMethod
+        brokerMethod,
+        localMethod
     };
 };

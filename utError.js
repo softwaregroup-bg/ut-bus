@@ -58,34 +58,37 @@ module.exports = ({logFactory, logLevel}) => {
         },
         register(errorsMap) {
             const result = {};
-            Object.keys(errorsMap).forEach(type => {
+            Object.entries(errorsMap).forEach(([type, message]) => {
                 if (!typeRegex.test(type)) {
                     warn(`Invalid error type format: '${type}'!`, {
                         args: {type, expectedFormat: typeRegex.toString()},
                         method: 'utError.register'
                     });
                 }
+                const props = typeof message === 'string' ? {message} : message;
+                if (!props.message) throw new Error(`Missing message for error '${type}'`);
                 if (errors[type]) {
-                    if (errors[type].message !== errorsMap[type]) {
+                    if (errors[type].message !== props.message) {
                         throw new Error(`Error '${type}' is already defined with different message!`);
                     }
                     result[type] = errors[type];
                     return;
                 }
-                const message = errorsMap[type];
-                const handler = (x = {}, $meta) => {
+
+                const handler = (params = {}, $meta) => {
                     const error = new Error();
-                    if (x instanceof Error) {
-                        error.cause = x;
+                    if (params instanceof Error) {
+                        error.cause = params;
                     } else {
-                        Object.assign(error, x);
+                        Object.assign(error, params);
                     }
+                    Object.assign(error, props);
                     error.type = type;
-                    error.message = interpolate(message, x.params);
+                    error.message = interpolate(props.message, params.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
                 handler.type = type;
-                handler.message = message;
+                handler.message = props.message;
                 result[type] = errors[type] = handler;
             });
             return result;

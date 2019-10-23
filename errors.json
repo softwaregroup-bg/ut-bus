@@ -9,5 +9,7 @@
     "bus.unhandledError": "Unhandled error {errorMessage}",
     "bus.bindingFailed": "Method binding failed for {typeName} {methodType} {methodName}",
     "bus.cacheFailed": "Method cache failed for {typeName} {methodType} {methodName}",
-    "bus.cacheOperationMissing": "Cache before adn after operations missing for {typeName} {methodType} {methodName}"
+    "bus.cacheOperationMissing": "Cache before adn after operations missing for {typeName} {methodType} {methodName}",
+    "bus.swagger.requestValidation": "Swagger request validation error",
+    "bus.swagger.responseValidation": "Swagger response validation error"
 }
