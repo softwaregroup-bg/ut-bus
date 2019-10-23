@@ -69,7 +69,7 @@ module.exports = async(swagger, errors) => {
                 handler
             }) => {
                 const paramsSchema = (params && params.isJoi) ? convertJoi(params) : params;
-                const resultSchema = result.isJoi ? convertJoi(result) : result;
+                const resultSchema = (result && result.isJoi) ? convertJoi(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
                 document.paths[path] = {
                     post: {
@@ -146,7 +146,7 @@ module.exports = async(swagger, errors) => {
                                             enum: [method],
                                             example: method
                                         },
-                                        result: resultSchema.type ? resultSchema : {type: 'object'}
+                                        ...resultSchema && {result: resultSchema}
                                     }
                                 }
                             }
