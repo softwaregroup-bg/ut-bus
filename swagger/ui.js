@@ -1,7 +1,7 @@
 const uiDistPath = require('swagger-ui-dist').getAbsoluteFSPath();
 const uiPath = '/docs';
 const path = require('path');
-require('inert');
+require('@hapi/inert');
 
 module.exports = swaggerDocument => {
     return {
