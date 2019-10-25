@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+
+        #container {
+            padding: 16px;
+        }
+
+        #wrapper {
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        #content {
+            background-color: #fefefe;
+            margin: 5% auto 15% auto;
+            border: 1px solid #888;
+            width: 300px;
+            -webkit-animation: animatezoom 0.6s;
+            animation: animatezoom 0.6s;
+        }
+
+
+        @-webkit-keyframes animatezoom {
+            from {-webkit-transform: scale(0)}
+            to {-webkit-transform: scale(1)}
+        }
+
+        @keyframes animatezoom {
+            from {transform: scale(0)}
+            to {transform: scale(1)}
+        }
+
+        input[type=text], input[type=password] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #0074ba;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0067a6;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div id="wrapper">
+  <form id="content" action="/oauth/login" method="post">
+    <div id="container">
+      <label for="username"><b>Username</b></label>
+      <input type="text" placeholder="Enter username" name="username" required>
+      <label for="password"><b>Password</b></label>
+      <input type="password" placeholder="Enter password" name="password" required>
+      <input type="hidden" name="response_type"/>
+      <input type="hidden" name="client_id"/>
+      <input type="hidden" name="redirect_uri"/>
+      <input type="hidden" name="state"/>
+      <button type="submit">Login</button>
+    </div>
+  </form>
+</div>
+<script>
+    (function() {
+        function onLoad() {
+            var params = new URLSearchParams(window.location.search);
+            var inputs = document.getElementsByTagName('input');
+            for (var i = 0; i < inputs.length; i += 1) {
+                if (inputs[i].type === 'hidden') {
+                    inputs[i].value = params.get(inputs[i].name);
+                }
+            }
+        }
+        if (document.addEventListener) {
+            document.addEventListener('DOMContentLoaded', onLoad);
+        } else if (window.attachEvent) {
+            window.attachEvent('onload', onLoad);
+        } else {
+            document.getElementById('container').innerHTML = '<div class="error">Unsupported browser !</div>';
+        }
+
+    })();
+</script>
+</body>
+</html>

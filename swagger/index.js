@@ -1,6 +1,7 @@
 const swaggerValidator = require('ut-swagger2-validator');
 const swaggerParser = require('swagger-parser');
 const joiToJsonSchema = require('joi-to-json-schema');
+const merge = require('ut-function.merge');
 const Boom = require('@hapi/boom');
 const convertJoi = joiSchema => joiToJsonSchema(joiSchema, (schema, j) => {
     if (schema.type === 'array' && !schema.items) schema.items = {};
@@ -9,25 +10,40 @@ const convertJoi = joiSchema => joiToJsonSchema(joiSchema, (schema, j) => {
 
 module.exports = async(swagger, errors) => {
     const routes = {};
-
-    let document;
+    const document = {
+        swagger: '2.0',
+        info: {
+            title: 'API',
+            description: 'API',
+            version: '1.0.0'
+        },
+        securityDefinitions: {
+            OAuth2: {
+                type: 'oauth2',
+                flow: 'accessCode',
+                authorizationUrl: '/oauth/authorize',
+                tokenUrl: '/oauth/token',
+                scopes: {
+                    read: 'Grants read access',
+                    write: 'Grants write access',
+                    admin: 'Grants read and write access to administrative information'
+                }
+            }
+        },
+        paths: {}
+    };
     switch (typeof swagger) {
         case 'function':
-            document = swagger();
+            merge(document, swagger());
             break;
         case 'string':
-            document = await swaggerParser.bundle(swagger);
+            merge(document, await swaggerParser.bundle(swagger));
+            break;
+        case 'object':
+            merge(document, swagger);
             break;
         default:
-            document = swagger || {
-                swagger: '2.0',
-                info: {
-                    title: 'API',
-                    description: 'API',
-                    version: '1.0.0'
-                },
-                paths: {}
-            };
+            break;
     }
 
     await swaggerParser.validate(document);

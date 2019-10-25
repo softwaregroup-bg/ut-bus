@@ -24,7 +24,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     });
 
     const swagger = socket.swagger && await require('./swagger')(socket.swagger.document, errors);
+
     const swaggerUi = swagger && socket.swagger.ui && require('./swagger/ui')(swagger.document);
+
+    const oauth = require('./oauth')();
+
+    server.route(oauth.routes);
 
     if (swaggerUi) server.route(swaggerUi.routes);
 

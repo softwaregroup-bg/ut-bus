@@ -7,6 +7,14 @@ module.exports = swaggerDocument => {
     return {
         routes: [{
             method: 'GET',
+            path: '/oauth2-redirect.html',
+            options: {auth: false},
+            handler: {
+                file: `${uiDistPath}/oauth2-redirect.html`
+            }
+        },
+        {
+            method: 'GET',
             path: `${uiPath}/swagger.json`,
             options: {
                 auth: false,
