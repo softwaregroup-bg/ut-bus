@@ -1,4 +1,5 @@
-module.exports = () => {
+const jwt = require('jsonwebtoken');
+module.exports = async function oauth({ key = 'ut5' } = {}) {
     return {
         routes: [
             {
@@ -37,7 +38,8 @@ module.exports = () => {
                         }
                     }, h) => {
                         // verify user credentials and generate client access code
-                        return h.redirect(`${redirectUri}?state=${state}&code=h1YHZmNkWnPXJ`);
+                        const code = 'sdfIUYRsdYYTdsrsdtyKGds';
+                        return h.redirect(`${redirectUri}?state=${state}&code=${code}`);
                     }
                 }
             },
@@ -57,10 +59,12 @@ module.exports = () => {
                     }, h) => {
                         // https://www.oauth.com/oauth2-servers/access-tokens/authorization-code-request/
                         // verify client credentials and access code and generate tokens
+                        const expiresIn = 300000; // milliseconds
+                        const token = jwt.sign({ test: true }, key, { expiresIn });
                         return h.response({
-                            access_token: 'sdfIUYRsdYYTdsrsdtyKGds',
+                            access_token: token,
                             token_type: 'bearer',
-                            expires_in: 3600,
+                            expires_in: expiresIn / 1000, // seconds
                             refresh_token: 'dfdsauyYTRTDsTdtstyTs',
                             scope: 'create'
                         });

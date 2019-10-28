@@ -2,7 +2,6 @@ const hapi = require('@hapi/hapi');
 const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const Boom = require('@hapi/boom');
-const Inert = require('@hapi/inert');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -17,13 +16,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         port: socket.port
     });
 
-    await server.register(Inert);
-
     server.events.on('start', () => {
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
 
-    const swagger = socket.swagger && await require('./swagger')(socket.swagger.document, errors);
+    const swagger = socket.swagger && await require('./swagger')(server, socket.swagger, errors);
 
     const swaggerUi = swagger && socket.swagger.ui && require('./swagger/ui')(swagger.document);
 

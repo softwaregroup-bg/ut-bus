@@ -3,14 +3,29 @@ const swaggerParser = require('swagger-parser');
 const joiToJsonSchema = require('joi-to-json-schema');
 const merge = require('ut-function.merge');
 const Boom = require('@hapi/boom');
+const Inert = require('@hapi/inert');
+const Jwt = require('hapi-auth-jwt2');
 const convertJoi = joiSchema => joiToJsonSchema(joiSchema, (schema, j) => {
     if (schema.type === 'array' && !schema.items) schema.items = {};
     return schema;
 });
 
-module.exports = async(swagger, errors) => {
+module.exports = async function swagger(server, {
+    document,
+    jwt: {
+        key = 'ut5'
+    } = {}
+}, errors) {
+    await server.register([Inert, Jwt]);
+    server.auth.strategy('jwt', 'jwt', {
+        key,
+        async validate(decoded, request, h) {
+            return { isValid: true };
+        }
+    });
+
     const routes = {};
-    const document = {
+    const swaggerDocument = {
         swagger: '2.0',
         info: {
             title: 'API',
@@ -32,29 +47,29 @@ module.exports = async(swagger, errors) => {
         },
         paths: {}
     };
-    switch (typeof swagger) {
+    switch (typeof document) {
         case 'function':
-            merge(document, swagger());
+            merge(swaggerDocument, document());
             break;
         case 'string':
-            merge(document, await swaggerParser.bundle(swagger));
+            merge(swaggerDocument, await swaggerParser.bundle(document));
             break;
         case 'object':
-            merge(document, swagger);
+            merge(swaggerDocument, document);
             break;
         default:
             break;
     }
 
-    await swaggerParser.validate(document);
+    await swaggerParser.validate(swaggerDocument);
 
-    const validator = await swaggerValidator(document);
+    const validator = await swaggerValidator(swaggerDocument);
 
-    const getRoutePath = path => [document.basePath, path].filter(x => x).join('');
+    const getRoutePath = path => [swaggerDocument.basePath, path].filter(x => x).join('');
 
-    Object.entries(document.paths).forEach(([path, methods]) => {
+    Object.entries(swaggerDocument.paths).forEach(([path, methods]) => {
         Object.entries(methods).forEach(([method, schema]) => {
-            const {operationId, responses} = schema;
+            const {operationId, responses, security = []} = schema;
             if (!operationId) throw new Error('operationId must be defined');
             const successCodes = Object.keys(responses).map(x => +x).filter(code => code >= 200 && code < 300);
             if (successCodes.length !== 1) throw new Error('Exactly 1 successful HTTP status code must be defined');
@@ -64,13 +79,14 @@ module.exports = async(swagger, errors) => {
                 method,
                 path: getRoutePath(path),
                 operationId,
+                security,
                 successCode: successCodes[0]
             });
         });
     });
 
     return {
-        document,
+        document: swaggerDocument,
         rpcRoutes: function swaggerRpcRoutes(definitions) {
             return definitions.map(({
                 tags,
@@ -87,7 +103,7 @@ module.exports = async(swagger, errors) => {
                 const paramsSchema = (params && params.isJoi) ? convertJoi(params) : params;
                 const resultSchema = (result && result.isJoi) ? convertJoi(result) : result;
                 const path = '/rpc/' + method.replace(/\./g, '/');
-                document.paths[path] = {
+                swaggerDocument.paths[path] = {
                     post: {
                         tags: ['rpc/' + method.split('.').shift()],
                         summary: description,
@@ -191,6 +207,7 @@ module.exports = async(swagger, errors) => {
                 method,
                 path,
                 operationId,
+                security,
                 successCode
             }) => {
                 const validate = validator[operationId];
@@ -199,7 +216,7 @@ module.exports = async(swagger, errors) => {
                     method,
                     path,
                     options: {
-                        auth: false,
+                        auth: security.find(({OAuth2}) => OAuth2) ? 'jwt' : false,
                         handler: async(request, h) => {
                             const {params, query, payload, headers} = request;
 

@@ -4,10 +4,11 @@
   "description": "UT bus module",
   "dependencies": {
     "@hapi/boom": "8.0.1",
-    "@hapi/inert": "5.2.2",
     "@hapi/hapi": "18.4.0",
+    "@hapi/inert": "5.2.2",
     "browser-process-hrtime": "1.0.0",
     "dns-discovery": "6.2.3",
+    "hapi-auth-jwt2": "8.1.0",
     "joi-to-json-schema": "5.1.0",
     "mdns-resolver": "0.0.3",
     "reconnect-core": "1.3.0",
