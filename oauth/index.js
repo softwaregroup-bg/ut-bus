@@ -11,10 +11,33 @@ module.exports = () => {
                             response_type: responseType,
                             client_id: clientId,
                             redirect_uri: redirectUri,
-                            state
+                            state,
+                            scope
                         }
                     }, h) => {
+                        // https://www.oauth.com/oauth2-servers/authorization/the-authorization-request/
                         return h.file('authorize.html', {confine: __dirname});
+                    }
+                }
+            },
+            {
+                method: 'POST',
+                path: '/oauth/login',
+                options: {
+                    auth: false,
+                    handler: async({
+                        payload: {
+                            client_id: clientId,
+                            redirect_uri: redirectUri,
+                            response_type: responseType,
+                            state,
+                            scope,
+                            username,
+                            password
+                        }
+                    }, h) => {
+                        // verify user credentials and generate client access code
+                        return h.redirect(`${redirectUri}?state=${state}&code=h1YHZmNkWnPXJ`);
                     }
                 }
             },
@@ -32,6 +55,8 @@ module.exports = () => {
                             code
                         }
                     }, h) => {
+                        // https://www.oauth.com/oauth2-servers/access-tokens/authorization-code-request/
+                        // verify client credentials and access code and generate tokens
                         return h.response({
                             access_token: 'sdfIUYRsdYYTdsrsdtyKGds',
                             token_type: 'bearer',
@@ -39,25 +64,6 @@ module.exports = () => {
                             refresh_token: 'dfdsauyYTRTDsTdtstyTs',
                             scope: 'create'
                         });
-                    }
-                }
-            },
-            {
-                method: 'POST',
-                path: '/oauth/login',
-                options: {
-                    auth: false,
-                    handler: async({
-                        payload: {
-                            client_id: clientId,
-                            redirect_uri: redirectUri,
-                            response_type: responseType,
-                            state,
-                            username,
-                            password
-                        }
-                    }, h) => {
-                        return h.redirect(`${redirectUri}?state=${state}&code=h1YHZmNkWnPXJ`);
                     }
                 }
             }
