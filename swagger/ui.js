@@ -1,16 +1,20 @@
 const uiDistPath = require('swagger-ui-dist').getAbsoluteFSPath();
 const uiPath = '/docs';
 const path = require('path');
-require('@hapi/inert');
 
 module.exports = swaggerDocument => {
     return {
         routes: [{
             method: 'GET',
             path: '/oauth2-redirect.html',
-            options: {auth: false},
+            options: {
+                auth: false
+            },
             handler: {
-                file: `${uiDistPath}/oauth2-redirect.html`
+                file: {
+                    path: 'oauth2-redirect.html',
+                    confine: uiDistPath
+                }
             }
         },
         {
