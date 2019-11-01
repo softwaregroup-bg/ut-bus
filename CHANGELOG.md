@@ -1,3 +1,12 @@
+## [7.6.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.6.0...v7.6.1) (2019-11-01)
+
+
+### Bug Fixes
+
+* move api docs to ut-api ([9fdf6ff](https://github.com/softwaregroup-bg/ut-bus/commit/9fdf6ff))
+
+
+
 # [7.6.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.5.2...v7.6.0) (2019-10-23)
 
 
