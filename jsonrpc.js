@@ -23,10 +23,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
 
-    const swagger = socket.swagger && await require('./swagger')(socket.swagger.document, errors);
-    const swaggerUi = swagger && socket.swagger.ui && require('./swagger/ui')(swagger.document);
-
-    if (swaggerUi) server.route(swaggerUi.routes);
+    const utApi = socket.api && await require('ut-api')(socket.api, errors);
+    if (utApi && utApi.uiRoutes) server.route(utApi.uiRoutes);
 
     server.route([{
         method: 'GET',
@@ -213,7 +211,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 },
                 handler
             }))
-            .then(() => swagger && name.endsWith('.request') && server.route(swagger.restRoutes({
+            .then(() => utApi && name.endsWith('.request') && server.route(utApi.restRoutes({
                 namespace: name.split('.')[0],
                 fn,
                 object
@@ -255,8 +253,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function localMethod(methods, namespace) {
-        if (namespace.endsWith('.validation') && swagger && Object.entries(methods).length) {
-            server.route(swagger.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
+        if (namespace.endsWith('.validation') && utApi && Object.entries(methods).length) {
+            server.route(utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {params, ...rest} = typeof validation === 'function' ? validation() : validation;
                 let path = '/rpc/ports/' + method.split('.').shift() + '/request';
                 return {
