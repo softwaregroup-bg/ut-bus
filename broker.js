@@ -51,6 +51,7 @@ class Broker {
             isTLS: this.ssl,
             mapLocal: this.mapLocal,
             processError: this.processError,
+            service: this.service,
             errors: this.errors,
             findMethodIn: (...params) => this.findMethodIn(...params),
             metrics: (...params) => {

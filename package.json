@@ -10,7 +10,7 @@
     "dns-discovery": "6.2.3",
     "mdns-resolver": "0.0.3",
     "reconnect-core": "1.3.0",
-    "ut-api": "^7.0.1",
+    "ut-api": "^7.0.2",
     "uuid": "3.3.2"
   },
   "devDependencies": {

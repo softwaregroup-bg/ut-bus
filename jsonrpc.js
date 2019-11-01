@@ -12,7 +12,7 @@ function initConsul(config) {
     return consul;
 }
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service}) {
     const server = new hapi.Server({
         port: socket.port
     });
@@ -23,7 +23,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
 
-    const utApi = socket.api && await require('ut-api')(socket.api, errors);
+    const utApi = socket.api && await require('ut-api')({service, ...socket.api}, errors);
     if (utApi && utApi.uiRoutes) server.route(utApi.uiRoutes);
 
     server.route([{
