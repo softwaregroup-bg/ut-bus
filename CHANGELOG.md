@@ -1,3 +1,12 @@
+## [7.6.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.6.1...v7.6.2) (2019-11-01)
+
+
+### Bug Fixes
+
+* pass service name to ut-api ([2a662a5](https://github.com/softwaregroup-bg/ut-bus/commit/2a662a5))
+
+
+
 ## [7.6.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.6.0...v7.6.1) (2019-11-01)
 
 
