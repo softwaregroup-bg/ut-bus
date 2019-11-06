@@ -3,6 +3,8 @@ const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
+const jwksRsa = require('jwks-rsa');
+const Jwt = require('hapi-auth-jwt2');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -12,18 +14,72 @@ function initConsul(config) {
     return consul;
 }
 
+const get = url => new Promise((resolve, reject) => {
+    request({json: true, method: 'GET', url}, (error, response, body) => {
+        if (error) {
+            reject(error);
+        } else if (body && body.error) {
+            reject(Object.assign(new Error(), body.error));
+        } else if (response.statusCode < 200 || response.statusCode >= 300) {
+            reject(new Error('HTTP error ' + response.statusCode));
+        } else if (body) {
+            resolve(body);
+        } else {
+            reject(new Error('Empty response'));
+        }
+    });
+});
+
+const openIdUrl = url => {
+    if (!url.replace('https://', '').includes('/')) url = url + '/.well-known/openid-configuration';
+    if (!url.startsWith('https://')) url = url + 'https://';
+    return url;
+};
+
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service}) {
     const server = new hapi.Server({
         port: socket.port
     });
 
-    await server.register(Inert);
+    const issuers = {};
+    const oidc = {};
+    const key = async decoded => {
+        const issuerId = decoded.payload && decoded.payload.iss;
+        if (!issuerId) throw new Error('Missing issuer in authentication token');
+        if (!oidc[issuerId]) throw new Error('Unsupported issuer ' + issuerId);
+        let issuer = issuers[issuerId];
+        if (!issuer) {
+            issuers[issuerId] = issuer = jwksRsa.hapiJwt2KeyAsync({
+                cache: true,
+                rateLimit: true,
+                jwksRequestsPerMinute: 2,
+                jwksUri: (await oidc[issuerId]).jwks_uri
+            });
+        }
+        return issuer(decoded);
+    };
+
+    if (socket.openId) {
+        await server.register([Inert, Jwt]);
+        socket.openId.forEach(issuerId => {
+            oidc[issuerId] = get(openIdUrl(issuerId));
+        });
+        server.auth.strategy('openId', 'jwt', {
+            complete: true,
+            key,
+            async validate(decoded, request, h) {
+                return {isValid: true};
+            }
+        });
+    } else {
+        await server.register(Inert);
+    }
 
     server.events.on('start', () => {
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
 
-    const utApi = socket.api && await require('ut-api')({service, ...socket.api}, errors);
+    const utApi = socket.api && await require('ut-api')({service, oidc, auth: socket.openId ? 'openId' : false, ...socket.api}, errors);
     if (utApi && utApi.uiRoutes) server.route(utApi.uiRoutes);
 
     server.route([{
@@ -252,7 +308,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
-    function localMethod(methods, namespace) {
+    function localMethod(methods, namespace, {version}) {
         if (namespace.endsWith('.validation') && utApi && Object.entries(methods).length) {
             server.route(utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {params, ...rest} = typeof validation === 'function' ? validation() : validation;
@@ -260,6 +316,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return {
                     method,
                     params,
+                    version,
                     validate: {
                         options: {abortEarly: false},
                         query: false,

@@ -70,10 +70,10 @@ class Bus extends Broker {
     unsubscribe(methods, namespace, port) {
         return this.rpc.removeMethod(methods, namespace || this.id, false, port);
     }
-    registerLocal(methods, moduleName) {
+    registerLocal(methods, moduleName, pkg) {
         if (!this.modules[moduleName]) this.modules[moduleName] = {};
         const methodsMap = flattenAPI(methods);
-        if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName);
+        if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName, pkg);
         Object.assign(this.modules[moduleName], methodsMap);
     }
     unregisterLocal(moduleName) {
@@ -337,41 +337,19 @@ class Bus extends Broker {
             set performance(performance) {
                 bus.performance = performance;
             },
-            registerErrors(errors) {
-                return bus.errorsApi.register(errors);
-            },
-            registerLocal(methods, namespace) {
-                return bus.registerLocal(methods, namespace);
-            },
-            unregisterLocal(methods, namespace) {
-                return bus.unregisterLocal(methods, namespace);
-            },
-            importMethod(methodName, options) {
-                return bus.importMethod(methodName, options);
-            },
-            attachHandlers(target, methods) {
-                return bus.attachHandlers(target, methods);
-            },
-            notification(method) {
-                return bus.notification(method);
-            },
-            register(methods, namespace, port) {
-                return bus.register(methods, namespace, port);
-            },
-            unregister(methods, namespace, port) {
-                return bus.unregister(methods, namespace, port);
-            },
-            subscribe(methods, namespace, port) {
-                return bus.subscribe(methods, namespace, port);
-            },
-            unsubscribe(methods, namespace, port) {
-                return bus.unsubscribe(methods, namespace, port);
-            },
-            getPath: name => bus.getPath(name),
-            getOpcode: name => bus.getOpcode(name),
-            dispatch(...params) {
-                return bus.dispatch(...params);
-            }
+            registerErrors: (...params) => bus.errorsApi.register(...params),
+            registerLocal: (...params) => bus.registerLocal(...params),
+            unregisterLocal: (...params) => bus.unregisterLocal(...params),
+            importMethod: (...params) => bus.importMethod(...params),
+            attachHandlers: (...params) => bus.attachHandlers(...params),
+            notification: (...params) => bus.notification(...params),
+            register: (...params) => bus.register(...params),
+            unregister: (...params) => bus.unregister(...params),
+            subscribe: (...params) => bus.subscribe(...params),
+            unsubscribe: (...params) => bus.unsubscribe(...params),
+            getPath: (...params) => bus.getPath(...params),
+            getOpcode: (...params) => bus.getOpcode(...params),
+            dispatch: (...params) => bus.dispatch(...params)
         };
     }
 }
