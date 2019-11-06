@@ -1,3 +1,12 @@
+# [7.7.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.6.2...v7.7.0) (2019-11-06)
+
+
+### Features
+
+* oidc ([830a220](https://github.com/softwaregroup-bg/ut-bus/commit/830a220))
+
+
+
 ## [7.6.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.6.1...v7.6.2) (2019-11-01)
 
 
