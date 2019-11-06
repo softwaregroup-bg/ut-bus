@@ -1,3 +1,12 @@
+## [7.7.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.7.0...v7.7.1) (2019-11-06)
+
+
+### Bug Fixes
+
+* allow missing pkg ([edfcdad](https://github.com/softwaregroup-bg/ut-bus/commit/edfcdad))
+
+
+
 # [7.7.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.6.2...v7.7.0) (2019-11-06)
 
 
