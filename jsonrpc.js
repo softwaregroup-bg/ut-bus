@@ -308,7 +308,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
-    function localMethod(methods, namespace, {version}) {
+    function localMethod(methods, namespace, {version} = {}) {
         if (namespace.endsWith('.validation') && utApi && Object.entries(methods).length) {
             server.route(utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {params, ...rest} = typeof validation === 'function' ? validation() : validation;
