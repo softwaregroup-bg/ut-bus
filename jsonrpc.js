@@ -36,7 +36,7 @@ const openIdUrl = url => {
     return url;
 };
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, registerLocal}) {
     const server = new hapi.Server({
         port: socket.port
     });
@@ -80,7 +80,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     });
 
     const utApi = socket.api && await require('ut-api')({service, oidc, auth: socket.openId ? 'openId' : false, ...socket.api}, errors);
-    if (utApi && utApi.uiRoutes) server.route(utApi.uiRoutes);
+    if (utApi) {
+        if (utApi.uiRoutes) server.route(utApi.uiRoutes);
+        if (registerLocal && utApi.modules) Object.entries(utApi.modules).forEach(([moduleName, methods]) => registerLocal(methods, moduleName));
+    };
 
     server.route([{
         method: 'GET',

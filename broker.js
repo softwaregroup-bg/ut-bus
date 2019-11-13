@@ -61,7 +61,8 @@ class Broker {
                     this.log && this.log.error && this.log.error(error);
                     return '';
                 }
-            }
+            },
+            ...this.registerLocal && {registerLocal: (...params) => this.registerLocal(...params)}
         });
         return this.rpc;
     }
