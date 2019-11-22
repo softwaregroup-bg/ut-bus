@@ -1,3 +1,12 @@
+# [7.8.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.7.1...v7.8.0) (2019-11-22)
+
+
+### Features
+
+* set pkg property on functions ([26c8969](https://github.com/softwaregroup-bg/ut-bus/commit/26c8969))
+
+
+
 ## [7.7.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.7.0...v7.7.1) (2019-11-06)
 
 
