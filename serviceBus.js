@@ -1,14 +1,15 @@
 const Broker = require('./broker');
 const hrtime = require('browser-process-hrtime');
-const flattenAPI = data => {
+const flattenAPI = (data, pkg) => {
     var result = {};
     function recurse(cur, prop, depth) {
         if (!depth) {
             throw new Error('API exceeds max depth: ' + prop);
         }
-        if (Object(cur) !== cur) {
+        if (Object(cur) !== cur || Array.isArray(cur)) {
             result[prop] = cur;
-        } else if (Array.isArray(cur) || typeof cur === 'function') {
+        } else if (typeof cur === 'function') {
+            cur.pkg = pkg;
             result[prop] = cur;
         } else {
             var isEmpty = true;
@@ -72,7 +73,7 @@ class Bus extends Broker {
     }
     registerLocal(methods, moduleName, pkg) {
         if (!this.modules[moduleName]) this.modules[moduleName] = {};
-        const methodsMap = flattenAPI(methods);
+        const methodsMap = flattenAPI(methods, pkg);
         if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName, pkg);
         Object.assign(this.modules[moduleName], methodsMap);
     }
