@@ -110,20 +110,21 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function brokerMethod(typeName, methodType) {
         return function(msg, $meta) {
-            const [service, op] = $meta.method.split('.', 2);
+            const [namespace, op] = $meta.method.split('.', 2);
             if (['start', 'stop', 'drain'].includes(op)) methodType = op;
-            return Promise.resolve({host: prefix + service.replace(/\//g, '-') + suffix, port: socket.port})
+            return Promise.resolve({host: prefix + namespace.replace(/\//g, '-') + suffix, port: socket.port, service})
                 .then(params => {
                     if (consul) {
                         return consul.health.service({
-                            service,
+                            service: namespace,
                             passing: true
                         })
                             .then(services => {
                                 if (!services || !services.length) {
-                                    throw Error('Service ' + service + ' cannot be found');
+                                    throw Error('Service ' + namespace + ' cannot be found');
                                 }
                                 return {
+                                    ...params,
                                     host: services[0].Node.Address,
                                     port: services[0].Service.Port
                                 };
@@ -135,11 +136,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 .then(params => {
                     if (resolver) {
                         return resolver.resolveSrv(params.host + '-' + domain + '.dns-discovery.local')
-                            .then(result => {
-                                params.host = result.target;
-                                params.port = result.port;
-                                return params;
-                            });
+                            .then(result => ({
+                                ...params,
+                                host: (result.target === '0.0.0.0' ? '127.0.0.1' : result.target),
+                                port: result.port
+                            }));
                     } else {
                         return params;
                     }
@@ -150,7 +151,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             followRedirect: false,
                             json: true,
                             method: 'POST',
-                            url: `http://${params.host}:${params.port}/rpc/ports/${service}/${methodType}`,
+                            url: `http://${params.host}:${params.port}/rpc/ports/${namespace}/${methodType}`,
                             body: {
                                 jsonrpc: '2.0',
                                 method: $meta.method,
@@ -169,6 +170,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             } else if (response.statusCode < 200 || response.statusCode >= 300) {
                                 reject(new Error('HTTP error ' + response.statusCode));
                             } else if (body && body.result !== undefined && body.error === undefined) {
+                                if (/\.service\.get$/.test($meta.method)) Object.assign(body.result[0], params);
                                 resolve(body.result);
                             } else {
                                 reject(new Error('Empty response'));
