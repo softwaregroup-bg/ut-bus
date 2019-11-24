@@ -1,3 +1,12 @@
+# [7.9.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.8.0...v7.9.0) (2019-11-24)
+
+
+### Features
+
+* enrich *.service.get result ([6273f6e](https://github.com/softwaregroup-bg/ut-bus/commit/6273f6e))
+
+
+
 # [7.8.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.7.1...v7.8.0) (2019-11-22)
 
 
