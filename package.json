@@ -24,7 +24,7 @@
     "rabbot": "^2.1.0",
     "sort-keys": "2.0.0",
     "tap": "^13.1.0",
-    "ut-tools": "^6.11.0"
+    "ut-tools": "^6.29.0"
   },
   "optionalDependencies": {
     "ut-rpc": "^6.0.0",
