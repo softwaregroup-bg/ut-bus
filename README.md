@@ -1,5 +1,300 @@
 # UT Bus
 
+## Transports
+
+Ut-bus supports the following transports:
+
+* [hemera](###hemera)
+* [jsonrpc](###jsonrpc)
+* [rabbot](###rabbot)
+* [moleculer](###moleculer)
+* [utRpc](###utRpc)
+
+### hemera
+
+[Hemera repo](https://github.com/hemerajs/hemera)
+
+#### configuration options
+
+Check [hemera config schema](https://github.com/hemerajs/hemera/blob/master/packages/hemera/lib/configScheme.js)
+for all options.
+
+I addition to all the options you can
+also pass a `nats` property which will
+be used for the nats connection.
+Check the [Nats connect options](https://github.com/nats-io/nats.js?utm_source=recordnotfound.com#connect-options)
+
+Configuration example:
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            hemera: {
+                ...hemeraOptions,
+                nats: {
+                    ...natsConnectOptions
+                }
+            }
+        }
+    }
+}
+```
+
+### jsonrpc
+
+http transport over json-rpc 2.0 protocol.
+
+#### configuration options
+
+* `port` (number) [optional] - tcp port.
+If omitted then a random port will be used.
+* `openId` (array) [optional] - a list of
+openId providers.
+* `api` (object) [optional] - swagger configuration.
+    * `ui` (boolean | object) [optional]
+    * `initOAuth` (object) [optional] - swagger ui OAuth credentials
+        * `clientId` (string) - prepopulated in swagger ui
+        auth interface
+        * `clientSecret` (string) - prepopulated in swagger ui
+        auth interface
+* `domain` (string | boolean) [optional] - Enables dns discovery and uses this
+property as a top-level domain to use for records. (both regular or multicast
+discovery mechanisms are supported).
+If set to `true` then machine's hostname will be
+used as a top-level domain
+* `consul` (object) [optional] - used for configuring
+a [consul client](https://github.com/silas/node-consul)
+in case [`Consul`](https://www.consul.io/) service discovery is required.
+For reference check [consul client options](https://github.com/silas/node-consul#consuloptions)
+* `prefix` (string) [optional] - prefix to be used in conjunction
+with the namespace to construct a `host` when resolving
+service locations. (e.g. host will become `prefix + namespace`)
+* `suffix` (string) [optional] - suffix to be used in conjunction
+with the namespace to construct a `host` when resolving
+service locations. (e.g. host will become `namespace + suffix`)
+
+Configuration examples:
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            jsonrpc: {
+                port: 9876,
+                ui: true
+            }
+        }
+    }
+}
+```
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            jsonrpc: {
+                port: 9876,
+                openId: [
+                    'https://accounts.google.com'
+                ],
+                ui: {
+                    clientId: 'someClientId'
+                    clientSecret: 'someClientSecret'
+                }
+            }
+        }
+    }
+}
+```
+
+### rabbot
+
+[Rabbot repo](https://github.com/arobson/rabbot)
+
+#### configuration options
+
+* debug (Boolean) - if set to true then additional
+debug queue and binding will be created.
+Also the reply queue in debug mode will not
+be subscribed for batch acknowledgement and will
+get auto deleted upon disconnection.
+* connection (Object) - see [connection options](https://github.com/arobson/rabbot/blob/master/docs/connections.md#rabbotaddconnection--options-)
+ for more info.
+* exchanges (Array) - exchanges to be auto created
+upon establishing a connection.
+
+if omitted then te following exchange will be created:
+
+```js
+{
+    name: bus.id,
+    type: 'fanout',
+    autoDelete: true
+}
+```
+
+* queues (Array) - queues to be auto created
+upon establishing a connection.
+
+if omitted then te following queue will be created:
+
+```js
+{
+    name: bus.id,
+    subscribe: true,
+    autoDelete: true
+}
+```
+
+if omitted and `debug` is set to true, then the following
+queue will also be created:
+
+```js
+{
+    name: bus.id + '(debug)',
+    subscribe: false,
+    autoDelete: false
+}
+```
+
+* bindings (Array) - bindings to be auto created
+upon establishing a connection.
+
+if omitted then te following binding will be created:
+
+```js
+{
+    exchange: bus.id,
+    target: bus.id,
+    keys: []
+}
+```
+
+if omitted and `debug` is set to true, then the following
+binding will also be created:
+
+```js
+{
+    exchange: bus.id,
+    target: bus.id + '(debug)',
+    keys: []
+}
+```
+
+Example:
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            rabbot: {
+                debug: true,
+                connection: {
+                    ...connectionOptions
+                },
+                exchanges: [
+                    ...exchanges
+                ],
+                queues: [
+                    ...queues
+                ],
+                bindings: [
+                    ...bindings
+                ]
+            }
+        }
+    }
+}
+```
+
+### moleculer
+
+[moleculer repo](https://github.com/moleculerjs/moleculer)
+This transport uses moleculer's `ServiceBroker` internally.
+
+#### configuration options
+
+See [Moleculer Broker options](https://moleculer.services/docs/0.14/configuration.html#Broker-options)
+for full list.
+
+Example:
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            moleculer: {
+                ...moleculerOptions
+            }
+        }
+    }
+}
+```
+
+If the `moleculer` property is set to a `string`
+instead of an `object` then it will be used as a
+transporter. E.g.
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            moleculer: 'abc'
+        }
+    }
+}
+// is equivalent to
+{
+    utBus: {
+        serviceBus: {
+            moleculer: {
+                transporter: 'abc'
+            }
+        }
+    }
+}
+```
+
+
+### utRpc
+
+This is an transport which relies on [ut-rpc](https://github.com/softwaregroup-bg/ut-rpc)
+for delivering messages over tcp streams.
+
+#### configuration options
+
+`utRpc` configuration property can be either
+a `string` or a `number`.
+If set to a `string` then the messages
+will be sent over a [`domain socket`](https://en.wikipedia.org/wiki/Unix_domain_socket) (on Linux)
+or a [`named pipe`](https://en.wikipedia.org/wiki/Named_pipe) (on windows).
+
+If set to a `number` that would mean the
+messages will be sent over the respective tcp port.
+
+Example:
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            utRpc: 9876 // tcp port
+        }
+    }
+}
+// or
+{
+    utBus: {
+        serviceBus: {
+            utRpc: 'abc'
+            // (for windows) named pipe: \\.\pipe\ut5-abc
+            // (for linux) domain socket: /tmp/ut5-abc.sock
+        }
+    }
+}
+```
+
 ## Caching
 
 Ut-bus provides built-in caching mechanisms.
