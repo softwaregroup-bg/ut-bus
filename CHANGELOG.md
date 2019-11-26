@@ -1,3 +1,12 @@
+## [7.9.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.9.0...v7.9.1) (2019-11-26)
+
+
+### Bug Fixes
+
+* require proper ut-api ([8686143](https://github.com/softwaregroup-bg/ut-bus/commit/8686143))
+
+
+
 # [7.9.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.8.0...v7.9.0) (2019-11-24)
 
 
