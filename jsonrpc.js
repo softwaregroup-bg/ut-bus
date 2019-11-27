@@ -3,6 +3,7 @@ const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
+const H2o2 = require('@hapi/h2o2');
 const jwksRsa = require('jwks-rsa');
 const Jwt = require('hapi-auth-jwt2');
 
@@ -60,7 +61,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     if (socket.openId) {
-        await server.register([Inert, Jwt]);
+        await server.register([Inert, H2o2, Jwt]);
         socket.openId.forEach(issuerId => {
             oidc[issuerId] = get(openIdUrl(issuerId));
         });
@@ -72,7 +73,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             }
         });
     } else {
-        await server.register(Inert);
+        await server.register(Inert, H2o2);
     }
 
     server.events.on('start', () => {
