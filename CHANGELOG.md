@@ -1,3 +1,7 @@
+## [7.10.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.10.0...v7.10.1) (2019-11-27)
+
+
+
 # [7.10.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.9.1...v7.10.0) (2019-11-27)
 
 
