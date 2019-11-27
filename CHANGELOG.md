@@ -1,3 +1,12 @@
+# [7.10.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.9.1...v7.10.0) (2019-11-27)
+
+
+### Features
+
+* add hapi proxy support ([bdbe4cf](https://github.com/softwaregroup-bg/ut-bus/commit/bdbe4cf))
+
+
+
 ## [7.9.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.9.0...v7.9.1) (2019-11-26)
 
 
