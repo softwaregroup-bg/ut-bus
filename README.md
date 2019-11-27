@@ -2,7 +2,7 @@
 
 ## Transports
 
-Ut-bus supports the following transports:
+ut-bus supports the following transports:
 
 * [hemera](###hemera)
 * [jsonrpc](###jsonrpc)
@@ -19,8 +19,7 @@ Ut-bus supports the following transports:
 Check [hemera config schema](https://github.com/hemerajs/hemera/blob/master/packages/hemera/lib/configScheme.js)
 for all options.
 
-I addition to all the options you can
-also pass a `nats` property which will
+In addition to all the options you can also pass a `nats` property which will
 be used for the nats connection.
 Check the [Nats connect options](https://github.com/nats-io/nats.js?utm_source=recordnotfound.com#connect-options)
 
@@ -45,34 +44,28 @@ Configuration example:
 
 http transport over json-rpc 2.0 protocol.
 
-#### configuration options
+#### jsonrpc configuration options
 
-* `port` (number) [optional] - tcp port.
-If omitted then a random port will be used.
-* `openId` (array) [optional] - a list of
-openId providers.
+* `port` (number) [optional] - tcp port. If omitted then a random port will be used.
+* `openId` (array) [optional] - a list of openId providers.
 * `api` (object) [optional] - swagger configuration.
-    * `ui` (boolean | object) [optional]
-    * `initOAuth` (object) [optional] - swagger ui OAuth credentials
-        * `clientId` (string) - prepopulated in swagger ui
-        auth interface
-        * `clientSecret` (string) - prepopulated in swagger ui
-        auth interface
+  * `ui` (boolean | object) [optional]
+  * `initOAuth` (object) [optional] - swagger ui OAuth credentials
+    * `clientId` (string) - pre-populated in swagger ui auth interface
+    * `clientSecret` (string) - pre-populated in swagger ui auth interface
 * `domain` (string | boolean) [optional] - Enables dns discovery and uses this
-property as a top-level domain to use for records. (both regular or multicast
-discovery mechanisms are supported).
-If set to `true` then machine's hostname will be
-used as a top-level domain
-* `consul` (object) [optional] - used for configuring
-a [consul client](https://github.com/silas/node-consul)
-in case [`Consul`](https://www.consul.io/) service discovery is required.
-For reference check [consul client options](https://github.com/silas/node-consul#consuloptions)
+  property as a top-level domain to use for records. (both regular or multi-cast
+  discovery mechanisms are supported).
+  If set to `true` then machine's hostname will be used as a top-level domain
+* `consul` (object) [optional] - used for configuring a [consul client](https://github.com/silas/node-consul)
+  in case [`Consul`](https://www.consul.io/) service discovery is required.
+  For reference check [consul client options](https://github.com/silas/node-consul#consuloptions)
 * `prefix` (string) [optional] - prefix to be used in conjunction
-with the namespace to construct a `host` when resolving
-service locations. (e.g. host will become `prefix + namespace`)
+  with the namespace to construct a `host` when resolving
+  service locations. (e.g. host will become `prefix + namespace`)
 * `suffix` (string) [optional] - suffix to be used in conjunction
-with the namespace to construct a `host` when resolving
-service locations. (e.g. host will become `namespace + suffix`)
+  with the namespace to construct a `host` when resolving
+  service locations. (e.g. host will become `namespace + suffix`)
 
 Configuration examples:
 
@@ -112,75 +105,70 @@ Configuration examples:
 
 [Rabbot repo](https://github.com/arobson/rabbot)
 
-#### configuration options
+#### rabbot configuration options
 
-* debug (Boolean) - if set to true then additional
-debug queue and binding will be created.
-Also the reply queue in debug mode will not
-be subscribed for batch acknowledgement and will
-get auto deleted upon disconnection.
+* debug (Boolean) - if set to true then additional debug queue and binding will
+  be created. Also the reply queue in debug mode will not be subscribed for
+  batch acknowledgement and will get auto deleted upon disconnection.
 * connection (Object) - see [connection options](https://github.com/arobson/rabbot/blob/master/docs/connections.md#rabbotaddconnection--options-)
- for more info.
+  for more info.
 * exchanges (Array) - exchanges to be auto created
-upon establishing a connection.
+  upon establishing a connection.
 
-if omitted then te following exchange will be created:
+  if omitted then te following exchange will be created:
 
-```js
-{
+  ```js
+  {
     name: bus.id,
     type: 'fanout',
     autoDelete: true
-}
-```
+  }
+  ```
 
-* queues (Array) - queues to be auto created
-upon establishing a connection.
+* queues (Array) - queues to be auto created upon establishing a connection.
 
-if omitted then te following queue will be created:
+  if omitted then te following queue will be created:
 
-```js
-{
+  ```js
+  {
     name: bus.id,
     subscribe: true,
     autoDelete: true
-}
-```
+  }
+  ```
 
-if omitted and `debug` is set to true, then the following
-queue will also be created:
+  if omitted and `debug` is set to true, then the following
+  queue will also be created:
 
-```js
-{
+  ```js
+  {
     name: bus.id + '(debug)',
     subscribe: false,
     autoDelete: false
-}
-```
+  }
+  ```
 
-* bindings (Array) - bindings to be auto created
-upon establishing a connection.
+* bindings (Array) - bindings to be auto created upon establishing a connection.
+  if omitted then te following binding will be created:
 
-if omitted then te following binding will be created:
-
-```js
-{
+  ```js
+  {
     exchange: bus.id,
     target: bus.id,
     keys: []
-}
-```
+  }
+  ```
 
-if omitted and `debug` is set to true, then the following
-binding will also be created:
+  if omitted and `debug` is set to true, then the following
+  binding will also be created:
 
-```js
-{
+  ```js
+  {
     exchange: bus.id,
     target: bus.id + '(debug)',
     keys: []
-}
-```
+  }
+  ```
 
 Example:
 
@@ -213,7 +201,7 @@ Example:
 [moleculer repo](https://github.com/moleculerjs/moleculer)
 This transport uses moleculer's `ServiceBroker` internally.
 
-#### configuration options
+#### moleculer configuration options
 
 See [Moleculer Broker options](https://moleculer.services/docs/0.14/configuration.html#Broker-options)
 for full list.
@@ -232,9 +220,8 @@ Example:
 }
 ```
 
-If the `moleculer` property is set to a `string`
-instead of an `object` then it will be used as a
-transporter. E.g.
+If the `moleculer` property is set to a `string` instead of an `object` then it
+will be used as a transporter. E.g.
 
 ```js
 {
@@ -256,22 +243,20 @@ transporter. E.g.
 }
 ```
 
-
 ### utRpc
 
 This is an transport which relies on [ut-rpc](https://github.com/softwaregroup-bg/ut-rpc)
 for delivering messages over tcp streams.
 
-#### configuration options
+#### utRpc configuration options
 
-`utRpc` configuration property can be either
-a `string` or a `number`.
-If set to a `string` then the messages
-will be sent over a [`domain socket`](https://en.wikipedia.org/wiki/Unix_domain_socket) (on Linux)
+`utRpc` configuration property can be either a `string` or a `number`.
+If set to a `string` then the messages will be sent over a
+[`domain socket`](https://en.wikipedia.org/wiki/Unix_domain_socket) (on Linux)
 or a [`named pipe`](https://en.wikipedia.org/wiki/Named_pipe) (on windows).
 
-If set to a `number` that would mean the
-messages will be sent over the respective tcp port.
+If set to a `number` that would mean the messages will be sent over the
+respective tcp port.
 
 Example:
 
@@ -302,7 +287,7 @@ There are 2 preconditions which are needed in order for caching to be achieved.
 
 1) There should be an instance of ut-port-cache defined on implementation level.
 This is necessary because ut-bus doesn't do the caching itself
-but relies on having a running isntance of ut-port-cache internally.
+but relies on having a running instance of ut-port-cache internally.
 
     E.g:
 
@@ -334,7 +319,7 @@ when importing a bus method.
 
     * `key` - an **object** or a **function** describing the storage options.
         Can be either an object or a function returning an object.
-    * **object** - an object consisting of the followig properties.
+    * **object** - an object consisting of the following properties.
         * `id` - a **string** to be used as a storage key
         * `params` - a **string** or an **object** used to define the segment
         by appending these params to the imported method name.
