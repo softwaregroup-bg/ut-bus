@@ -73,7 +73,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             }
         });
     } else {
-        await server.register(Inert, H2o2);
+        await server.register([Inert, H2o2]);
     }
 
     server.events.on('start', () => {
