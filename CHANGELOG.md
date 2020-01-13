@@ -1,3 +1,12 @@
+# [7.11.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.10.1...v7.11.0) (2020-01-13)
+
+
+### Features
+
+* prototype chain of imported modules ([d21c798](https://github.com/softwaregroup-bg/ut-bus/commit/d21c798))
+
+
+
 ## [7.10.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.10.0...v7.10.1) (2019-11-27)
 
 
