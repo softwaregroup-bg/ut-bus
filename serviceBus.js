@@ -228,6 +228,8 @@ class Bus extends Broker {
                 Object.entries(this.modules).forEach(function([moduleName, mod]) {
                     if ((pattern instanceof RegExp && pattern.test(moduleName)) || (pattern === moduleName)) {
                         target.importedMap.set(moduleName, mod);
+                        Object.setPrototypeOf(mod, target.imported || target);
+                        target.imported = mod;
                     }
                 });
             });
