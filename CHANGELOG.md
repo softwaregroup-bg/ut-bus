@@ -1,3 +1,12 @@
+## [7.11.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.11.0...v7.11.1) (2020-01-14)
+
+
+### Bug Fixes
+
+* pass proper objects to setPrototypeOf ([e1f0885](https://github.com/softwaregroup-bg/ut-bus/commit/e1f0885))
+
+
+
 # [7.11.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.10.1...v7.11.0) (2020-01-13)
 
 
