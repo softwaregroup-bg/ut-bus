@@ -72,14 +72,18 @@ class Bus extends Broker {
         return this.rpc.removeMethod(methods, namespace || this.id, false, port);
     }
     registerLocal(methods, moduleName, pkg) {
-        if (!this.modules[moduleName]) this.modules[moduleName] = {};
+        if (!this.modules[moduleName]) this.modules[moduleName] = {methods: {}, imported: []};
         const methodsMap = flattenAPI(methods, pkg);
         if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName, pkg);
-        Object.assign(this.modules[moduleName], methodsMap);
+        Object.assign(this.modules[moduleName].methods, methodsMap);
+        this.modules[moduleName].imported.push(methods);
     }
     unregisterLocal(moduleName) {
         let mod = this.modules[moduleName];
-        if (mod) for (let key in mod) { delete mod[key]; };
+        if (mod) {
+            for (let key in mod.methods) { delete mod.methods[key]; }
+            mod.imported.splice(0, mod.imported.length);
+        }
     }
     getMethod(typeName, methodType, methodName, options) {
         var bus = this;
@@ -227,9 +231,11 @@ class Bus extends Broker {
             patterns.forEach(pattern => {
                 Object.entries(this.modules).forEach(function([moduleName, mod]) {
                     if ((pattern instanceof RegExp && pattern.test(moduleName)) || (pattern === moduleName)) {
-                        target.importedMap.set(moduleName, mod);
-                        Object.setPrototypeOf(mod, target.imported || target);
-                        target.imported = mod;
+                        target.importedMap.set(moduleName, mod.methods);
+                        mod.imported.forEach(imported => {
+                            Object.setPrototypeOf(imported, target.imported || target);
+                            target.imported = imported;
+                        });
                     }
                 });
             });
