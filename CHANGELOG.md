@@ -1,3 +1,12 @@
+## [7.11.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.11.2...v7.11.3) (2020-01-15)
+
+
+### Bug Fixes
+
+* always initialize imported ([4f0d630](https://github.com/softwaregroup-bg/ut-bus/commit/4f0d630))
+
+
+
 ## [7.11.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.11.1...v7.11.2) (2020-01-14)
 
 
