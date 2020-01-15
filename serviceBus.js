@@ -228,12 +228,14 @@ class Bus extends Broker {
     attachHandlers(target, patterns) {
         if (patterns && patterns.length) {
             target.importedMap = new Map(); // preserve patterns order
+            target.imported = {};
+            Object.setPrototypeOf(target.imported, target);
             patterns.forEach(pattern => {
                 Object.entries(this.modules).forEach(function([moduleName, mod]) {
                     if ((pattern instanceof RegExp && pattern.test(moduleName)) || (pattern === moduleName)) {
                         target.importedMap.set(moduleName, mod.methods);
                         mod.imported.forEach(imported => {
-                            Object.setPrototypeOf(imported, target.imported || target);
+                            Object.setPrototypeOf(imported, target.imported);
                             target.imported = imported;
                         });
                     }
