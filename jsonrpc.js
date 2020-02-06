@@ -115,7 +115,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             if (['start', 'stop', 'drain'].includes(op)) methodType = op;
             return Promise.resolve({host: prefix + namespace.replace(/\//g, '-') + suffix, port: socket.port, service})
                 .then(params => {
-                    if (consul) {
+                    if (!socket.dns && consul) {
                         return consul.health.service({
                             service: namespace,
                             passing: true
@@ -135,7 +135,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     }
                 })
                 .then(params => {
-                    if (resolver) {
+                    if (!socket.dns && resolver) {
                         return resolver.resolveSrv(params.host + '-' + domain + '.dns-discovery.local')
                             .then(result => ({
                                 ...params,
