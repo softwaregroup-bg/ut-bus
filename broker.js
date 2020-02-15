@@ -28,6 +28,7 @@ class Broker {
             stop: () => true
         };
     }
+
     async init() {
         let rpc;
         if (this.hemera) {
@@ -65,21 +66,25 @@ class Broker {
         });
         return this.rpc;
     }
+
     start() {
         return this.rpc.start();
     }
+
     getPath(name) {
         return name.match(METHOD)[0];
     }
+
     getOpcode(name) {
         return this.getPath(name).split('.').pop();
     }
+
     findMethod(where, methodName, type) {
         methodName = this.getPath(methodName);
-        var key = ['ports', methodName, type].join('.');
-        var result = where[key] || where[methodName];
+        const key = ['ports', methodName, type].join('.');
+        let result = where[key] || where[methodName];
         if (!result) {
-            var names = methodName.split('.');
+            const names = methodName.split('.');
             while (names.length) {
                 result = where[['ports', names.join('.'), type].join('.')];
                 if (result) {
@@ -91,16 +96,17 @@ class Broker {
         }
         return result && result.method;
     }
+
     findMethodIn(where, type) {
         return (...args) => {
-            var $meta = (args.length > 1 && args[args.length - 1]) || {};
-            var method = $meta.method;
+            const $meta = (args.length > 1 && args[args.length - 1]) || {};
+            const method = $meta.method;
             if (!method) {
                 if ($meta.mtid === 'error') {
                     if (args[0] instanceof Error) {
                         return Promise.reject(args[0]);
                     }
-                    var err = this.errors['bus.unhandledError']({
+                    const err = this.errors['bus.unhandledError']({
                         errorCode: $meta.errorCode,
                         params: {
                             errorMessage: $meta.errorMessage ? ': ' + $meta.errorMessage : ''
@@ -111,7 +117,7 @@ class Broker {
                 }
                 return Promise.reject(this.errors['bus.missingMethod']({}));
             }
-            var fn = this.findMethod(where, $meta.destination || method, type);
+            const fn = this.findMethod(where, $meta.destination || method, type);
             if (fn) {
                 delete $meta.destination;
                 return fn(...args);
@@ -128,6 +134,7 @@ class Broker {
             }
         };
     }
+
     processError(obj, $meta) {
         if (obj && $meta && $meta.method) {
             if (Array.isArray(obj.method)) {
@@ -140,9 +147,11 @@ class Broker {
         }
         return obj;
     }
+
     stop() {
         return this.rpc.stop();
     }
+
     destroy() {
         return this.rpc.stop();
     }

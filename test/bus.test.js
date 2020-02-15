@@ -1,48 +1,56 @@
 /* eslint no-console:0 */
 
-let tap = require('tap');
+const tap = require('tap');
 
-const {Broker, ServiceBus} = require('../../..');
+const {Broker, ServiceBus} = require('../');
 
 tap.test('bus', async function test(t) {
-    var broker = new Broker({
+    const broker = new Broker({
         logLevel: 'trace',
         socket: 'test',
         id: 'broker',
         logFactory: null
     });
 
-    var bus1 = new ServiceBus({
+    const bus1 = new ServiceBus({
         logLevel: 'trace',
         socket: 'test',
         id: 'bus1',
         logFactory: null
     });
 
-    var bus2 = new ServiceBus({
+    const bus2 = new ServiceBus({
         logLevel: 'trace',
         socket: 'test',
         id: 'bus2',
         logFactory: null
     });
+
+    const bus3 = new ServiceBus({
+        logLevel: 'trace',
+        socket: false,
+        id: 'bus3',
+        logFactory: null
+    });
     await t.test('Init broker', () => broker.init());
     await t.test('Init bus1', () => bus1.init());
     await t.test('Init bus2', () => bus2.init());
+    await t.test('Init bus3', () => bus3.init());
     await t.test('Start broker', () => broker.start(broker));
     // test method imports
-    var fn1 = function() {
+    const fn1 = function() {
         return bus1.importMethod('bus2.test.m1')({x: 'bus1'}).then(function(result) {
             t.comment(result);
             return result;
         });
     };
-    var fn2 = function() {
+    const fn2 = function() {
         return bus1.importMethod('bus2.m2')('bus1').then(function(result) {
             t.comment(result);
             return result;
         });
     };
-    var fn3 = function() {
+    const fn3 = function() {
         return bus2.importMethod('bus1.m3')('bus2').then(function(result) {
             t.comment(result);
             return result;
@@ -115,6 +123,7 @@ tap.test('bus', async function test(t) {
                 ]);
             });
     });
+    t.throws(() => bus3.dispatch({}, {method: 'unknown'}));
     await t.test('Destroy bus1', () => bus1.destroy());
     await t.test('Destroy bus2', () => bus2.destroy());
     await t.test('Destroy broker', () => broker.destroy());

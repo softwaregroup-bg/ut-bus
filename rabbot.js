@@ -6,7 +6,7 @@ rabbot.nackUnhandled();
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn}) {
     function brokerMethod(typeName, methodType) {
         return async function() {
-            var $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
+            const $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             const reply = await rabbot.request(id, {
                 appId: 'ut',
                 type: 'ports.' + $meta.method.split('.').shift() + '.' + methodType,
