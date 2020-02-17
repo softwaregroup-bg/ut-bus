@@ -298,23 +298,37 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }
 
+    function applyMeta(response, {
+        httpResponse
+    } = {}) {
+        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type'].forEach(method =>
+            Object.prototype.hasOwnProperty.call(httpResponse, method) &&
+            response[method](...[].concat(httpResponse[method]))
+        );
+        return response;
+    }
+
     function registerRoute(namespace, name, fn, object) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
-        const handler = function(request, h) {
+        const handler = async function(request, h) {
             const {params, jsonrpc, id, shift, method} = request.pre.utBus;
-            return Promise.resolve(fn.apply(object, params))
-                .then(result => h.response(jsonrpc ? {
+            try {
+                const result = await Promise.resolve(fn.apply(object, params));
+                const response = h.response(jsonrpc ? {
                     jsonrpc,
                     id,
                     result: shift ? result[0] : result
-                } : (shift ? result[0] : result)).header('x-envoy-decorator-operation', method))
-                .catch(error => jsonrpc
+                } : (shift ? result[0] : result)).header('x-envoy-decorator-operation', method);
+                return applyMeta(response, result && result.length && result[result.length - 1]);
+            } catch (error) {
+                return jsonrpc
                     ? h.response({
                         jsonrpc,
                         id,
                         error
                     }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500)
-                    : Boom.boomify(error, {statusCode: error.statusCode || 500}));
+                    : Boom.boomify(error, { statusCode: error.statusCode || 500 });
+            }
         };
 
         const route = server.match('POST', path);
