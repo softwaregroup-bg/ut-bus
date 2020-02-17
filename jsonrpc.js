@@ -103,13 +103,13 @@ const preJsonRpc = [{
     }
 }];
 
-const preGet = method => [{
+const prePlain = method => [{
     assign: 'utBus',
     method: (request, h) => ({
         shift: true,
         method,
         params: [
-            {...request.query, ...request.params},
+            {...request.payload, ...request.query, ...request.params},
             {
                 method,
                 opcode: method.split('.').pop(),
@@ -417,27 +417,27 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     params,
                     path: route,
                     method: httpMethod,
-                    query = false,
+                    validate,
                     ...rest
                 } = typeof validation === 'function' ? validation() : validation;
                 const rpc = '/rpc/ports/' + method.split('.').shift() + '/request';
                 return {
                     method,
-                    params,
                     route,
                     httpMethod,
                     version,
-                    pre: params ? preJsonRpc : preGet(method),
+                    pre: params ? preJsonRpc : prePlain(method),
                     validate: {
                         options: {abortEarly: false},
-                        query,
+                        query: false,
                         payload: params && joi.object({
                             jsonrpc: '2.0',
                             timeout: joi.number().optional().allow(null),
                             id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
                             method,
                             ...params && {params}
-                        })
+                        }),
+                        ...validate
                     },
                     handler: (request, ...rest) => {
                         const route = server.match('POST', rpc);
