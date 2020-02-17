@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Test",
             "outputCapture": "std",
-            "program": "${workspaceFolder}/test/rabbit.test.js"
+            "program": "${workspaceFolder}/test/utError.test.js"
         }
     ]
 }
