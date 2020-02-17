@@ -19,10 +19,10 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
                 if (err) {
                     if (err.length > 1) {
                         $meta.mtid = 'error';
-                        reject(server ? err[0] : processError(err[0], $meta));
+                        reject(err);
                     } else {
                         $meta.mtid = 'error';
-                        reject(server ? err : processError(err, $meta));
+                        reject(err);
                     }
                 } else {
                     resolve(res);

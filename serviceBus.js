@@ -261,6 +261,7 @@ class Bus extends Broker {
                     .then(resolve)
                     .catch(error => { // todo maybe log these errors
                         if (Date.now() > timeout) {
+                            if (error) error.params = {method: 'methodName'};
                             reject(this.errors['bus.timeout'](error));
                         } else {
                             setTimeout(attempt, retry);

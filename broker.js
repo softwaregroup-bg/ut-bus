@@ -115,7 +115,7 @@ class Broker {
                     err.cause = args[0];
                     return Promise.reject(err);
                 }
-                return Promise.reject(this.errors['bus.missingMethod']({}));
+                return Promise.reject(this.errors['bus.missingMethod']());
             }
             const fn = this.findMethod(where, $meta.destination || method, type);
             if (fn) {
