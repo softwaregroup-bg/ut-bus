@@ -15,18 +15,25 @@ function initConsul(config) {
     return consul;
 }
 
-const get = url => new Promise((resolve, reject) => {
+const get = (url, errors) => new Promise((resolve, reject) => {
     request({json: true, method: 'GET', url}, (error, response, body) => {
         if (error) {
             reject(error);
-        } else if (body && body.error) {
-            reject(Object.assign(new Error(), body.error));
         } else if (response.statusCode < 200 || response.statusCode >= 300) {
-            reject(new Error('HTTP error ' + response.statusCode));
+            reject(errors['bus.oidcHttp']({
+                statusCode: response.statusCode,
+                statusText: response.statusText,
+                statusMessage: response.statusMessage,
+                validation: response.body && response.body.validation,
+                debug: response.body && response.body.debug,
+                params: {
+                    code: response.statusCode
+                }
+            }));
         } else if (body) {
             resolve(body);
         } else {
-            reject(new Error('Empty response'));
+            reject(errors['bus.oidcEmpty']());
         }
     });
 });
@@ -37,6 +44,81 @@ const openIdUrl = url => {
     return url;
 };
 
+function forward(headers) {
+    return [
+        'x-request-id',
+        'x-b3-traceid',
+        'x-b3-spanid',
+        'x-b3-parentspanid',
+        'x-b3-sampled',
+        'x-b3-flags',
+        'x-ot-span-context'
+    ].reduce(function(object, key) {
+        if (Object.prototype.hasOwnProperty.call(headers, key)) object[key] = headers[key];
+        return object;
+    }, {});
+}
+
+const preArray = [{
+    assign: 'utBus',
+    method: (request, h) => {
+        const {jsonrpc, id, method, params: [...params]} = request.payload;
+        const meta = params.pop();
+        return {
+            jsonrpc,
+            id,
+            method,
+            params: [
+                ...params,
+                {
+                    ...meta,
+                    method,
+                    opcode: method.split('.').pop(),
+                    forward: forward(request.headers)
+                }
+            ]
+        };
+    }
+}];
+
+const preJsonRpc = [{
+    assign: 'utBus',
+    method: (request, h) => {
+        const {jsonrpc, id, method, params} = request.payload;
+        return {
+            jsonrpc,
+            id,
+            method,
+            shift: true,
+            params: [
+                params,
+                {
+                    mtid: 'request',
+                    method,
+                    opcode: method.split('.').pop(),
+                    forward: forward(request.headers)
+                }
+            ]
+        };
+    }
+}];
+
+const preGet = method => [{
+    assign: 'utBus',
+    method: (request, h) => ({
+        shift: true,
+        method,
+        params: [
+            {...request.query, ...request.params},
+            {
+                method,
+                opcode: method.split('.').pop(),
+                forward: forward(request.headers)
+            }
+        ]
+    })
+}];
+
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service}) {
     const server = new hapi.Server({
         port: socket.port
@@ -46,8 +128,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const oidc = {};
     const key = async decoded => {
         const issuerId = decoded.payload && decoded.payload.iss;
-        if (!issuerId) throw new Error('Missing issuer in authentication token');
-        if (!oidc[issuerId]) throw new Error('Unsupported issuer ' + issuerId);
+        if (!issuerId) throw errors['bus.oidcNoIssuer']();
+        if (!oidc[issuerId]) throw errors['bus.oidcBadIssuer']({params: {issuerId}});
         let issuer = issuers[issuerId];
         if (!issuer) {
             issuers[issuerId] = issuer = jwksRsa.hapiJwt2KeyAsync({
@@ -63,7 +145,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     if (socket.openId) {
         await server.register([Inert, H2o2, Jwt]);
         socket.openId.forEach(issuerId => {
-            oidc[issuerId] = get(openIdUrl(issuerId));
+            oidc[issuerId] = get(openIdUrl(issuerId), errors);
         });
         server.auth.strategy('openId', 'jwt', {
             complete: true,
@@ -97,7 +179,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             auth: false,
             handler: (request, h) => h.response(metrics() || '').type('text/plain; version=0.0.4; charset=utf-8')
         }
-    }].filter(x => x));
+    }].filter(Boolean));
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
@@ -122,7 +204,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         })
                             .then(services => {
                                 if (!services || !services.length) {
-                                    throw Error('Service ' + namespace + ' cannot be found');
+                                    throw errors['bus.consulServiceNotFound']({params: {namespace}});
                                 }
                                 return {
                                     ...params,
@@ -169,12 +251,21 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             } else if (body && body.error) {
                                 reject(Object.assign(new Error(), body.error));
                             } else if (response.statusCode < 200 || response.statusCode >= 300) {
-                                reject(new Error('HTTP error ' + response.statusCode));
+                                reject(errors['bus.jsonRpcHttp']({
+                                    statusCode: response.statusCode,
+                                    statusText: response.statusText,
+                                    statusMessage: response.statusMessage,
+                                    validation: response.body && response.body.validation,
+                                    debug: response.body && response.body.debug,
+                                    params: {
+                                        code: response.statusCode
+                                    }
+                                }));
                             } else if (body && body.result !== undefined && body.error === undefined) {
                                 if (/\.service\.get$/.test($meta.method)) Object.assign(body.result[0], params);
                                 resolve(body.result);
                             } else {
-                                reject(new Error('Empty response'));
+                                reject(errors['bus.jsonRpcEmpty']());
                             }
                         });
                     });
@@ -186,8 +277,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return server.start();
     }
 
+    function info() {
+        return server.info;
+    }
+
     async function stop() {
-        let result = await server.stop();
+        const result = await server.stop();
         await (discover && new Promise(resolve => {
             discover.destroy(resolve);
         }));
@@ -195,7 +290,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function localRegister(nameSpace, name, fn) {
-        let local = mapLocal[nameSpace + '.' + name];
+        const local = mapLocal[nameSpace + '.' + name];
         if (local) {
             local.method = fn;
         } else {
@@ -204,36 +299,25 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function registerRoute(namespace, name, fn, object) {
-        let path = '/rpc/' + namespace + '/' + name.split('.').join('/');
-        let handler = function(request, h) {
-            let unpack = false;
-            if (request.payload.meta || !Array.isArray(request.payload.params)) {
-                unpack = true;
-                request.payload.params = [request.payload.params, request.payload.meta || {mtid: 'request', method: request.payload.method}];
-            }
-            request.payload.params[1] = Object.assign({}, request.payload.params[1], {
-                opcode: request.payload.method.split('.').pop(),
-                forward: ['x-request-id', 'x-b3-traceid', 'x-b3-spanid', 'x-b3-parentspanid', 'x-b3-sampled', 'x-b3-flags', 'x-ot-span-context']
-                    .reduce(function(object, key) {
-                        var value = request.headers[key];
-                        if (value !== undefined) object[key] = value;
-                        return object;
-                    }, {})
-            });
-            return Promise.resolve(fn.apply(object, request.payload.params))
-                .then(result => h.response({
-                    jsonrpc: request.payload.jsonrpc,
-                    id: request.payload.id,
-                    result: unpack ? result[0] : result
-                }).header('x-envoy-decorator-operation', request.payload.method))
-                .catch(error => h.response({
-                    jsonrpc: request.payload.jsonrpc,
-                    id: request.payload.id,
-                    error
-                }).header('x-envoy-decorator-operation', request.payload.method).code(error.statusCode || 500));
+        const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
+        const handler = function(request, h) {
+            const {params, jsonrpc, id, shift, method} = request.pre.utBus;
+            return Promise.resolve(fn.apply(object, params))
+                .then(result => h.response(jsonrpc ? {
+                    jsonrpc,
+                    id,
+                    result: shift ? result[0] : result
+                } : (shift ? result[0] : result)).header('x-envoy-decorator-operation', method))
+                .catch(error => jsonrpc
+                    ? h.response({
+                        jsonrpc,
+                        id,
+                        error
+                    }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500)
+                    : Boom.boomify(error, {statusCode: error.statusCode || 500}));
         };
 
-        let route = server.match('POST', path);
+        const route = server.match('POST', path);
         if (route && route.settings.handler === deleted) {
             route.settings.handler = handler;
             return route;
@@ -254,6 +338,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 method: 'POST',
                 path,
                 options: {
+                    pre: preArray,
                     payload: {
                         output: 'data',
                         parse: true
@@ -278,12 +363,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function unregisterRoute(namespace, name) {
-        let route = server.match('POST', '/rpc/' + namespace + '/' + name.split('.').join('/'));
+        const route = server.match('POST', '/rpc/' + namespace + '/' + name.split('.').join('/'));
         if (route) route.settings.handler = deleted;
     }
 
     function exportMethod(methods, namespace, reqrep) {
-        var methodNames = [];
+        const methodNames = [];
         if (methods instanceof Array) {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {
@@ -306,7 +391,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function removeMethod(names, namespace, reqrep) {
         names.forEach(name => {
             unregisterRoute(namespace, name);
-            let local = mapLocal[namespace + '.' + name];
+            const local = mapLocal[namespace + '.' + name];
             if (local) delete local.method;
         });
     }
@@ -314,16 +399,25 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function localMethod(methods, namespace, {version} = {}) {
         if (namespace.endsWith('.validation') && utApi && Object.entries(methods).length) {
             server.route(utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
-                const {params, ...rest} = typeof validation === 'function' ? validation() : validation;
-                let path = '/rpc/ports/' + method.split('.').shift() + '/request';
+                const {
+                    params,
+                    path: route,
+                    method: httpMethod,
+                    query = false,
+                    ...rest
+                } = typeof validation === 'function' ? validation() : validation;
+                const rpc = '/rpc/ports/' + method.split('.').shift() + '/request';
                 return {
                     method,
                     params,
+                    route,
+                    httpMethod,
                     version,
+                    pre: params ? preJsonRpc : preGet(method),
                     validate: {
                         options: {abortEarly: false},
-                        query: false,
-                        payload: joi.object({
+                        query,
+                        payload: params && joi.object({
                             jsonrpc: '2.0',
                             timeout: joi.number().optional().allow(null),
                             id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
@@ -332,7 +426,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         })
                     },
                     handler: (request, ...rest) => {
-                        const route = server.match('POST', path);
+                        const route = server.match('POST', rpc);
                         if (!route || !route.settings || !route.settings.handler) throw Boom.notFound();
                         return route.settings.handler(request, ...rest);
                     },
@@ -348,6 +442,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         exportMethod,
         removeMethod,
         brokerMethod,
-        localMethod
+        localMethod,
+        info
     };
 };
