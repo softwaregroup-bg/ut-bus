@@ -17,7 +17,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
     test.matchSnapshot(serverApi.performance, 'server.performance before');
     serverApi.performance = {prometheus: () => 'sample metrics'};
     test.matchSnapshot(serverApi.performance, 'server.performance after');
-    test.matchSnapshot(clean({errors: Object.keys(serverApi.errors)}), 'server.errors');
+    test.matchSnapshot(clean({errors: Object.keys(serverApi.errors).sort()}), 'server.errors');
     test.matchSnapshot(clean(serverApi.config), 'server.config');
     test.throws(() => serverApi.local, Error, 'server.local error');
     await test.test('Server register map', () => {
@@ -119,7 +119,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
             d: [true],
             e: {}
         }, 'client', {version: '1.0.0'});
-        test.matchSnapshot(client.modules, 'client.modules');
+        test.matchSnapshot(clean(client.modules), 'client.modules');
         await test.test('Client register', async() => {
             return clientApi.register({
                 method() {
