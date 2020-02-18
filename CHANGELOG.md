@@ -1,3 +1,21 @@
+# [7.12.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.11.3...v7.12.0) (2020-02-18)
+
+
+### Bug Fixes
+
+* allow configuring non rpc handlers ([8e644ed](https://github.com/softwaregroup-bg/ut-bus/commit/8e644ed07c9faec93bd3f0305bfb6fbdc08928b1))
+* improve errors ([f34eca7](https://github.com/softwaregroup-bg/ut-bus/commit/f34eca72381d3cda31d455595004ba8f1b397f59))
+
+
+### Features
+
+* add more meta data ([57188cf](https://github.com/softwaregroup-bg/ut-bus/commit/57188cf090cc2e9ffe111b60800bf0b78d4dc55f))
+* allow more configuration via validations ([2a53b20](https://github.com/softwaregroup-bg/ut-bus/commit/2a53b20bf6104e4cfd1df5dbc76c9a1ba4d578de))
+* allow returning http response decorators ([3a90878](https://github.com/softwaregroup-bg/ut-bus/commit/3a908780469d546379429766c78deb05291c6e20))
+* pass pkg to rpc ([f876583](https://github.com/softwaregroup-bg/ut-bus/commit/f876583ec70d7e38c00913606311bf8f944a50d4))
+
+
+
 ## [7.11.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.11.2...v7.11.3) (2020-01-15)
 
 
