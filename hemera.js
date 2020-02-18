@@ -3,7 +3,7 @@ const nats = require('nats');
 const util = require('util');
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, findMethodIn}) {
-    var hemeraParams = typeof socket === 'object' ? {...socket} : {};
+    const hemeraParams = typeof socket === 'object' ? {...socket} : {};
     delete hemeraParams.nats;
     const hemera = new Hemera(nats.connect((socket && socket.nats) || socket), {
         logLevel,
@@ -48,7 +48,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function brokerMethod(typeName, methodType) {
         return function() {
-            var $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
+            const $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             return hemera.act({
                 channel: channel,
                 topic: 'ports.' + $meta.method.split('.').shift() + '.' + methodType,
@@ -70,7 +70,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function exportMethod(methods, namespace, reqrep) {
-        var methodNames = [];
+        const methodNames = [];
         if (methods instanceof Array) {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {

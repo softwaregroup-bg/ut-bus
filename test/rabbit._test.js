@@ -1,7 +1,7 @@
-let tap = require('tap');
-let tests = require('./tests');
-let id = require('uuid').v4();
-let channel = 'impl-test';
+const tap = require('tap');
+const tests = require('./tests');
+const id = require('uuid').v4();
+const channel = 'impl-test';
 const rabbot = {
     connection: {
         server: '192.168.133.104',

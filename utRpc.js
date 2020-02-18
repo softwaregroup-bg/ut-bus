@@ -3,26 +3,26 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
         return Promise.resolve();
     };
 
-    var remotes = [];
-    var listReq = [];
-    var listPub = [];
-    var rpcLocal = [];
-    var map = {
+    const remotes = [];
+    const listReq = [];
+    const listPub = [];
+    const rpcLocal = [];
+    const map = {
         req: {},
         pub: {}
     };
 
     function handleRPCResponse(obj, fn, args, server) {
-        var $meta = (args.length > 1 && args[args.length - 1]);
+        const $meta = (args.length > 1 && args[args.length - 1]);
         return new Promise(function(resolve, reject) {
             args.push(function(err, res) {
                 if (err) {
                     if (err.length > 1) {
                         $meta.mtid = 'error';
-                        reject(server ? err[0] : processError(err[0], $meta));
+                        reject(err);
                     } else {
                         $meta.mtid = 'error';
-                        reject(server ? err : processError(err, $meta));
+                        reject(err);
                     }
                 } else {
                     resolve(res);
@@ -44,7 +44,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
     }
 
     function registerRemote(index, type, methods) {
-        var adapt = {
+        const adapt = {
             req: function req(fn) {
                 return function() {
                     if (!fn) {
@@ -52,7 +52,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
                             params: {bus: id}
                         }));
                     }
-                    var args = Array.prototype.slice.call(arguments);
+                    const args = Array.prototype.slice.call(arguments);
                     return handleRPCResponse(undefined, fn, args, isServer);
                 };
             },
@@ -64,13 +64,13 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
             }
         }[type];
 
-        var root = map[type];
+        const root = map[type];
 
         if (!(methods instanceof Array)) {
             methods = [methods];
         }
 
-        var remote = rpcLocal[index];
+        const remote = rpcLocal[index];
         methods.forEach(function(method) {
             root[method] = {method: adapt(remote.createRemote(method, type))};
         });
@@ -105,7 +105,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
 
     function localRegister(nameSpace, name, fn, adapted) {
         adapted ? listReq.push(nameSpace + '.' + name) : listPub.push(nameSpace + '.' + name);
-        let local = mapLocal[nameSpace + '.' + name];
+        const local = mapLocal[nameSpace + '.' + name];
         if (local) {
             local.method = fn;
         } else {
@@ -122,7 +122,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
      * @returns {promise|object}
      */
     function exportMethod(methods, namespace, adapt) {
-        var methodNames = [];
+        const methodNames = [];
         if (methods instanceof Array) {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {
@@ -149,13 +149,13 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
 
     function removeMethod(names, namespace, reqrep) {
         names.forEach(name => {
-            let local = mapLocal[namespace + '.' + name];
+            const local = mapLocal[namespace + '.' + name];
             if (local) delete local.method;
         });
     }
 
     return new Promise(function(resolve, reject) {
-        var result = {
+        const result = {
             stop: noOp,
             start: start,
             exportMethod,
@@ -163,7 +163,7 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
             brokerMethod
         };
 
-        var pipe;
+        let pipe;
         if (!socket) {
             resolve(result);
             return;
@@ -172,10 +172,10 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
         } else {
             pipe = socket;
         }
-        var net = require('net');
-        var utRPC = require('ut-rpc');
+        const net = require('net');
+        const utRPC = require('ut-rpc');
         function connectionHandler(socket) {
-            var connection = {
+            const connection = {
                 localAddress: socket.localAddress,
                 localPort: socket.localPort,
                 remoteAddress: socket.remoteAddress,
@@ -189,13 +189,13 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
             }).on('data', function(msg) {
                 logger && logger.trace && logger.trace({$meta: {mtid: 'frame', method: 'in'}, message: msg});
             });
-            var rpc = utRPC({
+            const rpc = utRPC({
                 registerRemote: registerRemote.bind(null, rpcLocal.length)
             }, isServer, logger);
             rpcLocal.push(rpc);
             rpc.on('remote', function(remote) {
                 remotes.push(remote);
-                var methods = [
+                const methods = [
                     registerRemoteMethods([remote], listReq, true),
                     registerRemoteMethods([remote], listPub, false),
                     registerLocalMethods([rpc], mapLocal)
@@ -206,12 +206,12 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
         }
         if (isServer) {
             if (process.platform !== 'win32') {
-                var fs = require('fs');
+                const fs = require('fs');
                 if (fs.existsSync(pipe)) {
                     fs.unlinkSync(pipe);
                 }
             }
-            var server = net.createServer(connectionHandler)
+            const server = net.createServer(connectionHandler)
                 .on('close', () => {
                     logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'bus.close'}, address: pipe});
                 })
@@ -239,15 +239,15 @@ module.exports = function create({id, socket, logger, isServer, isTLS, mapLocal,
                 });
             };
         } else {
-            var reconnect = isTLS ? require('./reconnect-tls') : require('./reconnect-net');
-            var connection = reconnect(connectionHandler)
+            const reconnect = isTLS ? require('./reconnect-tls') : require('./reconnect-net');
+            const connection = reconnect(connectionHandler)
                 .on('error', (err) => {
                     logger && logger.error && logger.error(err);
                 })
                 .connect(pipe);
             // todo set on error handler
             result.stop = function() {
-                var emitter = connection.disconnect();
+                const emitter = connection.disconnect();
                 emitter._connection && emitter._connection.unref();
                 result.stop = noOp;
                 return Promise.resolve();

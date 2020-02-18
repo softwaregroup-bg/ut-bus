@@ -1,7 +1,7 @@
 const Broker = require('./broker');
 const hrtime = require('browser-process-hrtime');
 const flattenAPI = (data, pkg) => {
-    var result = {};
+    const result = {};
     function recurse(cur, prop, depth) {
         if (!depth) {
             throw new Error('API exceeds max depth: ' + prop);
@@ -12,7 +12,7 @@ const flattenAPI = (data, pkg) => {
             cur.pkg = pkg;
             result[prop] = cur;
         } else {
-            var isEmpty = true;
+            let isEmpty = true;
             Object.keys(cur).forEach(function(p) {
                 isEmpty = false;
                 recurse(cur[p], prop ? prop + '.' + p : p, depth - 1);
@@ -45,14 +45,17 @@ class Bus extends Broker {
         this.decay = {};
         this.performance = null;
     }
+
     init(...params) {
         this.brokerRequest = this.getMethod('req', 'request', undefined, {returnMeta: true});
         this.brokerPublish = this.getMethod('pub', 'publish', undefined, {returnMeta: true});
         return super.init(...params);
     }
-    register(methods, namespace, port) {
-        return this.rpc.exportMethod(methods, namespace || this.id, true, port);
+
+    register(methods, namespace, port, pkg) {
+        return this.rpc.exportMethod(methods, namespace || this.id, true, port, pkg);
     }
+
     unregister(methods, namespace, port) {
         this.importCache = {}; // todo do not loose whole cache
         return this.rpc.removeMethod(methods, namespace || this.id, true, port);
@@ -65,12 +68,14 @@ class Bus extends Broker {
      * @param {string} [namespace] to use when registering
      * @returns {promise}
      */
-    subscribe(methods, namespace, port) {
-        return this.rpc.exportMethod(methods, namespace || this.id, false, port);
+    subscribe(methods, namespace, port, pkg) {
+        return this.rpc.exportMethod(methods, namespace || this.id, false, port, pkg);
     }
+
     unsubscribe(methods, namespace, port) {
         return this.rpc.removeMethod(methods, namespace || this.id, false, port);
     }
+
     registerLocal(methods, moduleName, pkg) {
         if (!this.modules[moduleName]) this.modules[moduleName] = {methods: {}, imported: []};
         const methodsMap = flattenAPI(methods, pkg);
@@ -78,26 +83,28 @@ class Bus extends Broker {
         Object.assign(this.modules[moduleName].methods, methodsMap);
         this.modules[moduleName].imported.push(methods);
     }
+
     unregisterLocal(moduleName) {
-        let mod = this.modules[moduleName];
+        const mod = this.modules[moduleName];
         if (mod) {
-            for (let key in mod.methods) { delete mod.methods[key]; }
+            for (const key in mod.methods) { delete mod.methods[key]; }
             mod.imported.splice(0, mod.imported.length);
         }
     }
+
     getMethod(typeName, methodType, methodName, options) {
-        var bus = this;
-        var fn = null;
-        var unpack = true;
-        var fallback = options && options.fallback;
-        var timeoutSec = options && options.timeout && (Math.floor(options.timeout / 1000));
-        var timeoutNSec = options && options.timeout && (options.timeout % 1000 * 1000000);
-        var fnCache = null;
-        let cache = options && options.cache;
+        const bus = this;
+        let fn = null;
+        let unpack = true;
+        const fallback = options && options.fallback;
+        const timeoutSec = options && options.timeout && (Math.floor(options.timeout / 1000));
+        const timeoutNSec = options && options.timeout && (options.timeout % 1000 * 1000000);
+        let fnCache = null;
+        const cache = options && options.cache;
 
         async function busMethod(...params) {
-            var $meta = (params.length > 1 && params[params.length - 1]);
-            var $applyMeta;
+            const $meta = (params.length > 1 && params[params.length - 1]);
+            let $applyMeta;
             if (!$meta) {
                 params.push($applyMeta = {method: methodName});
             } else {
@@ -139,7 +146,7 @@ class Bus extends Broker {
                     $applyMeta.mtid = 'request';
                     $applyMeta.method = methodName;
                     if (cache) {
-                        let before = cache.before || {
+                        const before = cache.before || {
                             get: 'get',
                             fetch: 'get',
                             add: false,
@@ -158,7 +165,7 @@ class Bus extends Broker {
                                 operation: before
                             }
                         };
-                        let after = cache.after || {
+                        const after = cache.after || {
                             get: 'set',
                             fetch: 'set',
                             add: 'set',
@@ -185,7 +192,7 @@ class Bus extends Broker {
                             }));
                         }
                         if (typeof cache.key === 'function') {
-                            let key = await cache.key(params[0]);
+                            const key = await cache.key(params[0]);
                             if ($metaBefore) $metaBefore.cache.key = key;
                             if ($metaAfter) $metaAfter.cache.key = key;
                         }
@@ -199,7 +206,7 @@ class Bus extends Broker {
                     const result = await fn.apply(this, params);
                     if (fnCache && $metaAfter) await fnCache.call(this, result[0], $metaAfter);
                     if ($meta.timer) {
-                        let $resultMeta = (result.length > 1 && result[result.length - 1]);
+                        const $resultMeta = (result.length > 1 && result[result.length - 1]);
                         $resultMeta && $resultMeta.calls && $meta.timer($resultMeta.calls);
                     }
                     if (!unpack || (options && options.returnMeta)) {
@@ -225,6 +232,7 @@ class Bus extends Broker {
 
         return busMethod;
     }
+
     attachHandlers(target, patterns) {
         if (patterns && patterns.length) {
             target.importedMap = new Map(); // preserve patterns order
@@ -243,15 +251,17 @@ class Bus extends Broker {
             });
         }
     }
+
     importMethod(methodName, options) {
         let result = this.importCache[methodName];
 
-        function startRetry(fn, {timeout, retry}) {
+        const startRetry = (fn, {timeout, retry}) => {
             return new Promise((resolve, reject) => {
                 const attempt = () => fn()
                     .then(resolve)
                     .catch(error => { // todo maybe log these errors
                         if (Date.now() > timeout) {
+                            if (error) error.params = {method: 'methodName'};
                             reject(this.errors['bus.timeout'](error));
                         } else {
                             setTimeout(attempt, retry);
@@ -262,7 +272,7 @@ class Bus extends Broker {
         };
 
         if (!result) {
-            var method = this.getMethod('req', 'request', methodName, options);
+            const method = this.getMethod('req', 'request', methodName, options);
             result = this.importCache[methodName] = Object.assign(function(msg, $meta) {
                 if ($meta && $meta.timeout && $meta.retry) {
                     return startRetry(() => method.apply(undefined, arguments), $meta);
@@ -274,21 +284,24 @@ class Bus extends Broker {
 
         return result;
     }
+
     notification(method) {
         return (msg, $meta) => this.dispatch(msg, Object.assign({}, $meta, {mtid: 'notification', method}));
     }
+
     decayTime(key) {
-        var longestPrefix = (prev, cur) => (prev.length < cur.length && key.substr(0, cur.length) === cur) ? cur : prev;
+        const longestPrefix = (prev, cur) => (prev.length < cur.length && key.substr(0, cur.length) === cur) ? cur : prev;
         return this.decay[Object.keys(this.decay).reduce(longestPrefix, '')];
     }
+
     dispatch() {
-        var $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
-        var mtid;
+        const $meta = (arguments.length > 1 && arguments[arguments.length - 1]);
+        let mtid;
         if ($meta) {
             mtid = $meta.mtid;
             if ($meta.resample) { // check if we need to discard messages coming earlier than specified decay time
-                var now = Date.now();
-                var last = this.last[$meta.resample];
+                const now = Date.now();
+                const last = this.last[$meta.resample];
                 if (last) {
                     if (last.decay > 0 && last.timeout <= now) {
                         last.count = 1;
@@ -299,7 +312,7 @@ class Bus extends Broker {
                     last.timeout = now + last.decay;
                     // todo persist last object in case decay > 0
                 } else {
-                    var decay = this.decayTime($meta.resample);
+                    const decay = this.decayTime($meta.resample);
                     this.last[$meta.resample] = {
                         count: 1,
                         timeout: now + decay,
@@ -314,7 +327,7 @@ class Bus extends Broker {
             if (mtid === 'discard') {
                 return true;
             }
-            var f = this.canSkipSocket && this.findMethod(this.mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
+            const f = this.canSkipSocket && this.findMethod(this.mapLocal, $meta.destination || $meta.method, mtid === 'request' ? 'request' : 'publish');
             if (f) {
                 return Promise.resolve(f.apply(undefined, Array.prototype.slice.call(arguments)));
             } else if (this.socket) {
@@ -330,6 +343,7 @@ class Bus extends Broker {
             return false;
         }
     }
+
     get publicApi() {
         const bus = this;
         return {

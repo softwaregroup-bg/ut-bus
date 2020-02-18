@@ -22,7 +22,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function brokerMethod(typeName, methodType) {
         return function() {
-            var $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
+            const $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             return broker.call(
                 'ports.' + $meta.method.split('.').shift() + '.' + methodType,
                 Array.prototype.slice.call(arguments)
@@ -51,7 +51,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function exportMethod(methods, namespace, reqrep, port) {
-        var actions = {};
+        const actions = {};
         if (methods instanceof Array) {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {

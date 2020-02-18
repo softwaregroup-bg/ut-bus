@@ -1,6 +1,6 @@
 {
     "bus": "Bus generic",
-    "bus.timeout": "Time out",
+    "bus.timeout": "Method {method} timed out",
     "bus.methodNotFound": "Method {method} not found",
     "bus.remoteMethodNotFound": "Remote method not found for \"{bus}\"",
     "bus.destinationNotFound": "Destination {destination} not found",
@@ -10,6 +10,13 @@
     "bus.bindingFailed": "Method binding failed for {typeName} {methodType} {methodName}",
     "bus.cacheFailed": "Method cache failed for {typeName} {methodType} {methodName}",
     "bus.cacheOperationMissing": "Cache before adn after operations missing for {typeName} {methodType} {methodName}",
-    "bus.swagger.requestValidation": "Swagger request validation error",
-    "bus.swagger.responseValidation": "Swagger response validation error"
+    "bus.requestValidation": "Request at {path} failed validation",
+    "bus.responseValidation": "Response at {path} failed validation",
+    "bus.consulServiceNotFound": "Service {namespace} not found in Consul",
+    "bus.oidcHttp": "OpenID returned HTTP error {code}",
+    "bus.oidcEmpty": "OpenID returned empty response",
+    "bus.oidcNoIssuer": "Missing issuer in authentication token",
+    "bus.oidcBadIssuer": "OpenID issuer '{issuerId}' is not supported",
+    "bus.jsonRpcHttp": "JSON RPC returned HTTP error {code}",
+    "bus.jsonRpcEmpty": "JSON RPC response without response and error"
 }
