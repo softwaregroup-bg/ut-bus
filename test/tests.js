@@ -179,15 +179,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
             }), 'dispatch()');
         });
         await test.test('Server call error', async assert => {
-            const result = clientApi.importMethod('module.entity.action')({});
-            assert.rejects(result);
-            try {
-                await result;
-            } catch (error) {
-                assert.matchSnapshot(clean({
-                    ...error
-                }), 'error');
-            }
+            assert.rejects(clientApi.importMethod('module.entity.action')({}), {type: 'module.invalidParameter'}, 'error module.invalidParameter');
             assert.matchSnapshot(await clientApi.importMethod('module.entity.unknown', {
                 fallback: () => 'fallback'
             })({}), 'fallback');

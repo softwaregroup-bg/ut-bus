@@ -88,14 +88,6 @@ exports[`test/jsonrpc.test.js TAP Bus Server attach handlers > validation handle
 undefined
 `
 
-exports[`test/jsonrpc.test.js TAP Bus Server call error > error 1`] = `
-Object {
-  "message": "Invalid parameter",
-  "method": "module.entity.action",
-  "type": "module.invalidParameter",
-}
-`
-
 exports[`test/jsonrpc.test.js TAP Bus Server call error > fallback 1`] = `
 fallback
 `
