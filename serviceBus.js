@@ -52,8 +52,8 @@ class Bus extends Broker {
         return super.init(...params);
     }
 
-    register(methods, namespace, port) {
-        return this.rpc.exportMethod(methods, namespace || this.id, true, port);
+    register(methods, namespace, port, pkg) {
+        return this.rpc.exportMethod(methods, namespace || this.id, true, port, pkg);
     }
 
     unregister(methods, namespace, port) {
@@ -68,8 +68,8 @@ class Bus extends Broker {
      * @param {string} [namespace] to use when registering
      * @returns {promise}
      */
-    subscribe(methods, namespace, port) {
-        return this.rpc.exportMethod(methods, namespace || this.id, false, port);
+    subscribe(methods, namespace, port, pkg) {
+        return this.rpc.exportMethod(methods, namespace || this.id, false, port, pkg);
     }
 
     unsubscribe(methods, namespace, port) {
