@@ -6,6 +6,8 @@ const Inert = require('@hapi/inert');
 const H2o2 = require('@hapi/h2o2');
 const jwksRsa = require('jwks-rsa');
 const Jwt = require('hapi-auth-jwt2');
+const os = require('os');
+const osName = [os.type(), os.platform(), os.release()].join(':');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -59,6 +61,41 @@ function forward(headers) {
     }, {});
 }
 
+function extendMeta(req, version, serviceName) {
+    const {
+        'user-agent': frontEnd,
+        latitude,
+        longitude,
+        deviceId,
+        'x-forwarded-host': forwardedHost,
+        'x-forwarded-for': forwardedIp
+    } = req.headers || {};
+    const {
+        localAddress,
+        localPort
+    } = (req.raw && req.raw.req && req.raw.req.socket && req.raw.req.socket) || {};
+    return {
+        forward: forward(req.headers),
+        frontEnd,
+        latitude,
+        longitude,
+        deviceId,
+        localAddress,
+        localPort,
+        auth: req.auth.credentials,
+        hostName: forwardedHost || req.info.hostname,
+        ipAddress: (forwardedIp || req.info.remoteAddress).split(',')[0],
+        machineName: req.server && req.server.info && req.server.info.host,
+        os: osName,
+        version,
+        serviceName,
+        httpRequest: {
+            url: req.url,
+            headers: req.headers
+        }
+    };
+}
+
 const preArray = [{
     assign: 'utBus',
     method: (request, h) => {
@@ -81,10 +118,10 @@ const preArray = [{
     }
 }];
 
-const preJsonRpc = [{
+const preJsonRpc = version => [{
     assign: 'utBus',
     method: (request, h) => {
-        const {jsonrpc, id, method, params} = request.payload;
+        const {jsonrpc, id, method, params, timeout} = request.payload;
         return {
             jsonrpc,
             id,
@@ -93,17 +130,18 @@ const preJsonRpc = [{
             params: [
                 params,
                 {
-                    mtid: 'request',
+                    mtid: !id ? 'notification' : 'request',
                     method,
                     opcode: method.split('.').pop(),
-                    forward: forward(request.headers)
+                    timeout,
+                    ...extendMeta(request, version, method.split('.').shift())
                 }
             ]
         };
     }
 }];
 
-const prePlain = method => [{
+const prePlain = (method, version) => [{
     assign: 'utBus',
     method: (request, h) => ({
         shift: true,
@@ -111,9 +149,10 @@ const prePlain = method => [{
         params: [
             {...request.payload, ...request.query, ...request.params},
             {
+                mtid: 'request',
                 method,
                 opcode: method.split('.').pop(),
-                forward: forward(request.headers)
+                ...extendMeta(request, version, method.split('.').shift())
             }
         ]
     })
@@ -308,7 +347,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return response;
     }
 
-    function registerRoute(namespace, name, fn, object) {
+    function registerRoute(namespace, name, fn, object, {version}) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         const handler = async function(request, h) {
             const {params, jsonrpc, id, shift, method} = request.pre.utBus;
@@ -381,19 +420,19 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         if (route) route.settings.handler = deleted;
     }
 
-    function exportMethod(methods, namespace, reqrep) {
+    function exportMethod(methods, namespace, reqrep, port, pkg = {}) {
         const methodNames = [];
         if (methods instanceof Array) {
             methods.forEach(function(fn) {
                 if (fn instanceof Function && fn.name) {
-                    registerRoute(namespace, fn.name, fn, null);
+                    registerRoute(namespace, fn.name, fn, null, pkg);
                     localRegister(namespace, fn.name, fn, reqrep);
                 }
             });
         } else {
             Object.keys(methods).forEach(function(key) {
                 if (methods[key] instanceof Function) {
-                    registerRoute(namespace, key, methods[key], methods);
+                    registerRoute(namespace, key, methods[key], methods, pkg);
                     localRegister(namespace, key, methods[key].bind(methods), reqrep);
                 }
             });
@@ -426,7 +465,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     route,
                     httpMethod,
                     version,
-                    pre: params ? preJsonRpc : prePlain(method),
+                    pre: params ? preJsonRpc(version) : prePlain(method, version),
                     validate: {
                         options: {abortEarly: false},
                         query: false,
