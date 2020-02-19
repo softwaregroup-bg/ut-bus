@@ -1,3 +1,12 @@
+## [7.12.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.12.0...v7.12.1) (2020-02-19)
+
+
+### Bug Fixes
+
+* prefix validation paths with /rpc/namespace ([4578eea](https://github.com/softwaregroup-bg/ut-bus/commit/4578eea2444fb03871a6891b2c2a92c73096d048))
+
+
+
 # [7.12.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.11.3...v7.12.0) (2020-02-18)
 
 
