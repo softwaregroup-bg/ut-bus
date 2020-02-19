@@ -134,7 +134,7 @@ const preJsonRpc = version => [{
                     method,
                     opcode: method.split('.').pop(),
                     timeout,
-                    ...extendMeta(request, version, method.split('.').shift())
+                    ...extendMeta(request, version, method.split('.')[0])
                 }
             ]
         };
@@ -152,7 +152,7 @@ const prePlain = (method, version) => [{
                 mtid: 'request',
                 method,
                 opcode: method.split('.').pop(),
-                ...extendMeta(request, version, method.split('.').shift())
+                ...extendMeta(request, version, method.split('.')[0])
             }
         ]
     })
@@ -378,7 +378,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
         return Promise.resolve()
             .then(() => consul && consul.agent.service.register({
-                name: name.split('.').shift(),
+                name: name.split('.')[0],
                 port: server.info.port,
                 check: {
                     http: `http://${server.info.host}:${server.info.port}/healthz`,
@@ -386,7 +386,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     deregistercriticalserviceafter: '1m'
                 }
             }))
-            .then(() => discover && discover.announce(prefix + name.split('.').shift().replace(/\//g, '-') + suffix + '-' + domain, server.info.port))
+            .then(() => discover && discover.announce(prefix + name.split('.')[0].replace(/\//g, '-') + suffix + '-' + domain, server.info.port))
             .then(() => server.route({
                 method: 'POST',
                 path,
@@ -454,15 +454,16 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             server.route(utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {
                     params,
-                    path: route,
+                    route,
+                    path = route,
                     method: httpMethod,
                     validate,
                     ...rest
                 } = typeof validation === 'function' ? validation() : validation;
-                const rpc = '/rpc/ports/' + method.split('.').shift() + '/request';
+                const rpc = '/rpc/ports/' + method.split('.')[0] + '/request';
                 return {
                     method,
-                    route,
+                    route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
                     pre: params ? preJsonRpc(version) : prePlain(method, version),

@@ -64,7 +64,7 @@ tap.test('Bus routes', async test => {
 
     test.test('REST', t => {
         request({
-            url: new URL('/module/entity/1', uri),
+            url: new URL('/rpc/module/entity/1', uri),
             json: true,
             method: 'GET'
         }, (error, response, body) => {

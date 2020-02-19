@@ -83,7 +83,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
             'module.entity.get'() {
                 return {
                     method: 'GET',
-                    path: '/module/entity/{entityId}'
+                    path: '/entity/{entityId}'
                 };
             },
             'module.oidc.test'() {
