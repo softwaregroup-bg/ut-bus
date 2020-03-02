@@ -1,3 +1,13 @@
+## [7.12.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.12.1...v7.12.2) (2020-03-02)
+
+
+### Bug Fixes
+
+* flatten validations ([c425f7e](https://github.com/softwaregroup-bg/ut-bus/commit/c425f7eaef58c6f959968bfdc260577f6d8e218b))
+* undo flatten validations ([ace7b00](https://github.com/softwaregroup-bg/ut-bus/commit/ace7b0096820a693e24005e9b66e037cba9773b4))
+
+
+
 ## [7.12.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.12.0...v7.12.1) (2020-02-19)
 
 
