@@ -81,7 +81,7 @@ class Bus extends Broker {
         const methodsMap = flattenAPI(methods, pkg);
         if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName, pkg);
         Object.assign(this.modules[moduleName].methods, methodsMap);
-        this.modules[moduleName].imported.push(methodsMap);
+        this.modules[moduleName].imported.push(methods);
     }
 
     unregisterLocal(moduleName) {
