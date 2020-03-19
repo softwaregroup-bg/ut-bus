@@ -170,7 +170,14 @@ const domainResolver = domain => {
             delete cache[getHostName(host)];
         } else {
             const cached = cache[hostName];
-            if (cached && hrtime(cached[0])[0] < 3) return {...cached[1], cache: host};
+            if (cached) {
+                if (hrtime(cached[0])[0] < 3) {
+                    cached[0] = now;
+                    return {...cached[1], cache: host};
+                } else {
+                    delete cache[hostName];
+                }
+            }
         }
         const resolved = await resolver.resolveSrv(hostName);
         const result = {
