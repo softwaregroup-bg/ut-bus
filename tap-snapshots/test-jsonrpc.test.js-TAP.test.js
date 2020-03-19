@@ -84,6 +84,10 @@ exports[`test/jsonrpc.test.js TAP Bus Client notification > notification success
 local result
 `
 
+exports[`test/jsonrpc.test.js TAP Bus Fill cache > call with object parameter 1`] = `
+HELLO WORLD
+`
+
 exports[`test/jsonrpc.test.js TAP Bus Server attach handlers > validation handlers 1`] = `
 undefined
 `
@@ -155,6 +159,10 @@ module.entity.action
 
 exports[`test/jsonrpc.test.js TAP Bus Server getPath > method with [] 1`] = `
 module.entity.action
+`
+
+exports[`test/jsonrpc.test.js TAP Bus Server moved to different port > call with object parameter 1`] = `
+HELLO WORLD
 `
 
 exports[`test/jsonrpc.test.js TAP Bus Server notification > dispatch() 1`] = `

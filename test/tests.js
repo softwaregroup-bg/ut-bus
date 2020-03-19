@@ -6,6 +6,28 @@ const clean = result => {
     return result;
 };
 
+const api = (server, errors) => ({
+    'module.request': async({text, entityId}, {method}) => {
+        switch (method) {
+            case 'module.entity.actionTimeout':
+            case 'module.entity.actionCached':
+            case 'module.entity.action': {
+                if (text) {
+                    return [text.toUpperCase(), {calls: ['module.entity.action']}];
+                } else {
+                    throw errors['module.invalidParameter']();
+                }
+            }
+            case 'module.entity.get':
+                return ['Entity ' + entityId];
+            case 'module.entity.empty':
+                return;
+            default:
+                throw server.errors['bus.methodNotFound']({params: {method}});
+        }
+    }
+});
+
 module.exports = async(test, clientConfig, serverConfig) => {
     const server = new ServiceBus(serverConfig);
     await test.test('Server init', () => server.init());
@@ -21,27 +43,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
     test.matchSnapshot(clean(serverApi.config), 'server.config');
     test.throws(() => serverApi.local, Error, 'server.local error');
     await test.test('Server register map', () => {
-        return serverApi.register({
-            'module.request': async({text, entityId}, {method}) => {
-                switch (method) {
-                    case 'module.entity.actionTimeout':
-                    case 'module.entity.actionCached':
-                    case 'module.entity.action': {
-                        if (text) {
-                            return [text.toUpperCase(), {calls: ['module.entity.action']}];
-                        } else {
-                            throw errors['module.invalidParameter']();
-                        }
-                    }
-                    case 'module.entity.get':
-                        return ['Entity ' + entityId];
-                    case 'module.entity.empty':
-                        return;
-                    default:
-                        throw server.errors['bus.methodNotFound']({params: {method}});
-                }
-            }
-        }, 'ports');
+        return serverApi.register(api(server, errors), 'ports');
     });
     await test.test('Server register array', () => {
         return serverApi.register([
@@ -231,15 +233,36 @@ module.exports = async(test, clientConfig, serverConfig) => {
             }), 'dispatch() resample disabled');
             assert.matchSnapshot(await clientApi.dispatch({}), 'dispatch() no meta');
         });
-        await test.test('Server unregister', async() => serverApi.unregister(['module.request'], 'ports'));
+        const server2 = new ServiceBus(serverConfig);
+        await test.test('Server2 init', () => server2.init());
+        await test.test('Server2 start', () => server2.start());
+        const server2Api = server2.publicApi;
+        const errors2 = server2Api.registerErrors({
+            'module.invalidParameter': 'Invalid parameter'
+        });
+        await test.test('Fill cache', async assert => {
+            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
+                text: 'hello world'
+            })), 'call with object parameter');
+        });
+        await test.test('Server stop', () => server.stop());
+        await test.test('Server2 register map', () => {
+            return server2Api.register(api(server2, errors2), 'ports');
+        });
+        await test.test('Server moved to different port', async assert => {
+            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
+                text: 'hello world'
+            })), 'call with object parameter');
+        });
+        await test.test('Server unregister', async() => server2Api.unregister(['module.request'], 'ports'));
         await test.test('Call unregistered method', async assert =>
             assert.rejects(clientApi.importMethod('module.entity.action')({
                 text: 'hello world'
             }), {type: 'bus.jsonRpcHttp'}, 'call with object parameter')
         );
-        await test.test('Server unregister local', async() => serverApi.unregisterLocal('module.validation'));
-        await test.test('Server unsubscribe', async() => serverApi.unsubscribe(['module.publish'], 'ports'));
+        await test.test('Server unregister local', async() => server2Api.unregisterLocal('module.validation'));
+        await test.test('Server unsubscribe', async() => server2Api.unsubscribe(['module.publish'], 'ports'));
         await test.test('Client stop', () => client.stop());
-        await test.test('Server stop', () => server.stop());
+        await test.test('Server2 stop', () => server2.stop());
     } else return server;
 };

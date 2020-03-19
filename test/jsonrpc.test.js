@@ -93,23 +93,35 @@ tap.test('Bus routes', async test => {
     });
 
     test.test('OIDC auth', t => {
-        request({
-            url: new URL('/rpc/module/oidc/test', uri),
-            headers: {
-                Authorization: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjE3ZDU1ZmY0ZTEwOTkxZDZiMGVmZDM5MmI5MWEzM2U1NGMwZTIxOGIifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJpYXQiOjE1ODE4OTg2NzMsImV4cCI6MTU4MTg5ODY4NSwiYXVkIjoiYXVkaWVuY2UiLCJzdWIiOiJzdWJqZWN0In0.ZQ1R_hOeWNwTMB3ikZqG4eJzWoM7KGy8fp6OKFp_tAlpKEC1jPuTaWS0-YtgaVZ2sMSyoIryxOk80zRgZZp6hXVxg2X74bLf9GxkrK4-zfY4vta_od4k2i9KE1azUgR5Sl1bNi61BdaTvYpQQLbK4AxNnQZIyQVLGp7FOfg9L3vRRe7nuFdW8Q9yRL1xTMECFanYqGrxP3U6SaqYNsIjo3pubD73CkZXYJEaJ44_Cai3AjhTmiqLVRT1p0docGdxRVuh4tcQYO_Mn7ybN_6pAlVYWTKZaYmgp6Nnbo6e8bDEMZ1sN5uz6J1A2LphitYpaEaZp3oZtEWEL6DGCbPDyQ'
-            },
-            json: true,
-            method: 'POST',
-            body: {
-                jsonrpc: '2.0',
-                method: 'module.oidc.test',
-                id: 1,
-                params: {}
-            }
+        request.get({
+            url: 'https://www.googleapis.com/oauth2/v3/certs',
+            json: true
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return entity');
-            t.end();
+            t.ok(body && body.keys && body.keys[0] && body.keys[0].kid && body.keys[0].alg, 'Return oauth key id');
+            const header = Buffer.from(JSON.stringify({
+                alg: body.keys[0].alg,
+                typ: 'JWT',
+                kid: body.keys[0].kid
+            })).toString('base64').replace(/=/g, '');
+            request({
+                url: new URL('/rpc/module/oidc/test', uri),
+                headers: {
+                    Authorization: `Bearer ${header}.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJpYXQiOjE1ODE4OTg2NzMsImV4cCI6MTU4MTg5ODY4NSwiYXVkIjoiYXVkaWVuY2UiLCJzdWIiOiJzdWJqZWN0In0.ZQ1R_hOeWNwTMB3ikZqG4eJzWoM7KGy8fp6OKFp_tAlpKEC1jPuTaWS0-YtgaVZ2sMSyoIryxOk80zRgZZp6hXVxg2X74bLf9GxkrK4-zfY4vta_od4k2i9KE1azUgR5Sl1bNi61BdaTvYpQQLbK4AxNnQZIyQVLGp7FOfg9L3vRRe7nuFdW8Q9yRL1xTMECFanYqGrxP3U6SaqYNsIjo3pubD73CkZXYJEaJ44_Cai3AjhTmiqLVRT1p0docGdxRVuh4tcQYO_Mn7ybN_6pAlVYWTKZaYmgp6Nnbo6e8bDEMZ1sN5uz6J1A2LphitYpaEaZp3oZtEWEL6DGCbPDyQ`
+                },
+                json: true,
+                method: 'POST',
+                body: {
+                    jsonrpc: '2.0',
+                    method: 'module.oidc.test',
+                    id: 1,
+                    params: {}
+                }
+            }, (error, response, body) => {
+                if (error) t.threw(error);
+                t.matchSnapshot(clean(body), 'Return entity');
+                t.end();
+            });
         });
     });
 
