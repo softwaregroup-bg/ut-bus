@@ -1,3 +1,12 @@
+## [7.13.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.13.0...v7.13.1) (2020-03-19)
+
+
+### Bug Fixes
+
+* refresh cache time ([8f29234](https://github.com/softwaregroup-bg/ut-bus/commit/8f29234602df9c6004405085afa9c943c91ad1e6))
+
+
+
 # [7.13.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.12.2...v7.13.0) (2020-03-19)
 
 
