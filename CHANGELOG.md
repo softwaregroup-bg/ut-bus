@@ -1,3 +1,12 @@
+# [7.13.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.12.2...v7.13.0) (2020-03-19)
+
+
+### Features
+
+* json rpc multicast dns cache ([c2fb360](https://github.com/softwaregroup-bg/ut-bus/commit/c2fb360e863f0f26c857f58d01aa2cdaaa49604e))
+
+
+
 ## [7.12.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.12.1...v7.12.2) (2020-03-02)
 
 
