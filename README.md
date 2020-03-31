@@ -50,9 +50,10 @@ http transport over json-rpc 2.0 protocol.
 * `openId` (array) [optional] - a list of openId providers.
 * `api` (object) [optional] - swagger configuration.
   * `ui` (boolean | object) [optional]
-  * `initOAuth` (object) [optional] - swagger ui OAuth credentials
-    * `clientId` (string) - pre-populated in swagger ui auth interface
-    * `clientSecret` (string) - pre-populated in swagger ui auth interface
+    * `base` (string) [optional] - ui path prefix (default '/api')
+    * `initOAuth` (object) [optional] - swagger ui OAuth credentials
+      * `clientId` (string) - pre-populated in swagger ui auth interface
+      * `clientSecret` (string) - pre-populated in swagger ui auth interface
 * `domain` (string | boolean) [optional] - Enables dns discovery and uses this
   property as a top-level domain to use for records. (both regular or multi-cast
   discovery mechanisms are supported).

@@ -159,6 +159,7 @@ class Bus extends Broker {
                         $metaBefore = before && {
                             method: methodName,
                             timeout: $applyMeta.timeout,
+                            auth: $applyMeta.auth,
                             cache: {
                                 key: cache.key,
                                 ttl: cache.ttl,
@@ -178,6 +179,7 @@ class Bus extends Broker {
                         $metaAfter = after && {
                             method: methodName,
                             timeout: $applyMeta.timeout,
+                            auth: $applyMeta.auth,
                             cache: {
                                 key: cache.key,
                                 ttl: cache.ttl,
