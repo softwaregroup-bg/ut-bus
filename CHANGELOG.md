@@ -1,3 +1,12 @@
+## [7.13.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.13.1...v7.13.2) (2020-04-02)
+
+
+### Bug Fixes
+
+* pass .auth to  and ([a1c4f9f](https://github.com/softwaregroup-bg/ut-bus/commit/a1c4f9fb505d2c9fbe97bf2af6dae6ba09668ba7))
+
+
+
 ## [7.13.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.13.0...v7.13.1) (2020-03-19)
 
 
