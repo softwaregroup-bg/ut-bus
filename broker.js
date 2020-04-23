@@ -51,6 +51,7 @@ class Broker {
             isServer: this.constructor === Broker,
             isTLS: this.ssl,
             mapLocal: this.mapLocal,
+            workDir: this.workDir,
             processError: this.processError,
             service: this.service,
             errors: this.errors,

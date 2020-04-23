@@ -9,6 +9,11 @@ const Jwt = require('hapi-auth-jwt2');
 const os = require('os');
 const osName = [os.type(), os.platform(), os.release()].join(':');
 const hrtime = require('browser-process-hrtime');
+const Content = require('content');
+const Pez = require('pez');
+const fs = require('fs');
+const uuid = require('uuid');
+const fsplus = require('fs-plus');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -142,21 +147,91 @@ const preJsonRpc = version => [{
     }
 }];
 
-const prePlain = (method, version) => [{
+const assertDir = dir => {
+    if (!dir) throw new Error('Missing workDir in configuration (ut-run@10.20.0 or newer expected)');
+    try {
+        fs.accessSync(dir, fs.R_OK | fs.W_OK);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            try {
+                fsplus.makeTreeSync(dir);
+            } catch (e) {
+                if (e.code !== 'EEXIST') {
+                    throw e;
+                }
+            }
+        } else {
+            throw error;
+        }
+    }
+};
+
+const uploads = async(workDir, request, logger) => {
+    assertDir(workDir);
+    const contentType = Content.type(request.headers['content-type']);
+    const dispenser = new Pez.Dispenser({boundary: contentType.boundary});
+    return new Promise((resolve, reject) => {
+        const params = {};
+        dispenser.once('close', () => resolve(params));
+        dispenser.on('part', async part => {
+            if (part.name) {
+                // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
+                const filename = workDir + '/' + uuid.v4() + '.upload';
+                params[part.name] = {
+                    originalFilename: part.filename,
+                    headers: part.headers,
+                    filename
+                };
+                const file = fs.createWriteStream(filename);
+                file.on('error', function(error) {
+                    logger.error && logger.error(error);
+                    reject(error);
+                });
+                part.pipe(file);
+            }
+        });
+        dispenser.on('field', (field, value) => {
+            params[field] = value;
+        });
+        dispenser.once('error', reject);
+        request.payload.pipe(dispenser);
+    });
+};
+
+const prePlain = (workDir, method, version, logger) => [{
     assign: 'utBus',
-    method: (request, h) => ({
-        shift: true,
-        method,
-        params: [
-            {...request.payload, ...request.query, ...request.params},
-            {
+    method: async(request, h) => {
+        try {
+            const $meta = {
                 mtid: 'request',
                 method,
                 opcode: method.split('.').pop(),
                 ...extendMeta(request, version, method.split('.')[0])
+            };
+            if (request.mime === 'multipart/form-data') {
+                return {
+                    shift: true,
+                    method,
+                    params: [
+                        await uploads(workDir, request, logger),
+                        $meta
+                    ]
+                };
+            } else {
+                return {
+                    shift: true,
+                    method,
+                    params: [
+                        {...request.payload, ...request.query, ...request.params},
+                        $meta
+                    ]
+                };
             }
-        ]
-    })
+        } catch (error) {
+            logger && logger.error && logger.error(error);
+            throw error;
+        }
+    }
 }];
 
 const domainResolver = domain => {
@@ -189,7 +264,7 @@ const domainResolver = domain => {
     };
 };
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir}) {
     const server = new hapi.Server({
         port: socket.port
     });
@@ -504,6 +579,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     path = route,
                     method: httpMethod,
                     validate,
+                    workDir: dir,
                     ...rest
                 } = typeof validation === 'function' ? validation() : validation;
                 const rpc = '/rpc/ports/' + method.split('.')[0] + '/request';
@@ -512,7 +588,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
-                    pre: params ? preJsonRpc(version) : prePlain(method, version),
+                    pre: params ? preJsonRpc(version) : prePlain(dir || workDir, method, version, logger),
                     validate: {
                         options: {abortEarly: false},
                         query: false,
