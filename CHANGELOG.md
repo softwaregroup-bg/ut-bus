@@ -1,3 +1,12 @@
+# [7.14.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.13.2...v7.14.0) (2020-04-23)
+
+
+### Features
+
+* enable multipart handlers ([bb36ea9](https://github.com/softwaregroup-bg/ut-bus/commit/bb36ea92d1394518335bf88dd92879b9dd77cf53))
+
+
+
 ## [7.13.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.13.1...v7.13.2) (2020-04-02)
 
 
