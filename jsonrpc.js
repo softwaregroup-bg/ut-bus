@@ -172,7 +172,7 @@ const uploads = async(workDir, request, logger) => {
     const dispenser = new Pez.Dispenser({boundary: contentType.boundary});
     return new Promise((resolve, reject) => {
         let promise = Promise.resolve({...request.query, ...request.params});
-        dispenser.once('close', () => promise.then(resolve));
+        dispenser.once('close', () => promise.then(resolve).catch(reject));
         dispenser.on('part', async part => {
             promise = promise.then(async params => {
                 if (part.name && typeof params[part.name] === 'undefined') {
