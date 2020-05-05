@@ -171,31 +171,37 @@ const uploads = async(workDir, request, logger) => {
     const contentType = Content.type(request.headers['content-type']);
     const dispenser = new Pez.Dispenser({boundary: contentType.boundary});
     return new Promise((resolve, reject) => {
-        const params = {...request.query, ...request.params};
-        dispenser.once('close', () => resolve(params));
+        let promise = Promise.resolve({...request.query, ...request.params});
+        dispenser.once('close', () => promise.then(resolve));
         dispenser.on('part', async part => {
-            if (part.name && typeof params[part.name] === 'undefined') {
-                // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
-                const filename = workDir + '/' + uuid.v4() + '.upload';
-                params[part.name] = await new Promise((resolve, reject) => {
-                    const file = fs.createWriteStream(filename);
-                    file.on('error', function(error) {
-                        logger.error && logger.error(error);
-                        reject(error);
-                    });
-                    file.on('end', function() {
-                        resolve({
-                            originalFilename: part.filename,
-                            headers: part.headers,
-                            filename
+            promise = promise.then(async params => {
+                if (part.name && typeof params[part.name] === 'undefined') {
+                    // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
+                    const filename = workDir + '/' + uuid.v4() + '.upload';
+                    params[part.name] = await new Promise((resolve, reject) => {
+                        const file = fs.createWriteStream(filename);
+                        part.on('error', function(error) {
+                            logger.error && logger.error(error);
+                            reject(error);
                         });
+                        part.on('end', function() {
+                            resolve({
+                                originalFilename: part.filename,
+                                headers: part.headers,
+                                filename
+                            });
+                        });
+                        part.pipe(file);
                     });
-                    part.pipe(file);
-                });
-            }
+                }
+                return params;
+            });
         });
         dispenser.on('field', (field, value) => {
-            if (typeof params[field] === 'undefined') params[field] = value;
+            promise = promise.then(params => {
+                if (typeof params[field] === 'undefined') params[field] = value;
+                return params;
+            });
         });
         dispenser.once('error', reject);
         request.payload.pipe(dispenser);
