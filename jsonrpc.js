@@ -171,10 +171,10 @@ const uploads = async(workDir, request, logger) => {
     const contentType = Content.type(request.headers['content-type']);
     const dispenser = new Pez.Dispenser({boundary: contentType.boundary});
     return new Promise((resolve, reject) => {
-        const params = {};
+        const params = {...request.query, ...request.params};
         dispenser.once('close', () => resolve(params));
         dispenser.on('part', async part => {
-            if (part.name) {
+            if (part.name && typeof params[part.name] === 'undefined') {
                 // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
                 const filename = workDir + '/' + uuid.v4() + '.upload';
                 params[part.name] = {
@@ -191,7 +191,7 @@ const uploads = async(workDir, request, logger) => {
             }
         });
         dispenser.on('field', (field, value) => {
-            params[field] = value;
+            if (typeof params[field] === 'undefined') params[field] = value;
         });
         dispenser.once('error', reject);
         request.payload.pipe(dispenser);
