@@ -177,17 +177,21 @@ const uploads = async(workDir, request, logger) => {
             if (part.name && typeof params[part.name] === 'undefined') {
                 // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
                 const filename = workDir + '/' + uuid.v4() + '.upload';
-                params[part.name] = {
-                    originalFilename: part.filename,
-                    headers: part.headers,
-                    filename
-                };
-                const file = fs.createWriteStream(filename);
-                file.on('error', function(error) {
-                    logger.error && logger.error(error);
-                    reject(error);
+                params[part.name] = await new Promise((resolve, reject) => {
+                    const file = fs.createWriteStream(filename);
+                    file.on('error', function(error) {
+                        logger.error && logger.error(error);
+                        reject(error);
+                    });
+                    file.on('end', function() {
+                        resolve({
+                            originalFilename: part.filename,
+                            headers: part.headers,
+                            filename
+                        });
+                    });
+                    part.pipe(file);
                 });
-                part.pipe(file);
             }
         });
         dispenser.on('field', (field, value) => {
