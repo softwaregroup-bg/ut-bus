@@ -171,45 +171,34 @@ const uploads = async(workDir, request, logger) => {
     const contentType = Content.type(request.headers['content-type']);
     const dispenser = new Pez.Dispenser({boundary: contentType.boundary});
     return new Promise((resolve, reject) => {
-        const pipeline = [];
-        dispenser.once('close', () => {
-            const params = Promise.resolve({...request.query, ...request.params});
-            pipeline
-                .reduce((promise, next) => promise.then(next), params)
-                .then(resolve)
-                .catch(reject);
-        });
-        dispenser.on('part', async part => {
-            pipeline.push(async params => {
+        const params = {...request.query, ...request.params};
+        const files = [];
+        dispenser
+            .on('part', part => {
                 if (part.name && typeof params[part.name] === 'undefined') {
                     // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
-                    const filename = workDir + '/' + uuid.v4() + '.upload';
-                    params[part.name] = await new Promise((resolve, reject) => {
-                        const file = fs.createWriteStream(filename);
+                    files.push(new Promise((resolve, reject) => {
+                        const filename = workDir + '/' + uuid.v4() + '.upload';
+                        params[part.name] = {
+                            originalFilename: part.filename,
+                            headers: part.headers,
+                            filename
+                        };
                         part.on('error', function(error) {
                             logger.error && logger.error(error);
                             reject(error);
                         });
-                        part.on('end', function() {
-                            resolve({
-                                originalFilename: part.filename,
-                                headers: part.headers,
-                                filename
-                            });
-                        });
-                        part.pipe(file);
-                    });
+                        part.on('end', resolve);
+                        part.pipe(fs.createWriteStream(filename));
+                    }));
                 }
-                return params;
-            });
-        });
-        dispenser.on('field', (field, value) => {
-            pipeline.push(params => {
+            })
+            .on('field', (field, value) => {
                 if (typeof params[field] === 'undefined') params[field] = value;
-                return params;
-            });
-        });
-        dispenser.once('error', reject);
+            })
+            .once('error', reject)
+            .once('close', () => Promise.all(files).then(() => resolve(params), reject));
+
         request.payload.pipe(dispenser);
     });
 };
