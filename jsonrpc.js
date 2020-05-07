@@ -171,29 +171,34 @@ const uploads = async(workDir, request, logger) => {
     const contentType = Content.type(request.headers['content-type']);
     const dispenser = new Pez.Dispenser({boundary: contentType.boundary});
     return new Promise((resolve, reject) => {
-        const params = {};
-        dispenser.once('close', () => resolve(params));
-        dispenser.on('part', async part => {
-            if (part.name) {
-                // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
-                const filename = workDir + '/' + uuid.v4() + '.upload';
-                params[part.name] = {
-                    originalFilename: part.filename,
-                    headers: part.headers,
-                    filename
-                };
-                const file = fs.createWriteStream(filename);
-                file.on('error', function(error) {
-                    logger.error && logger.error(error);
-                    reject(error);
-                });
-                part.pipe(file);
-            }
-        });
-        dispenser.on('field', (field, value) => {
-            params[field] = value;
-        });
-        dispenser.once('error', reject);
+        const params = {...request.query, ...request.params};
+        const files = [];
+        dispenser
+            .on('part', part => {
+                if (part.name && typeof params[part.name] === 'undefined') {
+                    // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
+                    files.push(new Promise((resolve, reject) => {
+                        const filename = workDir + '/' + uuid.v4() + '.upload';
+                        params[part.name] = {
+                            originalFilename: part.filename,
+                            headers: part.headers,
+                            filename
+                        };
+                        part.on('error', function(error) {
+                            logger.error && logger.error(error);
+                            reject(error);
+                        });
+                        part.on('end', resolve);
+                        part.pipe(fs.createWriteStream(filename));
+                    }));
+                }
+            })
+            .on('field', (field, value) => {
+                if (typeof params[field] === 'undefined') params[field] = value;
+            })
+            .once('error', reject)
+            .once('close', () => Promise.all(files).then(() => resolve(params), reject));
+
         request.payload.pipe(dispenser);
     });
 };
