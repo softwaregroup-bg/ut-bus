@@ -1,3 +1,12 @@
+## [7.14.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.14.0...v7.14.1) (2020-05-07)
+
+
+### Bug Fixes
+
+* wait for files to be uploaded ([5c3def6](https://github.com/softwaregroup-bg/ut-bus/commit/5c3def6e2d9e3bf9eb60a469f1be0483e532ea5f))
+
+
+
 # [7.14.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.13.2...v7.14.0) (2020-04-23)
 
 
