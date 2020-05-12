@@ -520,7 +520,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     pre: preArray,
                     payload: {
                         output: 'data',
-                        parse: true
+                        parse: true,
+                        maxBytes: socket.maxBytes
                     },
                     validate: {
                         payload: joi.object({
