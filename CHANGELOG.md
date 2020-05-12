@@ -1,3 +1,12 @@
+# [7.15.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.14.1...v7.15.0) (2020-05-12)
+
+
+### Features
+
+* Get maxBytes of route from configuration. ([#76](https://github.com/softwaregroup-bg/ut-bus/issues/76)) ([61188ba](https://github.com/softwaregroup-bg/ut-bus/commit/61188ba6abb4713443726e5fb521a04e15772686))
+
+
+
 ## [7.14.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.14.0...v7.14.1) (2020-05-07)
 
 
