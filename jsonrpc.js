@@ -4,8 +4,7 @@ const request = (process.type === 'renderer') ? require('ut-browser-request') : 
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
 const H2o2 = require('@hapi/h2o2');
-const jwksRsa = require('jwks-rsa');
-const Jwt = require('hapi-auth-jwt2');
+const jwt = require('./jwt');
 const os = require('os');
 const osName = [os.type(), os.platform(), os.release()].join(':');
 const hrtime = require('browser-process-hrtime');
@@ -23,12 +22,12 @@ function initConsul(config) {
     return consul;
 }
 
-const get = (url, errors) => new Promise((resolve, reject) => {
+const get = (url, errors, prefix) => new Promise((resolve, reject) => {
     request({json: true, method: 'GET', url}, (error, response, body) => {
         if (error) {
             reject(error);
         } else if (response.statusCode < 200 || response.statusCode >= 300) {
-            reject(errors['bus.oidcHttp']({
+            reject(errors[prefix + 'Http']({
                 statusCode: response.statusCode,
                 statusText: response.statusText,
                 statusMessage: response.statusMessage,
@@ -41,16 +40,10 @@ const get = (url, errors) => new Promise((resolve, reject) => {
         } else if (body) {
             resolve(body);
         } else {
-            reject(errors['bus.oidcEmpty']());
+            reject(errors[prefix + 'Empty']());
         }
     });
 });
-
-const openIdUrl = url => {
-    if (!url.replace('https://', '').includes('/')) url = url + '/.well-known/openid-configuration';
-    if (!url.startsWith('https://')) url = url + 'https://';
-    return url;
-};
 
 function forward(headers) {
     return [
@@ -124,26 +117,32 @@ const preArray = [{
     }
 }];
 
-const preJsonRpc = version => [{
+const preJsonRpc = (checkAuth, version, logger) => [{
     assign: 'utBus',
-    method: (request, h) => {
-        const {jsonrpc, id, method, params, timeout} = request.payload;
-        return {
-            jsonrpc,
-            id,
-            method,
-            shift: true,
-            params: [
-                params,
-                {
-                    mtid: !id ? 'notification' : 'request',
-                    method,
-                    opcode: method.split('.').pop(),
-                    timeout,
-                    ...extendMeta(request, version, method.split('.')[0])
-                }
-            ]
-        };
+    method: async(request, h) => {
+        try {
+            const {jsonrpc, id, method, params, timeout} = request.payload;
+            if (request.auth.strategy) await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            return {
+                jsonrpc,
+                id,
+                method,
+                shift: true,
+                params: [
+                    params,
+                    {
+                        mtid: !id ? 'notification' : 'request',
+                        method,
+                        opcode: method.split('.').pop(),
+                        timeout,
+                        ...extendMeta(request, version, method.split('.')[0])
+                    }
+                ]
+            };
+        } catch (error) {
+            logger && logger.error && logger.error(error);
+            throw error;
+        }
     }
 }];
 
@@ -203,10 +202,11 @@ const uploads = async(workDir, request, logger) => {
     });
 };
 
-const prePlain = (workDir, method, version, logger) => [{
+const prePlain = (checkAuth, workDir, method, version, logger) => [{
     assign: 'utBus',
     method: async(request, h) => {
         try {
+            if (request.auth.strategy) await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
             const $meta = {
                 mtid: 'request',
                 method,
@@ -274,45 +274,93 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         port: socket.port
     });
 
-    const issuers = {};
-    const oidc = {};
-    const key = async decoded => {
-        const issuerId = decoded.payload && decoded.payload.iss;
-        if (!issuerId) throw errors['bus.oidcNoIssuer']();
-        if (!oidc[issuerId]) throw errors['bus.oidcBadIssuer']({params: {issuerId}});
-        let issuer = issuers[issuerId];
-        if (!issuer) {
-            issuers[issuerId] = issuer = jwksRsa.hapiJwt2KeyAsync({
-                cache: true,
-                rateLimit: true,
-                jwksRequestsPerMinute: 2,
-                jwksUri: (await oidc[issuerId]).jwks_uri
+    let loginCache;
+    async function loginService() {
+        if (!loginCache) loginCache = discoverService('login');
+        try {
+            return await loginCache;
+        } catch (error) {
+            loginCache = false;
+            throw error;
+        }
+    }
+
+    async function discoverService(namespace) {
+        const params = {
+            host: prefix + namespace.replace(/\//g, '-') + suffix,
+            port: socket.port,
+            service
+        };
+        const requestParams = Object.assign({}, params);
+        if (consul) {
+            const services = await consul.health.service({
+                service: namespace,
+                passing: true
+            });
+            if (!services || !services.length) {
+                throw errors['bus.consulServiceNotFound']({params: {namespace}});
+            }
+            Object.assign(requestParams, {
+                host: services[0].Node.Address,
+                port: services[0].Service.Port
             });
         }
-        return issuer(decoded);
+        if (resolver) {
+            Object.assign(requestParams, await resolver(params.host));
+        }
+        return requestParams;
+    }
+
+    async function openIdConfig(issuer) {
+        if (issuer === 'ut-login') {
+            const {host, port} = await loginService();
+            issuer = `http://${host}:${port}/rpc/login/.well-known/openid-configuration`;
+        } else {
+            if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
+            if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
+        }
+        return get(issuer, errors, 'bus.oidc');
     };
 
-    if (socket.openId) {
-        await server.register([Inert, H2o2, Jwt]);
-        socket.openId.forEach(issuerId => {
-            oidc[issuerId] = get(openIdUrl(issuerId), errors);
-        });
-        server.auth.strategy('openId', 'jwt', {
-            complete: true,
-            key,
-            async validate(decoded, request, h) {
-                return {isValid: true};
-            }
-        });
-    } else {
-        await server.register([Inert, H2o2]);
+    let actionsCache;
+    async function actions(method) {
+        if (actionsCache) return actionsCache[method];
+        const {host, port} = await loginService();
+        actionsCache = await get(`http://${host}:${port}/rpc/login/action`, errors, 'bus.action');
+        return actionsCache[method];
     }
+
+    async function checkAuth(method, map) {
+        const bit = await actions(method) - 1;
+        const index = Math.floor(bit / 8);
+        if (index >= map.length || !(map[index] & (1 << (bit % 8)))) {
+            throw errors['bus.unauthorized']({params: {method}});
+        };
+    }
+
+    const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
+    const issuers = () => Promise.all(['ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(openIdConfig));
+
+    const oidc = {};
+    await server.register([
+        Inert,
+        H2o2,
+        {
+            plugin: jwt,
+            options: {
+                options: socket,
+                logger,
+                errors,
+                jwks
+            }
+        }
+    ]);
 
     server.events.on('start', () => {
         logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
     });
 
-    const utApi = socket.api && await require('ut-api')({service, oidc, auth: socket.openId ? 'openId' : false, ...socket.api}, errors);
+    const utApi = socket.api && await require('ut-api')({service, oidc, auth: socket.openId ? 'openId' : false, ...socket.api}, errors, issuers);
     if (utApi && utApi.uiRoutes) server.route(utApi.uiRoutes);
 
     server.route([{
@@ -345,28 +393,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return async function(msg, $meta) {
             const [namespace, op] = $meta.method.split('.', 2);
             if (['start', 'stop', 'drain'].includes(op)) methodType = op;
-            const params = {
-                host: prefix + namespace.replace(/\//g, '-') + suffix,
-                port: socket.port,
-                service
-            };
-            const requestParams = Object.assign({}, params);
-            if (consul) {
-                const services = await consul.health.service({
-                    service: namespace,
-                    passing: true
-                });
-                if (!services || !services.length) {
-                    throw errors['bus.consulServiceNotFound']({params: {namespace}});
-                }
-                Object.assign(requestParams, {
-                    host: services[0].Node.Address,
-                    port: services[0].Service.Port
-                });
-            }
-            if (resolver) {
-                Object.assign(requestParams, await resolver(params.host));
-            }
+            const requestParams = await discoverService(namespace);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
@@ -593,14 +620,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
-                    pre: params ? preJsonRpc(version) : prePlain(dir || workDir, method, version, logger),
+                    pre: params ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         options: {abortEarly: false},
                         query: false,
                         payload: params && joi.object({
                             jsonrpc: '2.0',
                             timeout: joi.number().optional().allow(null),
-                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')).example('1'),
                             method,
                             ...params && {params}
                         }),
