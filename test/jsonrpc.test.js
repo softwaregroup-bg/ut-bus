@@ -2,6 +2,8 @@ const tap = require('tap');
 const sortKeys = require('sort-keys');
 const tests = require('./tests');
 const request = require('request');
+const { JWT, JWK } = require('jose');
+const jose = require('../jose');
 
 const clean = result => {
     if (result && typeof result === 'object') return sortKeys(result, {deep: true});
@@ -30,6 +32,8 @@ tap.test('Bus', test => tests(test, {
 }));
 
 tap.test('Bus routes', async test => {
+    const sign = JWK.generateSync('EC', 'P-384', {use: 'sig'});
+    const encrypt = JWK.generateSync('EC', 'P-384', {use: 'enc'});
     const server = await tests(test, false, {
         jsonrpc: {
             domain: true,
@@ -37,27 +41,73 @@ tap.test('Bus routes', async test => {
             metrics: true,
             openId: [
                 'https://accounts.google.com'
-            ]
+            ],
+            sign,
+            encrypt
         }
     });
     const {uri} = server.rpc.info();
+
+    let auth;
+    // const mleServer = jose({sign, encrypt});
+    const clientSign = JWK.generateSync('EC', 'P-384', {use: 'sig'});
+    const clientEncrypt = JWK.generateSync('EC', 'P-384', {use: 'enc'});
+    const mleClient = jose({
+        sign: clientSign,
+        encrypt: clientEncrypt
+    });
+
+    const decrypt = ({result, error, ...rest}) => ({
+        ...result && {result: mleClient.decrypt(result, sign)},
+        ...error && {error: mleClient.decrypt(error, sign)},
+        ...rest
+    });
+
+    test.test('Login', t => {
+        request({
+            url: new URL('/rpc/login/auth', uri),
+            json: true,
+            method: 'POST',
+            body: {
+                sign: clientSign.toJWK(),
+                encrypt: clientEncrypt.toJWK()
+            }
+        }, (error, response, body) => {
+            if (error) t.threw(error);
+            const decoded = JWT.decode(body);
+            auth = 'Bearer ' + body;
+            delete decoded.exp;
+            delete decoded.iat;
+            delete decoded.enc.kid;
+            delete decoded.enc.x;
+            delete decoded.enc.y;
+            delete decoded.sig.kid;
+            delete decoded.sig.x;
+            delete decoded.sig.y;
+            t.matchSnapshot(decoded, 'Return valid JWT');
+            t.end();
+        });
+    });
 
     test.test('JSON RPC', t => {
         request({
             url: new URL('/rpc/module/entity/action', uri),
             json: true,
             method: 'POST',
+            headers: {
+                Authorization: auth
+            },
             body: {
                 jsonrpc: '2.0',
                 method: 'module.entity.action',
                 id: 1,
-                params: {
+                params: mleClient.encrypt({
                     text: 'JSON RPC 2.0'
-                }
+                }, encrypt)
             }
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return JSON RPC response');
+            t.matchSnapshot(clean(decrypt(body)), 'Return JSON RPC response');
             t.end();
         });
     });
@@ -65,11 +115,60 @@ tap.test('Bus routes', async test => {
     test.test('REST', t => {
         request({
             url: new URL('/rpc/module/entity/1', uri),
+            headers: {
+                Authorization: auth
+            },
             json: true,
             method: 'GET'
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return entity');
+            t.matchSnapshot(clean(mleClient.decrypt(body, sign)), 'Return entity');
+            t.end();
+        });
+    });
+
+    test.test('Forbidden', t => {
+        request({
+            url: new URL('/rpc/module/entity/empty', uri),
+            json: true,
+            method: 'POST',
+            headers: {
+                Authorization: auth
+            },
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.empty',
+                id: 1,
+                params: mleClient.encrypt({
+                    text: 'JSON RPC 2.0'
+                }, encrypt)
+            }
+        }, (error, response, body) => {
+            if (error) t.threw(error);
+            t.matchSnapshot(clean(body), 'Return 403');
+            t.end();
+        });
+    });
+
+    test.test('Forbidden', t => {
+        request({
+            url: new URL('/rpc/module/entity/notFound', uri),
+            json: true,
+            method: 'POST',
+            headers: {
+                Authorization: auth
+            },
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.empty',
+                id: 1,
+                params: mleClient.encrypt({
+                    text: 'JSON RPC 2.0'
+                }, encrypt)
+            }
+        }, (error, response, body) => {
+            if (error) t.threw(error);
+            t.matchSnapshot(clean(body), 'Return 404');
             t.end();
         });
     });
