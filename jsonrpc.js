@@ -97,7 +97,7 @@ function extendMeta(req, version, serviceName) {
 }
 
 async function failPre(request, h, error) {
-    return Boom.boomify(error, { statusCode: error.statusCode || 500 });
+    return new Boom.Boom(error.message, {statusCode: error.statusCode});
 }
 
 const preArray = [{
