@@ -4,7 +4,6 @@ const request = (process.type === 'renderer') ? require('ut-browser-request') : 
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
 const H2o2 = require('@hapi/h2o2');
-const jwt = require('./jwt');
 const os = require('os');
 const osName = [os.type(), os.platform(), os.release()].join(':');
 const hrtime = require('browser-process-hrtime');
@@ -13,6 +12,8 @@ const Pez = require('pez');
 const fs = require('fs');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
+const mle = require('./mle');
+const jwt = require('./jwt');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -95,8 +96,13 @@ function extendMeta(req, version, serviceName) {
     };
 }
 
+async function failPre(request, h, error) {
+    return Boom.boomify(error, { statusCode: error.statusCode || 500 });
+}
+
 const preArray = [{
     assign: 'utBus',
+    failAction: failPre,
     method: (request, h) => {
         const {jsonrpc, id, method, params: [...params]} = request.payload;
         const meta = params.pop();
@@ -119,6 +125,7 @@ const preArray = [{
 
 const preJsonRpc = (checkAuth, version, logger) => [{
     assign: 'utBus',
+    failAction: failPre,
     method: async(request, h) => {
         try {
             const {jsonrpc, id, method, params, timeout} = request.payload;
@@ -204,6 +211,7 @@ const uploads = async(workDir, request, logger) => {
 
 const prePlain = (checkAuth, workDir, method, version, logger) => [{
     assign: 'utBus',
+    failAction: failPre,
     method: async(request, h) => {
         try {
             if (request.auth.strategy) await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
@@ -333,7 +341,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     async function checkAuth(method, map) {
         const bit = await actions(method) - 1;
         const index = Math.floor(bit / 8);
-        if (index >= map.length || !(map[index] & (1 << (bit % 8)))) {
+        if (!Number.isInteger(index) || index >= map.length || !(map[index] & (1 << (bit % 8)))) {
             throw errors['bus.unauthorized']({params: {method}});
         };
     }
@@ -352,6 +360,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 logger,
                 errors,
                 jwks
+            }
+        },
+        {
+            plugin: mle,
+            options: {
+                options: socket
             }
         }
     ]);
@@ -497,6 +511,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function registerRoute(namespace, name, fn, object, {version}) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         const handler = async function(request, h) {
+            if (Boom.isBoom(request.pre.utBus)) return request.pre.utBus;
             const {params, jsonrpc, id, shift, method} = request.pre.utBus;
             try {
                 const result = await Promise.resolve(fn.apply(object, params));

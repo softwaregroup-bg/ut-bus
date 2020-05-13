@@ -29,14 +29,14 @@ module.exports = {
                                 credentials: {
                                     mlek: decoded.payload.enc,
                                     mlsk: decoded.payload.sig,
-                                    permissionMap: Buffer.from(decoded.payload.per, 'base64'),
+                                    permissionMap: Buffer.from(decoded.payload.per || '', 'base64'),
                                     actorId: decoded.payload.sub,
                                     sessionId: decoded.payload.ses
                                 }
                             });
                         } catch (error) {
                             logger && logger.error && logger.error(error);
-                            return h.unauthenticated(Boom.unauthorized());
+                            return h.unauthenticated(Boom.unauthorized(error.message));
                         }
                     }
                 };
@@ -57,7 +57,10 @@ module.exports = {
             server.auth.scheme('jwt', jose);
             if (options.openId) server.auth.strategy('openId', 'jwt', { key });
         },
-        pkg,
+        pkg: {
+            ...pkg,
+            name: 'ut-bus-jwt'
+        },
         requirements: {
             hapi: '>=18'
         }
