@@ -14,6 +14,10 @@ module.exports = ({sign, encrypt}) => {
     const encryptionPrivateKey = encrypt && JWK.asKey(encrypt);
     const signaturePrivateKey = sign && JWK.asKey(sign);
     return {
+        keys: {
+            sign: sign && signaturePrivateKey.toJWK(),
+            encrypt: encrypt && encryptionPrivateKey.toJWK()
+        },
         encrypt: (message, key) => sign ? signEncrypt(message, signaturePrivateKey, JWK.asKey(key)) : message,
         decrypt: (message, key) => encrypt ? decryptVerify(message, JWK.asKey(key), encryptionPrivateKey) : message
     };

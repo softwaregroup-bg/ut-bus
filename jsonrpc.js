@@ -12,8 +12,9 @@ const Pez = require('pez');
 const fs = require('fs');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
-const mle = require('./mle');
+const mlePlugin = require('./mle');
 const jwt = require('./jwt');
+const jose = require('./jose');
 
 function initConsul(config) {
     const consul = require('consul')(Object.assign({
@@ -348,6 +349,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
     const issuers = () => Promise.all(['ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(openIdConfig));
+    const mle = jose(socket);
 
     const oidc = {};
     await server.register([
@@ -363,9 +365,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             }
         },
         {
-            plugin: mle,
+            plugin: mlePlugin,
             options: {
-                options: socket
+                mle,
+                logger,
+                errors
             }
         }
     ]);
@@ -478,7 +482,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function info() {
-        return server.info;
+        return {
+            ...server.info,
+            ...mle.keys
+        };
     }
 
     async function stop() {
