@@ -1,10 +1,15 @@
 const joi = require('joi');
+const { JWKS, JWK, JWT } = require('jose');
 const sortKeys = require('sort-keys');
 const {ServiceBus} = require('..');
 const clean = result => {
     if (result && typeof result === 'object') return sortKeys(result, {deep: true});
     return result;
 };
+
+const key = JWK.generateSync('OKP', 'Ed25519', {use: 'sig'});
+const jwks = new JWKS.KeyStore();
+jwks.add(key);
 
 const api = (server, errors) => ({
     'module.request': async({text, entityId}, {method}) => {
@@ -22,6 +27,36 @@ const api = (server, errors) => ({
                 return ['Entity ' + entityId];
             case 'module.entity.empty':
                 return;
+            default:
+                throw server.errors['bus.methodNotFound']({params: {method}});
+        }
+    },
+    'login.request': async(params, {method, httpRequest: {url}}) => {
+        switch (method) {
+            case 'login.identity.authenticate':
+                return [
+                    JWT.sign({
+                        typ: 'Bearer',
+                        per: Buffer.from([3]).toString('Base64'),
+                        enc: JWK.asKey(params.encrypt),
+                        sig: JWK.asKey(params.sign)
+                    }, key, {
+                        issuer: 'ut-login',
+                        audience: 'ut-bus',
+                        expiresIn: '8 h'
+                    })
+                ];
+            case 'login.oidc.getConfiguration':
+                return [{
+                    jwks_uri: new URL('../jwks', url.href).href
+                }];
+            case 'login.action.map':
+                return [{
+                    'module.entity.action': 1,
+                    'module.entity.get': 2
+                }];
+            case 'login.oidc.getKeys':
+                return [jwks.toJWKS()];
             default:
                 throw server.errors['bus.methodNotFound']({params: {method}});
         }
@@ -75,7 +110,40 @@ module.exports = async(test, clientConfig, serverConfig) => {
         t.end();
     });
 
-    await test.test('Server register local', async() => {
+    await test.test('Server register local module', async() => {
+        return serverApi.registerLocal({
+            'login.identity.authenticate'() {
+                return {
+                    method: 'POST',
+                    path: '/auth',
+                    auth: false,
+                    validate: {
+                        payload: joi.object()
+                    }
+                };
+            },
+            'login.oidc.getConfiguration'() {
+                return {
+                    method: 'GET',
+                    path: '/.well-known/openid-configuration',
+                    auth: false
+                };
+            },
+            'login.oidc.getKeys'() {
+                return {
+                    method: 'GET',
+                    path: '/jwks',
+                    auth: false
+                };
+            },
+            'login.action.map': () => ({
+                method: 'GET',
+                path: '/action',
+                auth: false
+            })
+        }, 'login.validation', {version: '1.0.0'});
+    });
+    await test.test('Server register local login', async() => {
         return serverApi.registerLocal({
             'module.entity.action'() {
                 return {
@@ -90,8 +158,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
             },
             'module.oidc.test'() {
                 return {
-                    params: joi.object(),
-                    auth: 'openId'
+                    params: joi.object()
                 };
             },
             'module.entity.empty'() {

@@ -40,6 +40,8 @@ exports[`test/jsonrpc.test.js TAP Bus > server.errors 1`] = `
 Object {
   "errors": Array [
     "bus",
+    "bus.actionEmpty",
+    "bus.actionHttp",
     "bus.bindingFailed",
     "bus.cacheFailed",
     "bus.cacheOperationMissing",
@@ -47,17 +49,24 @@ Object {
     "bus.destinationNotFound",
     "bus.jsonRpcEmpty",
     "bus.jsonRpcHttp",
+    "bus.jwtInvalid",
+    "bus.jwtInvalidKey",
+    "bus.jwtMissingHeader",
     "bus.methodNotFound",
     "bus.missingMethod",
+    "bus.mleDecrypt",
+    "bus.mleEncrypt",
     "bus.notInitialized",
     "bus.oidcBadIssuer",
     "bus.oidcEmpty",
     "bus.oidcHttp",
     "bus.oidcNoIssuer",
+    "bus.oidcNoKid",
     "bus.remoteMethodNotFound",
     "bus.requestValidation",
     "bus.responseValidation",
     "bus.timeout",
+    "bus.unauthorized",
     "bus.unhandledError",
     "defineError",
     "fetchErrors",
@@ -201,6 +210,8 @@ exports[`test/jsonrpc.test.js TAP Bus routes > server.errors 1`] = `
 Object {
   "errors": Array [
     "bus",
+    "bus.actionEmpty",
+    "bus.actionHttp",
     "bus.bindingFailed",
     "bus.cacheFailed",
     "bus.cacheOperationMissing",
@@ -208,17 +219,24 @@ Object {
     "bus.destinationNotFound",
     "bus.jsonRpcEmpty",
     "bus.jsonRpcHttp",
+    "bus.jwtInvalid",
+    "bus.jwtInvalidKey",
+    "bus.jwtMissingHeader",
     "bus.methodNotFound",
     "bus.missingMethod",
+    "bus.mleDecrypt",
+    "bus.mleEncrypt",
     "bus.notInitialized",
     "bus.oidcBadIssuer",
     "bus.oidcEmpty",
     "bus.oidcHttp",
     "bus.oidcNoIssuer",
+    "bus.oidcNoKid",
     "bus.remoteMethodNotFound",
     "bus.requestValidation",
     "bus.responseValidation",
     "bus.timeout",
+    "bus.unauthorized",
     "bus.unhandledError",
     "defineError",
     "fetchErrors",
@@ -237,11 +255,46 @@ exports[`test/jsonrpc.test.js TAP Bus routes > server.performance before 1`] = `
 null
 `
 
+exports[`test/jsonrpc.test.js TAP Bus routes Forbidden > Return 403 1`] = `
+Object {
+  "error": "Forbidden",
+  "message": "Operation module.entity.empty is not allowed for this user",
+  "statusCode": 403,
+}
+`
+
+exports[`test/jsonrpc.test.js TAP Bus routes Forbidden > Return 404 1`] = `
+Object {
+  "error": "Not Found",
+  "message": "Not Found",
+  "statusCode": 404,
+}
+`
+
 exports[`test/jsonrpc.test.js TAP Bus routes JSON RPC > Return JSON RPC response 1`] = `
 Object {
   "id": 1,
   "jsonrpc": "2.0",
   "result": "JSON RPC 2.0",
+}
+`
+
+exports[`test/jsonrpc.test.js TAP Bus routes Login > Return valid JWT 1`] = `
+Object {
+  "aud": "ut-bus",
+  "enc": Object {
+    "crv": "P-384",
+    "kty": "EC",
+    "use": "enc",
+  },
+  "iss": "ut-login",
+  "per": "Aw==",
+  "sig": Object {
+    "crv": "P-384",
+    "kty": "EC",
+    "use": "sig",
+  },
+  "typ": "Bearer",
 }
 `
 
@@ -251,11 +304,8 @@ sample metrics
 
 exports[`test/jsonrpc.test.js TAP Bus routes OIDC auth > Return entity 1`] = `
 Object {
-  "attributes": Object {
-    "error": "Invalid token",
-  },
   "error": "Unauthorized",
-  "message": "Invalid token",
+  "message": "Invalid authentication (signature verification failed)",
   "statusCode": 401,
 }
 `
@@ -263,7 +313,7 @@ Object {
 exports[`test/jsonrpc.test.js TAP Bus routes OIDC no auth > Return entity 1`] = `
 Object {
   "error": "Unauthorized",
-  "message": "Missing authentication",
+  "message": "Missing bearer authorization header",
   "statusCode": 401,
 }
 `
