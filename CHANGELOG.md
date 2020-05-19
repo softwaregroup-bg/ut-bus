@@ -1,3 +1,12 @@
+# [7.16.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.15.0...v7.16.0) (2020-05-19)
+
+
+### Features
+
+* jose and jwt ([7f825de](https://github.com/softwaregroup-bg/ut-bus/commit/7f825de3756c5850cdcb14146f99f81da264dc3b))
+
+
+
 # [7.15.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.14.1...v7.15.0) (2020-05-12)
 
 
