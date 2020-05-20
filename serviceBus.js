@@ -364,7 +364,8 @@ class Bus extends Broker {
             set performance(performance) {
                 bus.performance = performance;
             },
-            info: (...params) => bus.rpc && bus.rpc.info && bus.rpc.info(),
+            info: (...params) => bus.rpc && bus.rpc.info && bus.rpc.info(...params),
+            discoverService: (...params) => bus.rpc && bus.rpc.discoverService && bus.rpc.discoverService(...params),
             registerErrors: (...params) => bus.errorsApi.register(...params),
             registerLocal: (...params) => bus.registerLocal(...params),
             unregisterLocal: (...params) => bus.unregisterLocal(...params),

@@ -674,6 +674,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         removeMethod,
         brokerMethod,
         localMethod,
+        discoverService,
         info
     };
 };
