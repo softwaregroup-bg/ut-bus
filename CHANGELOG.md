@@ -1,3 +1,12 @@
+# [7.17.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.16.0...v7.17.0) (2020-05-20)
+
+
+### Features
+
+* expose discoverService ([a4bf5d4](https://github.com/softwaregroup-bg/ut-bus/commit/a4bf5d42f27fa3918f0572dda39455af7ba3b37d))
+
+
+
 # [7.16.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.15.0...v7.16.0) (2020-05-19)
 
 
