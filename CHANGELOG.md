@@ -1,3 +1,12 @@
+# [7.18.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.17.0...v7.18.0) (2020-05-22)
+
+
+### Features
+
+* hot reload, validation override ([57a5411](https://github.com/softwaregroup-bg/ut-bus/commit/57a5411ca962e08621c166088eefd29a2f7d4e85))
+
+
+
 # [7.17.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.16.0...v7.17.0) (2020-05-20)
 
 
