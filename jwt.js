@@ -55,7 +55,7 @@ module.exports = {
                 return keys[issuerId].get({kid});
             };
             server.auth.scheme('jwt', jose);
-            if (options.openId) server.auth.strategy('openId', 'jwt', { key });
+            server.auth.strategy('openId', 'jwt', { key });
         },
         pkg: {
             ...pkg,

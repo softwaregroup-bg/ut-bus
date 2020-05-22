@@ -27,6 +27,7 @@ class Broker {
             brokerMethod: () => Promise.reject(this.errors['bus.notInitialized']()),
             stop: () => true
         };
+        this.packages = {};
     }
 
     async init() {
@@ -55,6 +56,7 @@ class Broker {
             processError: this.processError,
             service: this.service,
             errors: this.errors,
+            packages: this.packages,
             findMethodIn: (...params) => this.findMethodIn(...params),
             metrics: (...params) => {
                 try {

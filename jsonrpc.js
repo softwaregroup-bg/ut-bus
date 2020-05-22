@@ -278,11 +278,7 @@ const domainResolver = domain => {
     };
 };
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir}) {
-    const server = new hapi.Server({
-        port: socket.port
-    });
-
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages}) {
     let loginCache;
     async function loginService() {
         if (!loginCache) loginCache = discoverService('login');
@@ -347,55 +343,62 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         };
     }
 
-    const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
     const issuers = () => Promise.all(['ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(openIdConfig));
     const mle = jose(socket);
 
-    const oidc = {};
-    await server.register([
-        Inert,
-        H2o2,
-        {
-            plugin: jwt,
-            options: {
-                options: socket,
-                logger,
-                errors,
-                jwks
+    async function createServer() {
+        const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
+
+        const result = new hapi.Server({
+            port: socket.port
+        });
+
+        await result.register([
+            Inert,
+            H2o2,
+            {
+                plugin: jwt,
+                options: {
+                    options: socket,
+                    logger,
+                    errors,
+                    jwks
+                }
+            },
+            {
+                plugin: mlePlugin,
+                options: {
+                    mle,
+                    logger,
+                    errors
+                }
             }
-        },
-        {
-            plugin: mlePlugin,
-            options: {
-                mle,
-                logger,
-                errors
-            }
-        }
-    ]);
+        ]);
 
-    server.events.on('start', () => {
-        logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: server.info});
-    });
+        result.events.on('start', () => {
+            logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: result.info});
+        });
 
-    const utApi = socket.api && await require('ut-api')({service, oidc, auth: socket.openId ? 'openId' : false, ...socket.api}, errors, issuers);
-    if (utApi && utApi.uiRoutes) server.route(utApi.uiRoutes);
+        return result;
+    }
 
-    server.route([{
+    const utApi = await require('ut-api')({service, auth: 'openId', ...socket.api}, errors, issuers);
+
+    utApi.route([{
         method: 'GET',
         path: '/healthz',
         options: {
             auth: false,
             handler: (request, h) => 'ok'
         }
-    }, socket.metrics && {
+    }, (socket.metrics !== false) && {
         method: 'GET',
         path: '/metrics',
         options: {
             auth: false,
             handler: (request, h) => h.response(metrics() || '').type('text/plain; version=0.0.4; charset=utf-8')
         }
-    }].filter(Boolean));
+    }].filter(Boolean), 'utBus.jsonrpc');
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
@@ -477,8 +480,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         };
     }
 
-    function start() {
+    let server;
+
+    async function start() {
+        if (!packages['ut-port']) throw new Error('Unsupported ut-port version (ut-port@6.28.0 or newer expected)');
+        if (server) await server.stop();
+        server = await createServer();
         return server.start();
+    }
+
+    async function ready() {
+        server.route(utApi.routes());
     }
 
     function info() {
@@ -490,6 +502,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function stop() {
         const result = await server.stop();
+        server = false;
         await (discover && new Promise(resolve => {
             discover.destroy(resolve);
         }));
@@ -562,7 +575,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     error => error ? reject(error) : resolve()
                 );
             }))
-            .then(() => server.route({
+            .then(() => utApi.route({
                 method: 'POST',
                 path,
                 options: {
@@ -583,17 +596,19 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     }
                 },
                 handler
-            }))
-            .then(() => utApi && name.endsWith('.request') && server.route(utApi.restRoutes({
+            }, 'utBus.jsonrpc'))
+            .then(() => utApi && name.endsWith('.request') && utApi.restRoutes({
                 namespace: name.split('.')[0],
                 fn,
                 object
-            })));
+            }));
     }
 
     function unregisterRoute(namespace, name) {
-        const route = server.match('POST', '/rpc/' + namespace + '/' + name.split('.').join('/'));
+        const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
+        const route = server.match('POST', path);
         if (route) route.settings.handler = deleted;
+        utApi.deleteRoute({namespace, method: 'POST', path});
     }
 
     function exportMethod(methods, namespace, reqrep, port, pkg = {}) {
@@ -625,9 +640,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
-    function localMethod(methods, namespace, {version} = {}) {
-        if (namespace.endsWith('.validation') && utApi && Object.entries(methods).length) {
-            server.route(utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
+    function localMethod(methods, moduleName, {version} = {}) {
+        if (moduleName.endsWith('.validation') && utApi && Object.entries(methods).length) {
+            utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {
                     params,
                     route,
@@ -663,18 +678,24 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     },
                     ...rest
                 };
-            })));
+            }), moduleName);
         }
+    }
+
+    function removeModule(moduleName) {
+        utApi.deleteRoute({namespace: moduleName});
     }
 
     return {
         stop,
         start,
+        ready,
         exportMethod,
         removeMethod,
         brokerMethod,
         localMethod,
         discoverService,
+        removeModule,
         info
     };
 };

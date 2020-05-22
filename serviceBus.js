@@ -77,6 +77,7 @@ class Bus extends Broker {
     }
 
     registerLocal(methods, moduleName, pkg) {
+        if (pkg && pkg.name) this.packages[pkg.name] = pkg;
         if (!this.modules[moduleName]) this.modules[moduleName] = {methods: {}, imported: []};
         const methodsMap = flattenAPI(methods, pkg);
         if (this.rpc.localMethod) this.rpc.localMethod(methodsMap, moduleName, pkg);
@@ -90,6 +91,7 @@ class Bus extends Broker {
             for (const key in mod.methods) { delete mod.methods[key]; }
             mod.imported.splice(0, mod.imported.length);
         }
+        if (this.rpc.removeModule) this.rpc.removeModule(moduleName);
     }
 
     getMethod(typeName, methodType, methodName, options) {
@@ -365,6 +367,8 @@ class Bus extends Broker {
                 bus.performance = performance;
             },
             info: (...params) => bus.rpc && bus.rpc.info && bus.rpc.info(...params),
+            ready: (...params) => bus.rpc && bus.rpc.ready && bus.rpc.ready(...params),
+            reload: (...params) => bus.start(...params),
             discoverService: (...params) => bus.rpc && bus.rpc.discoverService && bus.rpc.discoverService(...params),
             registerErrors: (...params) => bus.errorsApi.register(...params),
             registerLocal: (...params) => bus.registerLocal(...params),

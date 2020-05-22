@@ -29,6 +29,12 @@ Object {
       "e": Object {},
     },
   },
+  "ut-port": Object {
+    "imported": Array [
+      Object {},
+    ],
+    "methods": Object {},
+  },
 }
 `
 

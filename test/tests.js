@@ -66,8 +66,9 @@ const api = (server, errors) => ({
 module.exports = async(test, clientConfig, serverConfig) => {
     const server = new ServiceBus(serverConfig);
     await test.test('Server init', () => server.init());
-    await test.test('Server start', () => server.start());
     const serverApi = server.publicApi;
+    serverApi.registerLocal({}, 'ut-port', {name: 'ut-port', version: '6.28.0'});
+    await test.test('Server start', () => server.start());
     const errors = serverApi.registerErrors({
         'module.invalidParameter': 'Invalid parameter'
     });
@@ -171,6 +172,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
         const handlers = {};
         assert.matchSnapshot(serverApi.attachHandlers(handlers, ['module.validation']), 'validation handlers');
     });
+    await test.test('Server ready', () => serverApi.ready());
     if (clientConfig) {
         const client = new ServiceBus(clientConfig);
         client.decay = {
@@ -178,8 +180,9 @@ module.exports = async(test, clientConfig, serverConfig) => {
             event2: 0
         };
         await test.test('Client init', () => client.init());
-        await test.test('Client start', () => client.start());
         const clientApi = client.publicApi;
+        clientApi.registerLocal({}, 'ut-port', {name: 'ut-port', version: '6.28.0'});
+        await test.test('Client start', () => client.start());
         test.throws('Client register local max depth', () => clientApi.registerLocal({
             a: {b: {c: {d: true}}}
         }, 'client', {version: '1.0.0'}));
@@ -203,6 +206,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
                 }
             }, 'ports', {version: '1.0.0'});
         });
+        await test.test('Client ready', () => clientApi.ready());
         await test.test('Client notification', async assert => {
             assert.matchSnapshot(await clientApi.notification('client.method')({}), 'notification success');
         });
@@ -302,8 +306,9 @@ module.exports = async(test, clientConfig, serverConfig) => {
         });
         const server2 = new ServiceBus(serverConfig);
         await test.test('Server2 init', () => server2.init());
-        await test.test('Server2 start', () => server2.start());
         const server2Api = server2.publicApi;
+        server2Api.registerLocal({}, 'ut-port', {name: 'ut-port', version: '6.28.0'});
+        await test.test('Server2 start', () => server2.start());
         const errors2 = server2Api.registerErrors({
             'module.invalidParameter': 'Invalid parameter'
         });
@@ -316,6 +321,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
         await test.test('Server2 register map', () => {
             return server2Api.register(api(server2, errors2), 'ports');
         });
+        await test.test('Server2 ready', () => server2Api.ready());
         await test.test('Server moved to different port', async assert => {
             assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
                 text: 'hello world'
