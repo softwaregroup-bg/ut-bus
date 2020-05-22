@@ -16,7 +16,7 @@
     "mdns-resolver": "0.0.3",
     "pez": "4.0.5",
     "reconnect-core": "1.3.0",
-    "ut-api": "^7.9.0",
+    "ut-api": "^7.9.1",
     "ut-rpc": "^6.1.2",
     "uuid": "3.3.2"
   },
