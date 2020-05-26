@@ -19,7 +19,7 @@ module.exports = {
             server.ext('onPreResponse', (request, h) => {
                 const response = request.response;
                 if (response.isBoom) return h.continue;
-                if (request.auth.strategy) {
+                if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
                     try {
                         const jsonrpc = request.pre.utBus && request.pre.utBus.jsonrpc;
                         const encrypt = message => mle.encrypt(message, request.auth.credentials && request.auth.credentials.mlek);
