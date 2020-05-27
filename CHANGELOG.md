@@ -1,3 +1,12 @@
+## [7.18.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.18.0...v7.18.1) (2020-05-27)
+
+
+### Bug Fixes
+
+* identical check before encrypting as the one before decrypting ([#77](https://github.com/softwaregroup-bg/ut-bus/issues/77)) ([479d199](https://github.com/softwaregroup-bg/ut-bus/commit/479d199431b7d87097285b0c4a24be244e47a35c))
+
+
+
 # [7.18.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.17.0...v7.18.0) (2020-05-22)
 
 
