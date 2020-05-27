@@ -10,6 +10,16 @@
             "name": "Test",
             "outputCapture": "std",
             "program": "${workspaceFolder}/test/jsonrpc.test.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Test Snapshot",
+            "outputCapture": "std",
+            "program": "${workspaceFolder}/test/jsonrpc.test.js",
+            "env": {
+                "TAP_SNAPSHOT": "1"
+            }
         }
     ]
 }

@@ -122,7 +122,7 @@ tap.test('Bus routes', async test => {
             method: 'GET'
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(mleClient.decrypt(body, sign)), 'Return entity');
+            t.matchSnapshot(clean(body), 'Return entity');
             t.end();
         });
     });
