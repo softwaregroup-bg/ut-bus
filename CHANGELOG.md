@@ -1,3 +1,13 @@
+## [7.18.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.18.1...v7.18.2) (2020-06-09)
+
+
+### Bug Fixes
+
+* check for wildcard action ([b923822](https://github.com/softwaregroup-bg/ut-bus/commit/b923822043a713a1c9e1c0958e52969ede82fbdc))
+* condition ([24a8c4d](https://github.com/softwaregroup-bg/ut-bus/commit/24a8c4d723b20b279799ee053ff10df4e66a16e2))
+
+
+
 ## [7.18.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.18.0...v7.18.1) (2020-05-27)
 
 
