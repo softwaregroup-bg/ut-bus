@@ -338,7 +338,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     async function checkAuthSingle(method, map) {
         const bit = await actions(method) - 1;
         const index = Math.floor(bit / 8);
-        return (!Number.isInteger(index) || index >= map.length || !(map[index] & (1 << (bit % 8))));
+        return (Number.isInteger(index) && (index < map.length) && (map[index] & (1 << (bit % 8))));
     }
 
     async function checkAuth(method, map) {
