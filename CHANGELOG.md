@@ -1,3 +1,12 @@
+# [7.19.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.18.2...v7.19.0) (2020-06-12)
+
+
+### Features
+
+* asset handlers ([dc28a10](https://github.com/softwaregroup-bg/ut-bus/commit/dc28a103207a7210542b555b57b8209604449b5f))
+
+
+
 ## [7.18.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.18.1...v7.18.2) (2020-06-09)
 
 
