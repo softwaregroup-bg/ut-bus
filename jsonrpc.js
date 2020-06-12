@@ -16,7 +16,7 @@ const mlePlugin = require('./mle');
 const jwt = require('./jwt');
 const jose = require('./jose');
 
-function initConsul(config) {
+function initConsul({discover, ...config}) {
     const consul = require('consul')(Object.assign({
         promisify: true
     }, config));
@@ -297,7 +297,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             service
         };
         const requestParams = Object.assign({}, params);
-        if (consul) {
+        if (consulDiscover) {
             const services = await consul.health.service({
                 service: namespace,
                 passing: true
@@ -406,6 +406,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
+    const consulDiscover = socket.consul && socket.consul.discover;
     const discover = socket.domain && require('dns-discovery')();
     const resolver = socket.domain && domainResolver(domain);
     const prefix = socket.prefix || '';
@@ -681,6 +682,23 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         return route.settings.handler(request, ...rest);
                     },
                     ...rest
+                };
+            }), moduleName);
+        } else if (moduleName.endsWith('.asset') && utApi && Object.entries(methods).length) {
+            utApi.route(Object.entries(methods).map(([method, validation]) => {
+                const {
+                    file,
+                    directory,
+                    auth = false
+                } = typeof validation === 'function' ? validation() : validation;
+                return {
+                    method: 'GET',
+                    path: '/a/' + (directory ? method + '/{path*}' : method),
+                    options: {auth},
+                    handler: {
+                        ...file && {file},
+                        ...directory && {directory}
+                    }
                 };
             }), moduleName);
         }
