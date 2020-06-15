@@ -208,7 +208,7 @@ class Bus extends Broker {
                     if (cached && cached[0] !== null) return cached[0];
                     applyFn = fn;
                     const result = await fn.apply(this, params);
-                    if (fnCache && $metaAfter) await fnCache.call(this, result[0], $metaAfter);
+                    if (fnCache && $metaAfter && typeof result[0] !== 'undefined') await fnCache.call(this, result[0], $metaAfter);
                     if ($meta.timer) {
                         const $resultMeta = (result.length > 1 && result[result.length - 1]);
                         $resultMeta && $resultMeta.calls && $meta.timer($resultMeta.calls);
