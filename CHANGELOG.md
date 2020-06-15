@@ -1,3 +1,12 @@
+## [7.19.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.1...v7.19.2) (2020-06-15)
+
+
+### Bug Fixes
+
+* don't attempt setting undefined value in cache ([d5f6906](https://github.com/softwaregroup-bg/ut-bus/commit/d5f6906353279c7928121133e5a60425e65d919d))
+
+
+
 ## [7.19.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.0...v7.19.1) (2020-06-15)
 
 
