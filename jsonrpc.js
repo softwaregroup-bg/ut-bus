@@ -24,8 +24,17 @@ function initConsul({discover, ...config}) {
     return consul;
 }
 
-const get = (url, errors, prefix) => new Promise((resolve, reject) => {
-    request({json: true, method: 'GET', url}, (error, response, body) => {
+const get = (url, errors, prefix, headers) => new Promise((resolve, reject) => {
+    request({
+        json: true,
+        method: 'GET',
+        url,
+        ...headers && {
+            headers: {
+                'x-forwarded-proto': headers['x-forwarded-proto'],
+                'x-forwarded-host': headers['x-forwarded-host']
+            }
+        }}, (error, response, body) => {
         if (error) {
             reject(error);
         } else if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -316,15 +325,16 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return requestParams;
     }
 
-    async function openIdConfig(issuer) {
+    async function openIdConfig(issuer, headers) {
         if (issuer === 'ut-login') {
             const {host, port} = await loginService();
             issuer = `http://${host}:${port}/rpc/login/.well-known/openid-configuration`;
         } else {
             if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
             if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
+            headers = false;
         }
-        return get(issuer, errors, 'bus.oidc');
+        return get(issuer, errors, 'bus.oidc', headers);
     };
 
     let actionsCache;
@@ -347,7 +357,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }
 
-    const issuers = () => Promise.all(['ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(openIdConfig));
+    const issuers = headers => Promise.all(['ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers)));
     const mle = jose(socket);
 
     async function createServer() {
@@ -386,7 +396,16 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return result;
     }
 
-    const utApi = await require('ut-api')({service, auth: 'openId', ...socket.api}, errors, issuers);
+    const brokerRequest = brokerMethod(false, 'request');
+    const internal = socket.api.internal && (() => Promise.all(socket.api.internal.map(name =>
+        brokerRequest({}, {method: name + '.service.get'})
+            .then(([result]) => ({namespace: name, ...result}))
+            .catch(() => ({namespace: name, version: '?'}))
+    )).catch(error => {
+        this.error(error);
+        throw error;
+    }));
+    const utApi = await require('ut-api')({service, auth: 'openId', ...socket.api}, errors, issuers, internal);
 
     utApi.route([{
         method: 'GET',
