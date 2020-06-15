@@ -1,3 +1,12 @@
+## [7.19.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.0...v7.19.1) (2020-06-15)
+
+
+### Bug Fixes
+
+* reverse proxy, internal api ([e77d2c0](https://github.com/softwaregroup-bg/ut-bus/commit/e77d2c00fc04cddc2ed310ee8405ead55cd5b92b))
+
+
+
 # [7.19.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.18.2...v7.19.0) (2020-06-12)
 
 
