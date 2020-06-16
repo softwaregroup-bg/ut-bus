@@ -1,3 +1,12 @@
+## [7.19.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.2...v7.19.3) (2020-06-16)
+
+
+### Bug Fixes
+
+* check if serviceBus.api is enabled before collecting data from internal services ([c751189](https://github.com/softwaregroup-bg/ut-bus/commit/c7511895f1d3609d3ebb17ca02f66e33fe349a0b))
+
+
+
 ## [7.19.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.1...v7.19.2) (2020-06-15)
 
 
