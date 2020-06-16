@@ -397,7 +397,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     const brokerRequest = brokerMethod(false, 'request');
-    const internal = socket.api.internal && (() => Promise.all(socket.api.internal.map(name =>
+    const internal = socket.api && socket.api.internal && (() => Promise.all(socket.api.internal.map(name =>
         brokerRequest({}, {method: name + '.service.get'})
             .then(([result]) => ({namespace: name, ...result}))
             .catch(() => ({namespace: name, version: '?'}))
