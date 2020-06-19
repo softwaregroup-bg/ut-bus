@@ -1,3 +1,12 @@
+# [7.20.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.3...v7.20.0) (2020-06-19)
+
+
+### Features
+
+* possibility to encode arbitrary claims in jwt token ([304e58b](https://github.com/softwaregroup-bg/ut-bus/commit/304e58bc69ec610c1cf8c9086b70688e42ec8851))
+
+
+
 ## [7.19.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.2...v7.19.3) (2020-06-16)
 
 
