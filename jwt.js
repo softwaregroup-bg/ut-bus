@@ -25,13 +25,35 @@ module.exports = {
                             } catch (error) {
                                 throw errors['bus.jwtInvalid']({params: error});
                             }
+                            const {
+                                // standard
+                                aud,
+                                exp,
+                                iss,
+                                iat,
+                                jti,
+                                nbf,
+                                sub: actorId,
+                                // headers
+                                typ,
+                                cty,
+                                alg,
+                                // custom
+                                sig: mlsk,
+                                enc: mlek,
+                                ses: sessionId,
+                                per = '',
+                                // arbitrary
+                                ...rest
+                            } = decoded.payload;
                             return h.authenticated({
                                 credentials: {
-                                    mlek: decoded.payload.enc,
-                                    mlsk: decoded.payload.sig,
-                                    permissionMap: Buffer.from(decoded.payload.per || '', 'base64'),
-                                    actorId: decoded.payload.sub,
-                                    sessionId: decoded.payload.ses
+                                    mlek,
+                                    mlsk,
+                                    permissionMap: Buffer.from(per, 'base64'),
+                                    actorId,
+                                    sessionId,
+                                    ...rest
                                 }
                             });
                         } catch (error) {
