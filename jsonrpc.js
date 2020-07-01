@@ -34,7 +34,8 @@ const get = (url, errors, prefix, headers) => new Promise((resolve, reject) => {
                 'x-forwarded-proto': headers['x-forwarded-proto'],
                 'x-forwarded-host': headers['x-forwarded-host']
             }
-        }}, (error, response, body) => {
+        }
+    }, (error, response, body) => {
         if (error) {
             reject(error);
         } else if (response.statusCode < 200 || response.statusCode >= 300) {
