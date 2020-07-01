@@ -5,6 +5,7 @@
         "etag",
         "fsplus",
         "mlek",
+        "moleculer",
         "reqrep"
     ]
 }
