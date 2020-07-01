@@ -6,8 +6,16 @@ function signEncrypt(message, signaturePrivateKey, encryptionPublicKey, protecte
     return jwe.encrypt('general');
 }
 
+function decrypt(message, encryptionPrivateKey, options) {
+    return JWE.decrypt(message, encryptionPrivateKey, options);
+}
+
+function verify(decrypted, signaturePublicKey) {
+    return JWS.verify(decrypted.toString(), signaturePublicKey);
+}
+
 function decryptVerify(message, signaturePublicKey, encryptionPrivateKey) {
-    return JWS.verify(JWE.decrypt(message, encryptionPrivateKey).toString(), signaturePublicKey);
+    return verify(decrypt(message, encryptionPrivateKey), signaturePublicKey);
 }
 
 module.exports = ({sign, encrypt}) => {
@@ -18,7 +26,9 @@ module.exports = ({sign, encrypt}) => {
             sign: sign && signaturePrivateKey.toJWK(),
             encrypt: encrypt && encryptionPrivateKey.toJWK()
         },
-        encrypt: (message, key) => sign ? signEncrypt(message, signaturePrivateKey, JWK.asKey(key)) : message,
-        decrypt: (message, key) => encrypt ? decryptVerify(message, JWK.asKey(key), encryptionPrivateKey) : message
+        signEncrypt: (message, key) => sign ? signEncrypt(message, signaturePrivateKey, JWK.asKey(key)) : message,
+        decryptVerify: (message, key) => encrypt ? decryptVerify(message, JWK.asKey(key), encryptionPrivateKey) : message,
+        decrypt: (message, options) => encrypt ? decrypt(message, encryptionPrivateKey, options) : message,
+        verify
     };
 };

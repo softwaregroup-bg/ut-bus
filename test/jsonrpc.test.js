@@ -58,8 +58,8 @@ tap.test('Bus routes', async test => {
     });
 
     const decrypt = ({result, error, ...rest}) => ({
-        ...result && {result: mleClient.decrypt(result, sign)},
-        ...error && {error: mleClient.decrypt(error, sign)},
+        ...result && {result: mleClient.decryptVerify(result, sign)},
+        ...error && {error: mleClient.decryptVerify(error, sign)},
         ...rest
     });
 
@@ -101,7 +101,7 @@ tap.test('Bus routes', async test => {
                 jsonrpc: '2.0',
                 method: 'module.entity.action',
                 id: 1,
-                params: mleClient.encrypt({
+                params: mleClient.signEncrypt({
                     text: 'JSON RPC 2.0'
                 }, encrypt)
             }
@@ -139,7 +139,7 @@ tap.test('Bus routes', async test => {
                 jsonrpc: '2.0',
                 method: 'module.entity.empty',
                 id: 1,
-                params: mleClient.encrypt({
+                params: mleClient.signEncrypt({
                     text: 'JSON RPC 2.0'
                 }, encrypt)
             }
@@ -162,7 +162,7 @@ tap.test('Bus routes', async test => {
                 jsonrpc: '2.0',
                 method: 'module.entity.empty',
                 id: 1,
-                params: mleClient.encrypt({
+                params: mleClient.signEncrypt({
                     text: 'JSON RPC 2.0'
                 }, encrypt)
             }

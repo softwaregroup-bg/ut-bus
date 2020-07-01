@@ -34,7 +34,8 @@ const get = (url, errors, prefix, headers) => new Promise((resolve, reject) => {
                 'x-forwarded-proto': headers['x-forwarded-proto'],
                 'x-forwarded-host': headers['x-forwarded-host']
             }
-        }}, (error, response, body) => {
+        }
+    }, (error, response, body) => {
         if (error) {
             reject(error);
         } else if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -139,7 +140,9 @@ const preJsonRpc = (checkAuth, version, logger) => [{
     method: async(request, h) => {
         try {
             const {jsonrpc, id, method, params, timeout} = request.payload;
-            if (request.auth.strategy) await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            if (request.auth.strategy && request.auth.strategy !== 'exchange') {
+                await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            }
             return {
                 jsonrpc,
                 id,
@@ -378,6 +381,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     errors,
                     jwks
                 }
+            },
+            {
+                plugin: require('./exchange')
             },
             {
                 plugin: mlePlugin,
