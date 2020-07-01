@@ -29,7 +29,7 @@
     "rabbot": "^2.1.0",
     "sort-keys": "2.0.0",
     "tap": "^14.10.6",
-    "ut-tools": "^6.33.2"
+    "ut-tools": "^6.33.4"
   },
   "optionalDependencies": {
     "ut-browser-request": "^1.0.2"
