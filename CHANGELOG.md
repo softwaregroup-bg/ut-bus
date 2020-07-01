@@ -1,3 +1,12 @@
+# [7.21.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.20.0...v7.21.0) (2020-07-01)
+
+
+### Features
+
+* allow message level key exchange between client and server ([#81](https://github.com/softwaregroup-bg/ut-bus/issues/81)) ([4ec2c75](https://github.com/softwaregroup-bg/ut-bus/commit/4ec2c7577a730925f8a717a71b55965cad8f4fec))
+
+
+
 # [7.20.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.19.3...v7.20.0) (2020-06-19)
 
 
