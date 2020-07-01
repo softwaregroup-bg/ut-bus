@@ -139,7 +139,9 @@ const preJsonRpc = (checkAuth, version, logger) => [{
     method: async(request, h) => {
         try {
             const {jsonrpc, id, method, params, timeout} = request.payload;
-            if (request.auth.strategy) await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            if (request.auth.strategy && request.auth.strategy !== 'exchange') {
+                await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            }
             return {
                 jsonrpc,
                 id,
@@ -380,7 +382,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 }
             },
             {
-                plugin: require('./keyExchange')
+                plugin: require('./exchange')
             },
             {
                 plugin: mlePlugin,
