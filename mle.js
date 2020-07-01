@@ -7,7 +7,16 @@ module.exports = {
             server.ext('onPostAuth', (request, h) => {
                 try {
                     if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
-                        request.payload.params = mle.decrypt(request.payload.params, request.auth.credentials && request.auth.credentials.mlsk);
+                        const {mlsk, mlek} = request.auth.credentials;
+                        if (mlsk === 'header' && mlek === 'header') {
+                            const {protected, clearText} = mle.decrypt(request.payload.params, { complete: true });
+                            request.auth.credentials.mlsk = protected.mlsk;
+                            request.auth.credentials.mlek = protected.mlek;
+                            request.payload.params = mle.verify(clearText, protected.mlsk);
+                        } else {
+                            request.payload.params = mle.decryptVerify(request.payload.params, mlsk);
+                        }
+
                     }
                 } catch (error) {
                     logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
@@ -22,7 +31,7 @@ module.exports = {
                 if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
                     try {
                         const jsonrpc = request.pre.utBus && request.pre.utBus.jsonrpc;
-                        const encrypt = message => mle.encrypt(message, request.auth.credentials && request.auth.credentials.mlek);
+                        const encrypt = message => mle.signEncrypt(message, request.auth.credentials && request.auth.credentials.mlek);
                         if (jsonrpc && response.source && Object.prototype.hasOwnProperty.call(response.source, 'result')) {
                             response.source.result = encrypt(response.source.result);
                             return h.continue;

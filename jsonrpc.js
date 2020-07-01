@@ -380,6 +380,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 }
             },
             {
+                plugin: require('./keyExchange')
+            },
+            {
                 plugin: mlePlugin,
                 options: {
                     mle,
