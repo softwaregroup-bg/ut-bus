@@ -9,10 +9,10 @@ module.exports = {
                     if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
                         const {mlsk, mlek} = request.auth.credentials;
                         if (mlsk === 'header' && mlek === 'header') {
-                            const {protected, clearText} = mle.decrypt(request.payload.params, { complete: true });
+                            const {protected, cleartext} = mle.decrypt(request.payload.params, { complete: true });
                             request.auth.credentials.mlsk = protected.mlsk;
                             request.auth.credentials.mlek = protected.mlek;
-                            request.payload.params = mle.verify(clearText, protected.mlsk);
+                            request.payload.params = mle.verify(cleartext, protected.mlsk);
                         } else {
                             request.payload.params = mle.decryptVerify(request.payload.params, mlsk);
                         }
