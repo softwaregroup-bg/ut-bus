@@ -16,7 +16,6 @@ module.exports = {
                         } else {
                             request.payload.params = mle.decryptVerify(request.payload.params, credentials.mlsk);
                         }
-
                     }
                 } catch (error) {
                     logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
