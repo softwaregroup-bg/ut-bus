@@ -1,3 +1,12 @@
+# [7.22.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.21.0...v7.22.0) (2020-07-03)
+
+
+### Features
+
+* allow bus to expose validations defined inside utModule.api in addition to utModule.validation ([3a8e5c3](https://github.com/softwaregroup-bg/ut-bus/commit/3a8e5c3e7b709cc0e8cccc52c0a5014fcd98ef4e))
+
+
+
 # [7.21.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.20.0...v7.21.0) (2020-07-01)
 
 
