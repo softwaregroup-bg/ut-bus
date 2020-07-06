@@ -1,3 +1,17 @@
+# [7.23.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.22.0...v7.23.0) (2020-07-06)
+
+
+### Bug Fixes
+
+* parsing is true by default ([0ad7dd7](https://github.com/softwaregroup-bg/ut-bus/commit/0ad7dd7dae28742862e15e0a9f543dff2b451ff2))
+
+
+### Features
+
+* enable unparsed payload ([9382d66](https://github.com/softwaregroup-bg/ut-bus/commit/9382d668853935f1742ff646f7e3f137061b76ea))
+
+
+
 # [7.22.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.21.0...v7.22.0) (2020-07-03)
 
 
