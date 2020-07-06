@@ -248,7 +248,9 @@ const prePlain = (checkAuth, workDir, method, version, logger) => [{
                     shift: true,
                     method,
                     params: [
-                        {...request.payload, ...request.query, ...request.params},
+                        (request.route && request.route.settings && request.route.settings.payload && request.route.settings.payload.parse)
+                            ? {...request.payload, ...request.query, ...request.params}
+                            : {payload: request.payload, query: request.query, params: request.params},
                         $meta
                     ]
                 };
