@@ -1,3 +1,12 @@
+# [7.24.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.23.0...v7.24.0) (2020-07-14)
+
+
+### Features
+
+* upload validation ([066d4a7](https://github.com/softwaregroup-bg/ut-bus/commit/066d4a72d9eea957fc90571b94509881796ef7cc))
+
+
+
 # [7.23.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.22.0...v7.23.0) (2020-07-06)
 
 
