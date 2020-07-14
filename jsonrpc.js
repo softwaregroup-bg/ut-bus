@@ -108,6 +108,7 @@ function extendMeta(req, version, serviceName) {
 }
 
 async function failPre(request, h, error) {
+    if (error.isJoi) return Boom.badRequest(error.message, error);
     return Boom.internal(error.message, undefined, error.statusCode);
 }
 
@@ -216,7 +217,14 @@ const uploads = async(workDir, request, logger) => {
                 if (typeof params[field] === 'undefined') params[field] = value;
             })
             .once('error', reject)
-            .once('close', () => Promise.all(files).then(() => resolve(params), reject));
+            .once('close', () => Promise.all(files).then(() => {
+                const payload = request.route.settings && request.route.settings.app && request.route.settings.app.payload;
+                if (payload && payload.validate) {
+                    const {value, error} = payload.validate(params);
+                    return error ? reject(error) : resolve(value);
+                }
+                return resolve(params);
+            }, reject));
 
         request.payload.pipe(dispenser);
     });
@@ -306,7 +314,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function discoverService(namespace) {
         const params = {
-            host: prefix + namespace.replace(/\//g, '-') + suffix,
+            host: socket.host || (prefix + namespace.replace(/\//g, '-') + suffix),
             port: socket.port,
             service
         };
@@ -685,22 +693,23 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     ...rest
                 } = typeof validation === 'function' ? validation() : validation;
                 const rpc = '/rpc/ports/' + method.split('.')[0] + '/request';
+                const jsonrpc = params && (!rest.body || rest.body.parse || rest.body.parse === undefined);
                 return {
                     method,
                     route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
-                    pre: params ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
+                    pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         options: {abortEarly: false},
                         query: false,
-                        payload: params && joi.object({
+                        payload: jsonrpc ? joi.object({
                             jsonrpc: '2.0',
                             timeout: joi.number().optional().allow(null),
                             id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')).example('1'),
                             method,
-                            ...params && {params}
-                        }),
+                            params
+                        }) : (rest.body && rest.body.parse === false),
                         ...validate
                     },
                     handler: (request, ...rest) => {
@@ -708,7 +717,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         if (!route || !route.settings || !route.settings.handler) throw Boom.notFound();
                         return route.settings.handler(request, ...rest);
                     },
-                    ...rest
+                    ...rest,
+                    ...!jsonrpc && params && {app: {payload: params, ...rest.app}}
                 };
             }), moduleName);
         } else if (moduleName.endsWith('.asset') && utApi && Object.entries(methods).length) {
