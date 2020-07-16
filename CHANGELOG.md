@@ -1,3 +1,12 @@
+## [7.26.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.0...v7.26.1) (2020-07-16)
+
+
+### Bug Fixes
+
+* update ut-api ([e56c556](https://github.com/softwaregroup-bg/ut-bus/commit/e56c556e1c0018cae29c89fe45b8bdfb8f4aabe4))
+
+
+
 # [7.26.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.25.0...v7.26.0) (2020-07-16)
 
 
