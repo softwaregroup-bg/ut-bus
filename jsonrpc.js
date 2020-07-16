@@ -102,6 +102,7 @@ function extendMeta(req, version, serviceName) {
         serviceName,
         httpRequest: {
             url: req.url,
+            state: req.state,
             headers: req.headers
         }
     };
@@ -561,7 +562,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function applyMeta(response, {
         httpResponse
     } = {}) {
-        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type'].forEach(method =>
+        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type', 'state'].forEach(method =>
             Object.prototype.hasOwnProperty.call(httpResponse, method) &&
             response[method](...[].concat(httpResponse[method]))
         );
