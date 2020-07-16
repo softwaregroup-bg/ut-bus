@@ -1,3 +1,12 @@
+# [7.26.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.25.0...v7.26.0) (2020-07-16)
+
+
+### Features
+
+* enable local rpc ([2e5d438](https://github.com/softwaregroup-bg/ut-bus/commit/2e5d4382cfec348a0c6d55f3dc431ebf9b227237))
+
+
+
 # [7.25.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.24.0...v7.25.0) (2020-07-16)
 
 
