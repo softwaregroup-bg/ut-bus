@@ -78,6 +78,7 @@ module.exports = {
             };
             server.auth.scheme('jwt', jose);
             server.auth.strategy('openId', 'jwt', { key });
+            server.auth.strategy('preauthorized', 'jwt', { key });
         },
         pkg: {
             ...pkg,

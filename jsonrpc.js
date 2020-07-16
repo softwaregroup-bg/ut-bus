@@ -113,6 +113,22 @@ async function failPre(request, h, error) {
     return Boom.internal(error.message, undefined, error.statusCode);
 }
 
+async function failPreRpc(request, h, error) {
+    const code = error.statusCode || (error.isJoi && 400) || 500;
+    return h
+        .response({
+            jsonrpc: request.payload.jsonrpc,
+            id: request.payload.id,
+            error: {
+                type: error.type,
+                message: error.message
+            }
+        })
+        .header('x-envoy-decorator-operation', request.payload.method)
+        .code(code)
+        .takeover();
+}
+
 const preArray = [{
     assign: 'utBus',
     failAction: failPre,
@@ -138,11 +154,11 @@ const preArray = [{
 
 const preJsonRpc = (checkAuth, version, logger) => [{
     assign: 'utBus',
-    failAction: failPre,
+    failAction: failPreRpc,
     method: async(request, h) => {
         try {
             const {jsonrpc, id, method, params, timeout} = request.payload;
-            if (request.auth.strategy && request.auth.strategy !== 'exchange') {
+            if (request.auth.strategy && !['exchange', 'preauthorized'].includes(request.auth.strategy)) {
                 await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
             }
             return {
