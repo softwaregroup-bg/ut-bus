@@ -583,13 +583,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 } : (shift ? result[0] : result)).header('x-envoy-decorator-operation', method);
                 return applyMeta(response, result && result.length && result[result.length - 1]);
             } catch (error) {
-                return jsonrpc
-                    ? h.response({
-                        jsonrpc,
-                        id,
-                        error
-                    }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500)
-                    : Boom.boomify(error, { statusCode: error.statusCode || 500 });
+                return h.response({
+                    jsonrpc,
+                    id,
+                    error
+                }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500);
             }
         };
 
@@ -682,7 +680,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function localMethod(methods, moduleName, {version} = {}) {
-        if ((moduleName.endsWith('.validation') || moduleName.endsWith('.api')) && utApi && Object.entries(methods).length) {
+        if (/\.validation|\.api/.test(moduleName) && utApi && Object.entries(methods).length) {
             utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {
                     params,
@@ -702,6 +700,20 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     version,
                     pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
+                        failAction(request, h, error) {
+                            logger.error && logger.error(error);
+                            return h.response({
+                                ...jsonrpc && {
+                                    jsonrpc: request.payload.jsonrpc,
+                                    id: request.payload.id
+                                },
+                                error: {
+                                    type: 'port.paramsValidation',
+                                    message: `Method ${method} parameters failed validation`,
+                                    ...socket.debug && {cause: error}
+                                }
+                            }).header('x-envoy-decorator-operation', method).code(400).takeover();
+                        },
                         options: {abortEarly: false},
                         query: false,
                         payload: jsonrpc ? joi.object({
