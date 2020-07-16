@@ -1,3 +1,12 @@
+## [7.26.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.1...v7.26.2) (2020-07-16)
+
+
+### Bug Fixes
+
+* json rpc error result ([ac90185](https://github.com/softwaregroup-bg/ut-bus/commit/ac9018507a10c00fac1bf192b3fe67b3f88eaacd))
+
+
+
 ## [7.26.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.0...v7.26.1) (2020-07-16)
 
 
