@@ -1,3 +1,17 @@
+# [7.25.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.24.0...v7.25.0) (2020-07-16)
+
+
+### Bug Fixes
+
+* validation handling ([f11bce9](https://github.com/softwaregroup-bg/ut-bus/commit/f11bce9f6b60df6a239696c96261ab566fc5ff56))
+
+
+### Features
+
+* enable cookies for jsonrpc ([a4bcc1f](https://github.com/softwaregroup-bg/ut-bus/commit/a4bcc1fc03c0331dc562b0611babd653c9bd1f8a))
+
+
+
 # [7.24.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.23.0...v7.24.0) (2020-07-14)
 
 
