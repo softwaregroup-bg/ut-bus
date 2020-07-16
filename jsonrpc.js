@@ -316,7 +316,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     async function discoverService(namespace) {
         const params = {
             host: socket.host || (prefix + namespace.replace(/\//g, '-') + suffix),
-            port: socket.port,
+            port: socket.port || server.info.port,
             service
         };
         const requestParams = Object.assign({}, params);
