@@ -131,8 +131,8 @@ class Bus extends Broker {
                 }
             }
             if (cache && !fnCache) {
-                fnCache = bus.findMethod(bus.mapLocal, `${cache.port || 'cache'}`, methodType) ||
-                    bus.rpc.brokerMethod(typeName, methodType);
+                fnCache = bus.findMethod(bus.mapLocal, `${cache.port || 'cache'}`, methodType);
+                // todo || bus.rpc.brokerMethod(typeName, methodType);
                 if (!fnCache && !cache.optional) {
                     return Promise.reject(bus.errors['bus.cacheFailed']({
                         params: {
@@ -204,11 +204,11 @@ class Bus extends Broker {
                 }
                 let applyFn;
                 try {
-                    const cached = fnCache && $metaBefore && await fnCache.call(this, params[0], $metaBefore);
+                    const cached = fnCache && $metaBefore && $metaBefore.cache.key && await fnCache.call(this, params[0], $metaBefore);
                     if (cached && cached[0] !== null) return cached[0];
                     applyFn = fn;
                     const result = await fn.apply(this, params);
-                    if (fnCache && $metaAfter && typeof result[0] !== 'undefined') await fnCache.call(this, result[0], $metaAfter);
+                    if (fnCache && $metaAfter && $metaAfter.cache.key && typeof result[0] !== 'undefined') await fnCache.call(this, result[0], $metaAfter);
                     if ($meta.timer) {
                         const $resultMeta = (result.length > 1 && result[result.length - 1]);
                         $resultMeta && $resultMeta.calls && $meta.timer($resultMeta.calls);
