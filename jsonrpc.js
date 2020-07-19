@@ -85,6 +85,7 @@ function extendMeta(req, version, serviceName) {
         localAddress,
         localPort
     } = (req.raw && req.raw.req && req.raw.req.socket && req.raw.req.socket) || {};
+    const {language, ...auth} = req.auth.credentials || {};
     return {
         forward: forward(req.headers),
         frontEnd,
@@ -93,7 +94,7 @@ function extendMeta(req, version, serviceName) {
         deviceId,
         localAddress,
         localPort,
-        auth: req.auth.credentials,
+        ...req.auth.credentials && {auth, language},
         hostName: forwardedHost || req.info.hostname,
         ipAddress: (forwardedIp || req.info.remoteAddress).split(',')[0],
         machineName: req.server && req.server.info && req.server.info.host,
