@@ -1,3 +1,12 @@
+## [7.26.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.3...v7.26.4) (2020-07-19)
+
+
+### Bug Fixes
+
+* read language from JWT ([91d1884](https://github.com/softwaregroup-bg/ut-bus/commit/91d18845677ef38a8b9347a3545c7079395472a7))
+
+
+
 ## [7.26.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.2...v7.26.3) (2020-07-17)
 
 
