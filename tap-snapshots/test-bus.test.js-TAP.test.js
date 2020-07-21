@@ -12,8 +12,9 @@ Object {
 `
 
 exports[`test/bus.test.js TAP bus Call errors > error.interpolation error 1`] = `
-Error: interpolation test {
+error.interpolation: interpolation test {
   "message": "interpolation test",
+  "name": "error.interpolation",
   "params": Object {
     "placeholder": "test",
   },
@@ -37,8 +38,9 @@ Object {
 `
 
 exports[`test/bus.test.js TAP bus Call errors > error.simple error 1`] = `
-Error: simple error text {
+error.simple: simple error text {
   "message": "simple error text",
+  "name": "error.simple",
   "type": "error.simple",
 }
 `
@@ -59,8 +61,9 @@ Object {
 `
 
 exports[`test/bus.test.js TAP bus Call errors > interpolated error 1`] = `
-Error: interpolation test {
+error.interpolation: interpolation test {
   "message": "interpolation test",
+  "name": "error.interpolation",
   "params": Object {
     "placeholder": "test",
   },
@@ -75,8 +78,9 @@ Array [
 `
 
 exports[`test/bus.test.js TAP bus Call errors > simple error 1`] = `
-Error: simple error text {
+error.simple: simple error text {
   "message": "simple error text",
+  "name": "error.simple",
   "type": "error.simple",
 }
 `

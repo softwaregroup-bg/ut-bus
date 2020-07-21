@@ -6,15 +6,17 @@
  */
 'use strict'
 exports[`test/utError.test.js TAP utError > Create child error 1`] = `
-Error: Child error {
+parent.child: Child error {
   "message": "Child error",
+  "name": "parent.child",
   "type": "parent.child",
 }
 `
 
 exports[`test/utError.test.js TAP utError > Create interpolated error 1`] = `
-Error: Error interpolated {
+parent.interpolated: Error interpolated {
   "message": "Error interpolated",
+  "name": "parent.interpolated",
   "params": Object {
     "name": "interpolated",
   },
@@ -23,15 +25,17 @@ Error: Error interpolated {
 `
 
 exports[`test/utError.test.js TAP utError > Create interpolated error without params 1`] = `
-Error: Error ?name? {
+parent.interpolated: Error ?name? {
   "message": "Error ?name?",
+  "name": "parent.interpolated",
   "type": "parent.interpolated",
 }
 `
 
 exports[`test/utError.test.js TAP utError > Create parent error 1`] = `
-Error: Parent error {
+parent: Parent error {
   "message": "Parent error",
+  "name": "parent",
   "type": "parent",
 }
 `
@@ -63,8 +67,9 @@ Array [
 `
 
 exports[`test/utError.test.js TAP utError > Get root error 1`] = `
-Error: Root error {
+root: Root error {
   "message": "Root error",
+  "name": "root",
   "type": "root",
 }
 `
