@@ -83,7 +83,7 @@ module.exports = ({logFactory, logLevel}) => {
                         Object.assign(error, params);
                     }
                     Object.assign(error, props);
-                    error.name = type;
+                    Object.defineProperty(error, 'name', {value: type});
                     error.type = type;
                     error.message = interpolate(props.message, params.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
