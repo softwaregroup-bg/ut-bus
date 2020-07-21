@@ -1,3 +1,13 @@
+## [7.27.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.27.0...v7.27.1) (2020-07-21)
+
+
+### Bug Fixes
+
+* name is not enumerable ([d9d79d1](https://github.com/softwaregroup-bg/ut-bus/commit/d9d79d1896ec0abf8f6555ee5a4c3dcd2c36ae6d))
+* tap compatibility ([6732987](https://github.com/softwaregroup-bg/ut-bus/commit/6732987ff2022dcadd874a86b335c50ead72fff1))
+
+
+
 # [7.27.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.4...v7.27.0) (2020-07-21)
 
 
