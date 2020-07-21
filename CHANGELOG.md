@@ -1,3 +1,12 @@
+# [7.27.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.4...v7.27.0) (2020-07-21)
+
+
+### Features
+
+* improve error reporting ([9bf27e0](https://github.com/softwaregroup-bg/ut-bus/commit/9bf27e0eb96337d2eb00ac03f827f240767ef1ac))
+
+
+
 ## [7.26.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.26.3...v7.26.4) (2020-07-19)
 
 
