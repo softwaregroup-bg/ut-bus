@@ -357,15 +357,20 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     async function openIdConfig(issuer, headers) {
-        if (issuer === 'ut-login') {
-            const {host, port} = await loginService();
-            issuer = `http://${host}:${port}/rpc/login/.well-known/openid-configuration`;
-        } else {
-            if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
-            if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
-            headers = false;
+        try {
+            if (issuer === 'ut-login') {
+                const {host, port} = await loginService();
+                issuer = `http://${host}:${port}/rpc/login/.well-known/openid-configuration`;
+            } else {
+                if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
+                if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
+                headers = false;
+            }
+            return await get(issuer, errors, 'bus.oidc', headers);
+        } catch (error) {
+            logger && logger.error && logger.error(error);
+            throw error;
         }
-        return get(issuer, errors, 'bus.oidc', headers);
     };
 
     let actionsCache;
