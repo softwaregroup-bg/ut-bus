@@ -15,6 +15,7 @@ const fsplus = require('fs-plus');
 const mlePlugin = require('./mle');
 const jwt = require('./jwt');
 const jose = require('./jose');
+const {after, spare} = require('ut-function.timing');
 
 function initConsul({discover, ...config}) {
     const consul = require('consul')(Object.assign({
@@ -173,7 +174,7 @@ const preJsonRpc = (checkAuth, version, logger) => [{
                         mtid: !id ? 'notification' : 'request',
                         method,
                         opcode: method.split('.').pop(),
-                        timeout,
+                        timeout: after(timeout),
                         ...extendMeta(request, version, method.split('.')[0])
                     }
                 ]
@@ -487,7 +488,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     jsonrpc: '2.0',
                     method: $meta.method,
                     id: 1,
-                    // timeout: timeout && (timeout - this.config.minLatency),
+                    ...$meta.timeout && {timeout: spare($meta.timeout, socket.latency || 50)},
                     params: Array.prototype.slice.call(arguments)
                 },
                 headers: Object.assign({
