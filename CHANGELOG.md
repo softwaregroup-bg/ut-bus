@@ -1,3 +1,18 @@
+# [7.28.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.27.1...v7.28.0) (2020-07-27)
+
+
+### Bug Fixes
+
+* timeout passing ([53e3521](https://github.com/softwaregroup-bg/ut-bus/commit/53e35218ba9285a08089fc5b13bb9a4786502c89))
+* validation/api naming convention ([17aa870](https://github.com/softwaregroup-bg/ut-bus/commit/17aa870ceb0c9d442be54d62f1e5836a4739d574))
+
+
+### Features
+
+* configurable integration with ut-login ([f8a94d6](https://github.com/softwaregroup-bg/ut-bus/commit/f8a94d600f14c7cc44055bdf7068864a5c567c32))
+
+
+
 ## [7.27.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.27.0...v7.27.1) (2020-07-21)
 
 
