@@ -703,7 +703,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function localMethod(methods, moduleName, {version} = {}) {
-        if (/\.validation|\.api/.test(moduleName) && utApi && Object.entries(methods).length) {
+        if (/\.validation|\.api|^validation$|^api$/.test(moduleName) && utApi && Object.entries(methods).length) {
             utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
                 const {
                     params,
