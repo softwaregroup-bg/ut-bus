@@ -394,7 +394,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }
 
-    const issuers = headers => Promise.all(['ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers)));
+    const issuers = headers => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers)));
     const mle = jose(socket);
 
     async function createServer() {
