@@ -1,3 +1,12 @@
+## [7.28.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.0...v7.28.1) (2020-07-28)
+
+
+### Bug Fixes
+
+* timeout is optional ([000b06e](https://github.com/softwaregroup-bg/ut-bus/commit/000b06e06b2f73e22bc1565eda6adbfa90c0355b))
+
+
+
 # [7.28.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.27.1...v7.28.0) (2020-07-27)
 
 
