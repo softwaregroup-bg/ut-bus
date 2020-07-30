@@ -585,7 +585,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function applyMeta(response, {
         httpResponse
     } = {}) {
-        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type', 'state'].forEach(method =>
+        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type', 'state', 'header'].forEach(method =>
             Object.prototype.hasOwnProperty.call(httpResponse, method) &&
             response[method](...[].concat(httpResponse[method]))
         );
