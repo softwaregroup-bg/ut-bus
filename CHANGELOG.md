@@ -1,3 +1,12 @@
+## [7.28.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.1...v7.28.2) (2020-07-30)
+
+
+### Bug Fixes
+
+* allow headers in .httpResponse ([78a3081](https://github.com/softwaregroup-bg/ut-bus/commit/78a308123b2167f72478906bf7ca9322b1459c64))
+
+
+
 ## [7.28.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.0...v7.28.1) (2020-07-28)
 
 
