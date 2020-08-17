@@ -27,22 +27,19 @@ module.exports = {
             server.ext('onPreResponse', (request, h) => {
                 const response = request.response;
                 if (response.isBoom) return h.continue;
-                if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
+                if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params && response.source) {
                     try {
-                        const jsonrpc = request.pre.utBus && request.pre.utBus.jsonrpc;
                         const encrypt = message => mle.signEncrypt(message, request.auth.credentials && request.auth.credentials.mlek);
-                        if (jsonrpc && response.source && Object.prototype.hasOwnProperty.call(response.source, 'result')) {
+                        if (Object.prototype.hasOwnProperty.call(response.source, 'result')) {
                             response.source.result = encrypt(response.source.result);
                             return h.continue;
                         }
-                        if (jsonrpc && response.source && Object.prototype.hasOwnProperty.call(response.source, 'error')) {
+                        if (Object.prototype.hasOwnProperty.call(response.source, 'error')) {
                             response.source.error = encrypt({...response.source.error});
                             return h.continue;
                         }
-                        if (!jsonrpc) {
-                            response.source = encrypt(response.source);
-                            return h.continue;
-                        }
+                        response.source = encrypt(response.source);
+                        return h.continue;
                     } catch (error) {
                         logger && logger.error && logger.error(errors['bus.mleEncrypt']({cause: error, params: request.payload}));
                         return Boom.badRequest();
