@@ -1,3 +1,12 @@
+## [7.28.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.2...v7.28.3) (2020-08-17)
+
+
+### Bug Fixes
+
+* encrypt only error instead of the whole message when encountering request validation error ([537ad76](https://github.com/softwaregroup-bg/ut-bus/commit/537ad76e03465c1361151714ff8b1ac3de0ec242))
+
+
+
 ## [7.28.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.1...v7.28.2) (2020-07-30)
 
 
