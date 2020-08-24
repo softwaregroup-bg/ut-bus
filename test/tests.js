@@ -1,3 +1,6 @@
+const {Readable} = require('readable-stream');
+const url = require('url');
+const path = require('path');
 const joi = require('joi');
 const { JWKS, JWK, JWT } = require('jose');
 const {ServiceBus} = require('..');
@@ -7,7 +10,7 @@ const jwks = new JWKS.KeyStore();
 jwks.add(key);
 
 const api = (server, errors) => ({
-    'module.request': async({text, entityId}, {method}) => {
+    'module.request': async({text, entityId} = {}, {method}) => {
         switch (method) {
             case 'module.entity.actionTimeout':
             case 'module.entity.actionCached':
@@ -22,6 +25,14 @@ const api = (server, errors) => ({
                 return ['Entity ' + entityId];
             case 'module.entity.empty':
                 return;
+            case 'module.entity.file':
+                return [url.pathToFileURL(path.join(__dirname, 'file.txt'))];
+            case 'module.entity.stream': {
+                const result = new Readable();
+                result.push('stream content');
+                result.push(null);
+                return [result];
+            }
             default:
                 throw server.errors['bus.methodNotFound']({params: {method}});
         }
@@ -32,7 +43,7 @@ const api = (server, errors) => ({
                 return [
                     JWT.sign({
                         typ: 'Bearer',
-                        per: Buffer.from([3]).toString('Base64'),
+                        per: Buffer.from([15]).toString('Base64'),
                         enc: JWK.asKey(params.encrypt),
                         sig: JWK.asKey(params.sign)
                     }, key, {
@@ -48,7 +59,9 @@ const api = (server, errors) => ({
             case 'login.action.map':
                 return [{
                     'module.entity.action': 1,
-                    'module.entity.get': 2
+                    'module.entity.get': 2,
+                    'module.entity.file': 3,
+                    'module.entity.stream': 4
                 }];
             case 'login.oidc.getKeys':
                 return [jwks.toJWKS()];
@@ -159,6 +172,16 @@ module.exports = async(test, clientConfig, serverConfig) => {
             },
             'module.entity.empty'() {
                 return {
+                };
+            },
+            'module.entity.file'() {
+                return {
+                    params: joi.object()
+                };
+            },
+            'module.entity.stream'() {
+                return {
+                    params: joi.object()
                 };
             }
         }, 'module.validation', {version: '1.0.0'});

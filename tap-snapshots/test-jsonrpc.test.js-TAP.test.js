@@ -261,6 +261,10 @@ exports[`test/jsonrpc.test.js TAP Bus routes > server.performance before 1`] = `
 null
 `
 
+exports[`test/jsonrpc.test.js TAP Bus routes File > Return file 1`] = `
+file content
+`
+
 exports[`test/jsonrpc.test.js TAP Bus routes Forbidden > Return 403 1`] = `
 Object {
   "error": "Forbidden",
@@ -294,7 +298,7 @@ Object {
     "use": "enc",
   },
   "iss": "ut-login",
-  "per": "Aw==",
+  "per": "Dw==",
   "sig": Object {
     "crv": "P-384",
     "kty": "EC",
@@ -362,4 +366,8 @@ module.entity.action
 
 exports[`test/jsonrpc.test.js TAP Bus routes Server getPath > method with [] 1`] = `
 module.entity.action
+`
+
+exports[`test/jsonrpc.test.js TAP Bus routes Stream > Return stream 1`] = `
+stream content
 `

@@ -13,12 +13,14 @@ const logFactory = {
 
 tap.test('Bus', test => tests(test, {
     logFactory,
+    workDir: __dirname,
     jsonrpc: {
         domain: true,
         api: true
     }
 }, {
     logFactory,
+    workDir: __dirname,
     jsonrpc: {
         domain: true,
         api: true
@@ -29,6 +31,7 @@ tap.test('Bus routes', async test => {
     const sign = JWK.generateSync('EC', 'P-384', {use: 'sig'});
     const encrypt = JWK.generateSync('EC', 'P-384', {use: 'enc'});
     const server = await tests(test, false, {
+        workDir: __dirname,
         jsonrpc: {
             domain: true,
             api: true,
@@ -117,6 +120,46 @@ tap.test('Bus routes', async test => {
         }, (error, response, body) => {
             if (error) t.threw(error);
             t.matchSnapshot(body, 'Return entity');
+            t.end();
+        });
+    });
+
+    test.test('File', t => {
+        request({
+            url: new URL('/rpc/module/entity/file', uri),
+            headers: {
+                Authorization: auth
+            },
+            json: true,
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.file',
+                id: 1
+            },
+            method: 'POST'
+        }, (error, response, body) => {
+            if (error) t.threw(error);
+            t.matchSnapshot(body, 'Return file');
+            t.end();
+        });
+    });
+
+    test.test('Stream', t => {
+        request({
+            url: new URL('/rpc/module/entity/stream', uri),
+            headers: {
+                Authorization: auth
+            },
+            json: true,
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.stream',
+                id: 1
+            },
+            method: 'POST'
+        }, (error, response, body) => {
+            if (error) t.threw(error);
+            t.matchSnapshot(body, 'Return stream');
             t.end();
         });
     });

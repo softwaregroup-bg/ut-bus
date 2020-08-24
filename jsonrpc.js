@@ -1,3 +1,6 @@
+// eslint-disable-next-line no-restricted-modules
+const Stream = require('stream');
+const url = require('url');
 const hapi = require('@hapi/hapi');
 const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
@@ -595,17 +598,31 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function registerRoute(namespace, name, fn, object, {version}) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
-        const handler = async function(request, h) {
-            if (Boom.isBoom(request.pre.utBus)) return request.pre.utBus;
-            const {params, jsonrpc, id, shift, method} = request.pre.utBus;
+        const handler = async function({pre}, h) {
+            if (Boom.isBoom(pre.utBus)) return pre.utBus;
+            const {params, jsonrpc, id, shift, method} = pre.utBus;
             try {
-                const result = await Promise.resolve(fn.apply(object, params));
-                const response = h.response(jsonrpc ? {
-                    jsonrpc,
-                    id,
-                    result: shift ? result[0] : result
-                } : (shift ? result[0] : result)).header('x-envoy-decorator-operation', method);
-                return applyMeta(response, result && result.length && result[result.length - 1]);
+                const results = await fn.apply(object, params);
+                const result = shift ? results[0] : results;
+                const result0 = [].concat(result)[0];
+                const response = (type => {
+                    switch (type) {
+                        case 'file:': {
+                            const [file, options = {confine: workDir}] = [].concat(result);
+                            return h.file(url.fileURLToPath(file), options);
+                        }
+                        case 'http:':
+                        case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
+                        case 'stream': return h.response(result);
+                        case 'jsonrpc': return h.response({jsonrpc, id, result});
+                        default: return h.response(result);
+                    }
+                })(
+                    (result0 instanceof URL && result0.protocol) ||
+                    (result instanceof Stream && 'stream') ||
+                    (jsonrpc && 'jsonrpc')
+                ).header('x-envoy-decorator-operation', method);
+                return applyMeta(response, results && Array.isArray(results) && results[results.length - 1]);
             } catch (error) {
                 return h.response({
                     jsonrpc,
