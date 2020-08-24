@@ -1,3 +1,17 @@
+# [7.29.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.3...v7.29.0) (2020-08-24)
+
+
+### Bug Fixes
+
+* retain the random port when restarting ([2ed868f](https://github.com/softwaregroup-bg/ut-bus/commit/2ed868fdfd05ddb5bf3251d435791a7ade3fbb1e))
+
+
+### Features
+
+* support URL and Stream in the response ([a8d2122](https://github.com/softwaregroup-bg/ut-bus/commit/a8d2122eab6605081de9c638cd1ce418a7b15f00))
+
+
+
 ## [7.28.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.2...v7.28.3) (2020-08-17)
 
 
