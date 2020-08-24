@@ -1,14 +1,8 @@
 const tap = require('tap');
-const sortKeys = require('sort-keys');
 const tests = require('./tests');
 const request = require('request');
 const { JWT, JWK } = require('jose');
 const jose = require('../jose');
-
-const clean = result => {
-    if (result && typeof result === 'object') return sortKeys(result, {deep: true});
-    return result;
-};
 
 const logFactory = {
     createLog: () => ({
@@ -107,7 +101,7 @@ tap.test('Bus routes', async test => {
             }
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(decrypt(body)), 'Return JSON RPC response');
+            t.matchSnapshot(decrypt(body), 'Return JSON RPC response');
             t.end();
         });
     });
@@ -122,7 +116,7 @@ tap.test('Bus routes', async test => {
             method: 'GET'
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return entity');
+            t.matchSnapshot(body, 'Return entity');
             t.end();
         });
     });
@@ -145,7 +139,7 @@ tap.test('Bus routes', async test => {
             }
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return 403');
+            t.matchSnapshot(body, 'Return 403');
             t.end();
         });
     });
@@ -168,7 +162,7 @@ tap.test('Bus routes', async test => {
             }
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return 404');
+            t.matchSnapshot(body, 'Return 404');
             t.end();
         });
     });
@@ -186,7 +180,7 @@ tap.test('Bus routes', async test => {
             }
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return entity');
+            t.matchSnapshot(body, 'Return entity');
             t.end();
         });
     });
@@ -218,7 +212,7 @@ tap.test('Bus routes', async test => {
                 }
             }, (error, response, body) => {
                 if (error) t.threw(error);
-                t.matchSnapshot(clean(body), 'Return entity');
+                t.matchSnapshot(body, 'Return entity');
                 t.end();
             });
         });
@@ -231,7 +225,7 @@ tap.test('Bus routes', async test => {
             method: 'GET'
         }, (error, response, body) => {
             if (error) t.threw(error);
-            t.matchSnapshot(clean(body), 'Return metrics');
+            t.matchSnapshot(body, 'Return metrics');
             t.end();
         });
     });

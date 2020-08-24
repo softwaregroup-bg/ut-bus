@@ -28,8 +28,7 @@
     "nats-hemera": "^6.1.1",
     "nats": "^1.2.2",
     "rabbot": "^2.1.0",
-    "sort-keys": "2.0.0",
-    "tap": "^14.10.6",
+    "tap": "^14.10.8",
     "ut-tools": "^6.33.4"
   },
   "optionalDependencies": {

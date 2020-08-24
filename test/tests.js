@@ -1,11 +1,6 @@
 const joi = require('joi');
 const { JWKS, JWK, JWT } = require('jose');
-const sortKeys = require('sort-keys');
 const {ServiceBus} = require('..');
-const clean = result => {
-    if (result && typeof result === 'object') return sortKeys(result, {deep: true});
-    return result;
-};
 
 const key = JWK.generateSync('OKP', 'Ed25519', {use: 'sig'});
 const jwks = new JWKS.KeyStore();
@@ -75,8 +70,8 @@ module.exports = async(test, clientConfig, serverConfig) => {
     test.matchSnapshot(serverApi.performance, 'server.performance before');
     serverApi.performance = {prometheus: () => 'sample metrics'};
     test.matchSnapshot(serverApi.performance, 'server.performance after');
-    test.matchSnapshot(clean({errors: Object.keys(serverApi.errors).sort()}), 'server.errors');
-    test.matchSnapshot(clean(serverApi.config), 'server.config');
+    test.matchSnapshot({errors: Object.keys(serverApi.errors).sort()}, 'server.errors');
+    test.matchSnapshot(serverApi.config, 'server.config');
     test.throws(() => serverApi.local, Error, 'server.local error');
     await test.test('Server register map', () => {
         return serverApi.register(api(server, errors), 'ports');
@@ -191,7 +186,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
             d: [true],
             e: {}
         }, 'client', {version: '1.0.0'});
-        test.matchSnapshot(clean(client.modules), 'client.modules');
+        test.matchSnapshot(client.modules, 'client.modules');
         await test.test('Client register', async() => {
             return clientApi.register({
                 method() {
@@ -222,20 +217,20 @@ module.exports = async(test, clientConfig, serverConfig) => {
             assert.matchSnapshot(await clientApi.notification('client.method')({}), 'notification success');
         });
         await test.test('Server call success', async assert => {
-            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
+            assert.matchSnapshot(await clientApi.importMethod('module.entity.action')({
                 text: 'hello world'
-            })), 'call with object parameter');
-            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
+            }), 'call with object parameter');
+            assert.matchSnapshot(await clientApi.importMethod('module.entity.action')({
                 text: 'hello world'
             }, {
                 timer: calls => assert.matchSnapshot(calls, 'calls')
-            })), 'call with timer');
-            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.actionTimeout', {
+            }), 'call with timer');
+            assert.matchSnapshot(await clientApi.importMethod('module.entity.actionTimeout', {
                 timeout: 999
             })({
                 text: 'hello world'
-            })), 'call with timeout');
-            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.actionCached', {
+            }), 'call with timeout');
+            assert.matchSnapshot(await clientApi.importMethod('module.entity.actionCached', {
                 cache: {
                     key: () => 'key',
                     before: 'get',
@@ -243,7 +238,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
                 }
             })({
                 text: 'hello world'
-            })), 'call with cache');
+            }), 'call with cache');
             assert.matchSnapshot(await clientApi.dispatch({
                 text: 'hello world'
             }, {
@@ -313,9 +308,9 @@ module.exports = async(test, clientConfig, serverConfig) => {
             'module.invalidParameter': 'Invalid parameter'
         });
         await test.test('Fill cache', async assert => {
-            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
+            assert.matchSnapshot(await clientApi.importMethod('module.entity.action')({
                 text: 'hello world'
-            })), 'call with object parameter');
+            }), 'call with object parameter');
         });
         await test.test('Server stop', () => server.stop());
         await test.test('Server2 register map', () => {
@@ -323,9 +318,9 @@ module.exports = async(test, clientConfig, serverConfig) => {
         });
         await test.test('Server2 ready', () => server2Api.ready());
         await test.test('Server moved to different port', async assert => {
-            assert.matchSnapshot(clean(await clientApi.importMethod('module.entity.action')({
+            assert.matchSnapshot(await clientApi.importMethod('module.entity.action')({
                 text: 'hello world'
-            })), 'call with object parameter');
+            }), 'call with object parameter');
         });
         await test.test('Server unregister', async() => server2Api.unregister(['module.request'], 'ports'));
         await test.test('Call unregistered method', async assert =>

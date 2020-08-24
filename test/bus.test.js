@@ -1,9 +1,4 @@
 const tap = require('tap');
-const sortKeys = require('sort-keys');
-const clean = result => {
-    if (result && typeof result === 'object') return sortKeys(result, {deep: true});
-    return result;
-};
 
 const {Broker, ServiceBus} = require('../');
 
@@ -78,9 +73,9 @@ tap.test('bus', async function test(t) {
                 throw new Error('trace');
             }
         }), 'bus1 register');
-        t.matchSnapshot(clean({result: await bus1Api.importMethod('bus2.test.m1')({x: 'bus1'})}), 'm1');
-        t.matchSnapshot(clean({result: await bus1Api.importMethod('bus2.m2')('bus1')}), 'm2');
-        t.matchSnapshot(clean({result: await bus2Api.importMethod('bus1.m3')('bus2')}), 'm3');
+        t.matchSnapshot({result: await bus1Api.importMethod('bus2.test.m1')({x: 'bus1'})}, 'm1');
+        t.matchSnapshot({result: await bus1Api.importMethod('bus2.m2')('bus1')}, 'm2');
+        t.matchSnapshot({result: await bus2Api.importMethod('bus1.m3')('bus2')}, 'm3');
     });
     await t.test('Call errors', async t => {
         const errorsMap = {
@@ -89,7 +84,7 @@ tap.test('bus', async function test(t) {
         };
         const errors = bus1Api.registerErrors(errorsMap);
         const inspect = (type, params) => {
-            t.matchSnapshot(clean({properties: Object.entries(errors[type])}), type + ' error handler properties');
+            t.matchSnapshot({properties: Object.entries(errors[type])}, type + ' error handler properties');
             t.matchSnapshot(errors[type](params), type + ' error');
         };
         inspect('error.simple');
@@ -120,7 +115,7 @@ tap.test('bus', async function test(t) {
     bus4.register({
         'test.request': () => 'bus4'
     }, 'ports');
-    t.matchSnapshot(clean({result: await bus4Api.importMethod('test.entity.action')('bus2')}), 'm3');
+    t.matchSnapshot({result: await bus4Api.importMethod('test.entity.action')('bus2')}, 'm3');
     await t.test('Destroy bus1', () => bus1.destroy());
     await t.test('Destroy bus2', () => bus2.destroy());
     await t.test('Destroy bus3', () => bus3.destroy());
