@@ -397,11 +397,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const issuers = headers => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers)));
     const mle = jose(socket);
 
-    async function createServer() {
+    async function createServer(port) {
         const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
 
         const result = new hapi.Server({
-            port: socket.port
+            port: port || socket.port
         });
 
         await result.register([
@@ -548,8 +548,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function start() {
         if (!packages['ut-port']) throw new Error('Unsupported ut-port version (ut-port@6.28.0 or newer expected)');
+        const port = server && server.info.port;
         if (server) await server.stop();
-        server = await createServer();
+        server = await createServer(port);
         return server.start();
     }
 
