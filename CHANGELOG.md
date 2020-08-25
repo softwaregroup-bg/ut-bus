@@ -1,3 +1,12 @@
+# [7.30.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.29.0...v7.30.0) (2020-08-25)
+
+
+### Features
+
+* result.httpResponse function ([7bbb656](https://github.com/softwaregroup-bg/ut-bus/commit/7bbb6562b5efb0c18c261aec526501f28e8168e9))
+
+
+
 # [7.29.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.28.3...v7.29.0) (2020-08-24)
 
 
