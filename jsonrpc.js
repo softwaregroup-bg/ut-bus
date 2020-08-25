@@ -622,6 +622,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     (result instanceof Stream && 'stream') ||
                     (jsonrpc && 'jsonrpc')
                 ).header('x-envoy-decorator-operation', method);
+                if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
                 return applyMeta(response, results && Array.isArray(results) && results[results.length - 1]);
             } catch (error) {
                 return h.response({
