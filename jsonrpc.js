@@ -477,11 +477,31 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return h.response('Method was deleted').code(404);
     };
 
+    let codecCache;
+    if (socket.gateway) {
+        Object.entries(socket.gateway).forEach(([name, gateway]) => {
+            const mle = jose(gateway);
+            const gatewayCodec = {
+                ...gateway,
+                encode: mle.signEncrypt,
+                decode: mle.decryptVerify
+            };
+            [].concat(gateway.namespace).forEach(namespace => {
+                codecCache[namespace] = gatewayCodec;
+            });
+        });
+    }
+
+    function codec(namespace) {
+        return codecCache[namespace];
+    }
+
     function brokerMethod(typeName, methodType) {
         return async function(msg, $meta) {
             const [namespace, op] = $meta.method.split('.', 2);
             if (['start', 'stop', 'drain'].includes(op)) methodType = op;
             const requestParams = await discoverService(namespace);
+            const {encode = Array.prototype.slice, decode = data => data} = await codec(namespace);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
@@ -492,7 +512,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     method: $meta.method,
                     id: 1,
                     ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
-                    params: Array.prototype.slice.call(arguments)
+                    params: encode.call(arguments)
                 },
                 headers: Object.assign({
                     'x-envoy-decorator-operation': $meta.method
@@ -523,7 +543,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         };
                         reject(error);
                     } else if (body && body.error) {
-                        reject(Object.assign(new Error(), body.error));
+                        reject(Object.assign(new Error(), decode(body.error)));
                     } else if (response.statusCode < 200 || response.statusCode >= 300) {
                         reject(errors['bus.jsonRpcHttp']({
                             statusCode: response.statusCode,
@@ -536,8 +556,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
-                        if (/\.service\.get$/.test($meta.method)) Object.assign(body.result[0], requestParams);
-                        resolve(body.result);
+                        const result = decode(body.result);
+                        if (/\.service\.get$/.test($meta.method)) Object.assign(result, requestParams);
+                        resolve(result);
                     } else {
                         reject(errors['bus.jsonRpcEmpty']());
                     }
