@@ -518,7 +518,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         cache.auth = mle.decryptVerify(result, sign);
                         cache.tokenInfo = JWT.decode(cache.auth.access_token);
                     }
-                    if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 earlier just in case
+                    if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
                         const {body} = await httpPost({
                             url: `http://${host}:${port}/rpc/login/token`,
                             body: {
