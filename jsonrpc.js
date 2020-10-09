@@ -19,6 +19,7 @@ const mlePlugin = require('./mle');
 const jwt = require('./jwt');
 const jose = require('./jose');
 const {after, spare} = require('ut-function.timing');
+const {JWT} = require('jose');
 
 function initConsul({discover, ...config}) {
     const consul = require('consul')(Object.assign({
@@ -477,46 +478,117 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return h.response('Method was deleted').code(404);
     };
 
-    let codecCache;
-    if (socket.gateway) {
-        Object.entries(socket.gateway).forEach(([name, gateway]) => {
-            const mle = jose(gateway);
-            const gatewayCodec = {
-                ...gateway,
-                encode: mle.signEncrypt,
-                decode: mle.decryptVerify
+    const codecCache = {};
+    if (mle && socket.gateway) {
+        const [httpGet, httpPost] = [request.get, request.post].map(require('util').promisify);
+        Object.entries(socket.gateway).forEach(([name, {
+            namespace,
+            username,
+            password,
+            channel = 'web',
+            host = 'localhost',
+            port
+        }]) => {
+            const cache = {};
+            const discover = () => {
+                // get local port (remote discovery not supported)
+                if (!port) port = server.info.port;
+                return {host, port};
             };
-            [].concat(gateway.namespace).forEach(namespace => {
+            const gatewayCodec = {
+                encode: async (msg, $meta) => {
+                    const {host, port} = discover();
+                    if (!cache.auth) {
+                        const {body: {sign, encrypt}} = await httpGet({
+                            url: `http://${host}:${port}/rpc/login/.well-known/mle`,
+                            json: true
+                        });
+                        const {body: {result, error}} = await httpPost({
+                            url: `http://${host}:${port}/rpc/login/identity/exchange`,
+                            body: {
+                                jsonrpc: '2.0',
+                                method: 'login.identity.exchange',
+                                id: 1,
+                                ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
+                                params: mle.signEncrypt({username, password, channel}, encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
+                            },
+                            json: true
+                        });
+                        if (error) throw Object.assign(new Error(), mle.decryptVerify(error, sign));
+                        cache.auth = mle.decryptVerify(result, sign);
+                        cache.tokenInfo = JWT.decode(cache.auth.access_token);
+                    }
+                    if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 earlier just in case
+                        const {body} = await httpPost({
+                            url: `http://${host}:${port}/rpc/login/token`,
+                            body: {
+                                grant_type: 'refresh_token',
+                                refresh_token: cache.auth.refresh_token
+                            },
+                            json: true
+                        });
+                        Object.assign(cache.auth, body);
+                        cache.tokenInfo = JWT.decode(body.access_token);
+                    }
+
+                    return {
+                        params: mle.signEncrypt(msg,  cache.auth.encrypt),
+                        headers: {
+                            authorization: cache.tokenInfo.typ + ' ' + cache.auth.access_token
+                        }
+                    }
+                },
+                decode: msg => mle.decryptVerify(msg, cache.auth.sign),
+                context: async(methodParts) => {
+                    return {
+                        ...discover(),
+                        uri: `/rpc/${methodParts.join('/')}`
+                    }
+                }
+            };
+            [].concat(namespace).forEach(namespace => {
                 codecCache[namespace] = gatewayCodec;
             });
         });
     }
 
     function codec(namespace) {
-        return codecCache[namespace];
+        return codecCache[namespace] || {
+            encode: (...params) => ({params}),
+            decode: data => data,
+            context: async(methodParts, methodType) => {
+                const op = ['start', 'stop', 'drain'].includes(methodParts[1]) ? methodParts[1] : methodType;
+                return {
+                    ...await discoverService(namespace),
+                    uri: `/rpc/ports/${namespace}/${op}`
+                };
+            }
+        };
     }
 
     function brokerMethod(typeName, methodType) {
         return async function(msg, $meta) {
-            const [namespace, op] = $meta.method.split('.', 2);
-            if (['start', 'stop', 'drain'].includes(op)) methodType = op;
-            const requestParams = await discoverService(namespace);
-            const {encode = Array.prototype.slice, decode = data => data} = await codec(namespace);
+            const methodParts = $meta.method.split('.');
+            const {encode, decode, context} = await codec(methodParts[0]);
+            const requestParams = await context(methodParts, methodType);
+            const {params, headers} = await encode(msg, $meta);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
                 method: 'POST',
-                url: `http://${requestParams.host}:${requestParams.port}/rpc/ports/${namespace}/${methodType}`,
+                url: `http://${requestParams.host}:${requestParams.port}${requestParams.uri}`,
                 body: {
                     jsonrpc: '2.0',
                     method: $meta.method,
                     id: 1,
                     ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
-                    params: encode.call(arguments)
+                    params
                 },
-                headers: Object.assign({
-                    'x-envoy-decorator-operation': $meta.method
-                }, $meta.forward)
+                headers: {
+                    'x-envoy-decorator-operation': $meta.method,
+                    ...$meta.forward,
+                    ...headers
+                }
             }, callback);
 
             return new Promise((resolve, reject) => {
@@ -543,7 +615,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         };
                         reject(error);
                     } else if (body && body.error) {
-                        reject(Object.assign(new Error(), decode(body.error)));
+                        reject(Object.assign(new Error(), body.jsonrpc ? decode(body.error) : body.error));
                     } else if (response.statusCode < 200 || response.statusCode >= 300) {
                         reject(errors['bus.jsonRpcHttp']({
                             statusCode: response.statusCode,
