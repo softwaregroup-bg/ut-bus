@@ -496,7 +496,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return {host, port};
             };
             const gatewayCodec = {
-                encode: async (msg, $meta) => {
+                encode: async(msg, $meta) => {
                     const {host, port} = discover();
                     if (!cache.auth) {
                         const {body: {sign, encrypt}} = await httpGet({
@@ -532,18 +532,18 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     }
 
                     return {
-                        params: mle.signEncrypt(msg,  cache.auth.encrypt),
+                        params: mle.signEncrypt(msg, cache.auth.encrypt),
                         headers: {
                             authorization: cache.tokenInfo.typ + ' ' + cache.auth.access_token
                         }
-                    }
+                    };
                 },
                 decode: msg => mle.decryptVerify(msg, cache.auth.sign),
                 context: async(methodParts) => {
                     return {
                         ...discover(),
                         uri: `/rpc/${methodParts.join('/')}`
-                    }
+                    };
                 }
             };
             [].concat(namespace).forEach(namespace => {
