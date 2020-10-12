@@ -489,18 +489,30 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         host = 'localhost',
         port = server.info.port,
         url = `${protocol}://${host}:${port}`,
+        key = url,
+        auth,
         encrypt = true
     }, method) {
-        if (!gatewayCache[url]) {
+        if (!gatewayCache[key]) {
             if (encrypt && mle) {
                 const cache = {};
-                gatewayCache[url] = {
+                const {body: {sign, encrypt}} = await httpGet({
+                    url: `${url}/rpc/login/.well-known/mle`,
+                    json: true
+                });
+                gatewayCache[key] = {
                     encode: async(params, $meta) => {
+                        if (auth) {
+                            cache.auth = auth;
+                            cache.tokenInfo = JWT.decode(cache.auth.access_token);
+                        }
                         if (!cache.auth) {
-                            const {body: {sign, encrypt}} = await httpGet({
-                                url: `${url}/rpc/login/.well-known/mle`,
-                                json: true
-                            });
+                            if (!username && !password) {
+                                return {
+                                    params: mle.signEncrypt(params, encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt}),
+                                    method
+                                };
+                            }
                             const {body: {result, error}} = await httpPost({
                                 url: `${url}/rpc/login/identity/exchange`,
                                 body: {
@@ -516,6 +528,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             cache.auth = mle.decryptVerify(result, sign);
                             cache.tokenInfo = JWT.decode(cache.auth.access_token);
                         }
+
                         if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
                             const {body} = await httpPost({
                                 url: `${url}/rpc/login/token`,
@@ -532,22 +545,23 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         return {
                             params: mle.signEncrypt(params, cache.auth.encrypt),
                             headers: {
-                                authorization: cache.tokenInfo.typ + ' ' + cache.auth.access_token
-                            }
+                                authorization: 'Bearer ' + cache.auth.access_token
+                            },
+                            method
                         };
                     },
-                    decode: params => mle.decryptVerify(params, cache.auth.sign)
+                    decode: result => mle.decryptVerify(result, cache.auth ? cache.auth.sign : sign)
                 };
             } else {
-                gatewayCache[url] = {
-                    encode: params => ({params}),
+                gatewayCache[key] = {
+                    encode: params => ({params, method}),
                     decode: result => result
                 };
             }
         }
 
         return {
-            ...gatewayCache[url],
+            ...gatewayCache[key],
             requestParams: {
                 url: `${url}/rpc/${method.replace(/\./g, '/')}`
             }
@@ -580,7 +594,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function brokerMethod(typeName, methodType) {
         return async function(msg, $meta) {
             const {encode, decode, requestParams} = await codec($meta, methodType);
-            const {params, headers} = await encode(msg, $meta);
+            const {params, headers, method = $meta.method} = await encode(msg, $meta);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
@@ -588,13 +602,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 url: requestParams.url,
                 body: {
                     jsonrpc: '2.0',
-                    method: $meta.method,
+                    method,
                     id: 1,
                     ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
                     params
                 },
                 headers: {
-                    'x-envoy-decorator-operation': $meta.method,
+                    'x-envoy-decorator-operation': method,
                     ...$meta.forward,
                     ...headers
                 }
@@ -638,7 +652,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
                         const result = decode(body.result);
-                        if (/\.service\.get$/.test($meta.method)) Object.assign(result, requestParams);
+                        if (/\.service\.get$/.test(method)) Object.assign(result, requestParams);
                         resolve(result);
                     } else {
                         reject(errors['bus.jsonRpcEmpty']());
