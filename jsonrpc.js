@@ -4,6 +4,7 @@ const url = require('url');
 const hapi = require('@hapi/hapi');
 const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
+const [httpGet, httpPost] = [request.get, request.post].map(require('util').promisify);
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
 const H2o2 = require('@hapi/h2o2');
@@ -478,105 +479,112 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return h.response('Method was deleted').code(404);
     };
 
-    const codecCache = {};
-    if (mle && socket.gateway) {
-        const [httpGet, httpPost] = [request.get, request.post].map(require('util').promisify);
-        Object.entries(socket.gateway).forEach(([name, {
-            namespace,
-            username,
-            password,
-            channel = 'web',
-            host = 'localhost',
-            port
-        }]) => {
-            const cache = {};
-            const discover = () => {
-                // get local port (remote discovery not supported)
-                if (!port) port = server.info.port;
-                return {host, port};
-            };
-            const gatewayCodec = {
-                encode: async(msg, $meta) => {
-                    const {host, port} = discover();
-                    if (!cache.auth) {
-                        const {body: {sign, encrypt}} = await httpGet({
-                            url: `http://${host}:${port}/rpc/login/.well-known/mle`,
-                            json: true
-                        });
-                        const {body: {result, error}} = await httpPost({
-                            url: `http://${host}:${port}/rpc/login/identity/exchange`,
-                            body: {
-                                jsonrpc: '2.0',
-                                method: 'login.identity.exchange',
-                                id: 1,
-                                ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
-                                params: mle.signEncrypt({username, password, channel}, encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
-                            },
-                            json: true
-                        });
-                        if (error) throw Object.assign(new Error(), mle.decryptVerify(error, sign));
-                        cache.auth = mle.decryptVerify(result, sign);
-                        cache.tokenInfo = JWT.decode(cache.auth.access_token);
-                    }
-                    if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
-                        const {body} = await httpPost({
-                            url: `http://${host}:${port}/rpc/login/token`,
-                            body: {
-                                grant_type: 'refresh_token',
-                                refresh_token: cache.auth.refresh_token
-                            },
-                            json: true
-                        });
-                        Object.assign(cache.auth, body);
-                        cache.tokenInfo = JWT.decode(body.access_token);
-                    }
+    const gatewayCache = {};
 
-                    return {
-                        params: mle.signEncrypt(msg, cache.auth.encrypt),
-                        headers: {
-                            authorization: cache.tokenInfo.typ + ' ' + cache.auth.access_token
+    async function gateway({
+        username,
+        password,
+        channel = 'web',
+        protocol = server.info.protocol,
+        host = 'localhost',
+        port = server.info.port,
+        url = `${protocol}://${host}:${port}`
+    }, method) {
+        if (!gatewayCache[url]) {
+            if (mle) {
+                const cache = {};
+                gatewayCache[url] = {
+                    encode: async(params, $meta) => {
+                        if (!cache.auth) {
+                            const {body: {sign, encrypt}} = await httpGet({
+                                url: `${url}/rpc/login/.well-known/mle`,
+                                json: true
+                            });
+                            const {body: {result, error}} = await httpPost({
+                                url: `${url}/rpc/login/identity/exchange`,
+                                body: {
+                                    jsonrpc: '2.0',
+                                    method: 'login.identity.exchange',
+                                    id: 1,
+                                    ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
+                                    params: mle.signEncrypt({username, password, channel}, encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
+                                },
+                                json: true
+                            });
+                            if (error) throw Object.assign(new Error(), mle.decryptVerify(error, sign));
+                            cache.auth = mle.decryptVerify(result, sign);
+                            cache.tokenInfo = JWT.decode(cache.auth.access_token);
                         }
-                    };
-                },
-                decode: msg => mle.decryptVerify(msg, cache.auth.sign),
-                context: async(methodParts) => {
-                    return {
-                        ...discover(),
-                        uri: `/rpc/${methodParts.join('/')}`
-                    };
-                }
-            };
-            [].concat(namespace).forEach(namespace => {
-                codecCache[namespace] = gatewayCodec;
-            });
-        });
+                        if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
+                            const {body} = await httpPost({
+                                url: `${url}/rpc/login/token`,
+                                body: {
+                                    grant_type: 'refresh_token',
+                                    refresh_token: cache.auth.refresh_token
+                                },
+                                json: true
+                            });
+                            Object.assign(cache.auth, body);
+                            cache.tokenInfo = JWT.decode(body.access_token);
+                        }
+
+                        return {
+                            params: mle.signEncrypt(params, cache.auth.encrypt),
+                            headers: {
+                                authorization: cache.tokenInfo.typ + ' ' + cache.auth.access_token
+                            }
+                        };
+                    },
+                    decode: params => mle.decryptVerify(params, cache.auth.sign)
+                };
+            } else {
+                gatewayCache[url] = {
+                    encode: params => ({params}),
+                    decode: result => result
+                };
+            }
+        }
+
+        return {
+            ...gatewayCache[url],
+            requestParams: {
+                url: `${url}/rpc/${method.replace(/\./g, '/')}`
+            }
+        };
     }
 
-    function codec(namespace) {
-        return codecCache[namespace] || {
-            encode: (...params) => ({params}),
-            decode: data => data,
-            context: async(methodParts, methodType) => {
-                const op = ['start', 'stop', 'drain'].includes(methodParts[1]) ? methodParts[1] : methodType;
-                return {
-                    ...await discoverService(namespace),
-                    uri: `/rpc/ports/${namespace}/${op}`
-                };
+    async function codec($meta, methodType) {
+        if ($meta.gateway) return gateway($meta.gateway, $meta.method);
+
+        const [prefix, method = prefix] = $meta.method.split('/');
+
+        if (socket.gateway && socket.gateway[prefix]) return gateway(socket.gateway[prefix], method);
+
+        const [namespace, event] = $meta.method.split('.');
+
+        const op = ['start', 'stop', 'drain'].includes(event) ? event : methodType;
+
+        const requestParams = await discoverService(namespace);
+
+        return {
+            encode: params => ({params: [params, $meta]}),
+            decode: result => result,
+            requestParams: {
+                ...requestParams,
+                url: `http://${requestParams.host}:${requestParams.port}/rpc/ports/${namespace}/${op}`
             }
         };
     }
 
     function brokerMethod(typeName, methodType) {
         return async function(msg, $meta) {
-            const methodParts = $meta.method.split('.');
-            const {encode, decode, context} = await codec(methodParts[0]);
-            const requestParams = await context(methodParts, methodType);
+            const {encode, decode, requestParams} = await codec($meta, methodType);
             const {params, headers} = await encode(msg, $meta);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
                 method: 'POST',
-                url: `http://${requestParams.host}:${requestParams.port}${requestParams.uri}`,
+                url: requestParams.url,
                 body: {
                     jsonrpc: '2.0',
                     method: $meta.method,
