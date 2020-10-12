@@ -488,10 +488,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         protocol = server.info.protocol,
         host = 'localhost',
         port = server.info.port,
-        url = `${protocol}://${host}:${port}`
+        url = `${protocol}://${host}:${port}`,
+        encrypt = true
     }, method) {
         if (!gatewayCache[url]) {
-            if (mle) {
+            if (encrypt && mle) {
                 const cache = {};
                 gatewayCache[url] = {
                     encode: async(params, $meta) => {
@@ -554,11 +555,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     async function codec($meta, methodType) {
-        if ($meta.gateway) return gateway($meta.gateway, $meta.method);
-
         const [prefix, method = prefix] = $meta.method.split('/');
 
-        if (socket.gateway && socket.gateway[prefix]) return gateway(socket.gateway[prefix], method);
+        if (socket.gateway && socket.gateway[prefix]) return gateway({...socket.gateway[prefix], ...$meta.gateway}, method);
+
+        if ($meta.gateway) return gateway($meta.gateway, $meta.method);
 
         const [namespace, event] = $meta.method.split('.');
 
