@@ -494,70 +494,70 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         encrypt = true
     }, method) {
         if (!gatewayCache[key]) {
-            if (encrypt && mle) {
-                const cache = {};
-                const {body: {sign, encrypt}} = await httpGet({
-                    url: `${url}/rpc/login/.well-known/mle`,
-                    json: true
-                });
-                gatewayCache[key] = {
-                    encode: async(params, $meta) => {
-                        if (auth) {
-                            cache.auth = auth;
-                            cache.tokenInfo = JWT.decode(cache.auth.access_token);
+            const cache = {};
+            gatewayCache[key] = {
+                encode: async(params, $meta) => {
+                    if (!mle || !encrypt) return {params, method};
+                    if (!cache.remoteKeys) {
+                        const {body} = await httpGet({
+                            url: `${url}/rpc/login/.well-known/mle`,
+                            json: true
+                        });
+                        cache.remoteKeys = body;
+                    }
+                    if (auth) {
+                        cache.auth = auth;
+                        cache.tokenInfo = JWT.decode(auth.access_token);
+                    }
+                    if (!cache.auth) {
+                        if (!username || !password) {
+                            return {
+                                params: mle.signEncrypt(params, cache.remoteKeys.encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt}),
+                                method
+                            };
                         }
-                        if (!cache.auth) {
-                            if (!username && !password) {
-                                return {
-                                    params: mle.signEncrypt(params, encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt}),
-                                    method
-                                };
-                            }
-                            const {body: {result, error}} = await httpPost({
-                                url: `${url}/rpc/login/identity/exchange`,
-                                body: {
-                                    jsonrpc: '2.0',
-                                    method: 'login.identity.exchange',
-                                    id: 1,
-                                    ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
-                                    params: mle.signEncrypt({username, password, channel}, encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
-                                },
-                                json: true
-                            });
-                            if (error) throw Object.assign(new Error(), mle.decryptVerify(error, sign));
-                            cache.auth = mle.decryptVerify(result, sign);
-                            cache.tokenInfo = JWT.decode(cache.auth.access_token);
-                        }
-
-                        if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
-                            const {body} = await httpPost({
-                                url: `${url}/rpc/login/token`,
-                                body: {
-                                    grant_type: 'refresh_token',
-                                    refresh_token: cache.auth.refresh_token
-                                },
-                                json: true
-                            });
-                            Object.assign(cache.auth, body);
-                            cache.tokenInfo = JWT.decode(body.access_token);
-                        }
-
-                        return {
-                            params: mle.signEncrypt(params, cache.auth.encrypt),
-                            headers: {
-                                authorization: 'Bearer ' + cache.auth.access_token
+                        const {body: {result, error}} = await httpPost({
+                            url: `${url}/rpc/login/identity/exchange`,
+                            body: {
+                                jsonrpc: '2.0',
+                                method: 'login.identity.exchange',
+                                id: 1,
+                                ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
+                                params: mle.signEncrypt({username, password, channel}, cache.remoteKeys.encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
                             },
-                            method
-                        };
-                    },
-                    decode: result => [mle.decryptVerify(result, cache.auth ? cache.auth.sign : sign), {mtid: 'response', method}]
-                };
-            } else {
-                gatewayCache[key] = {
-                    encode: params => ({params, method}),
-                    decode: result => [result, {mtid: 'response', method}]
-                };
-            }
+                            json: true
+                        });
+                        if (error) throw Object.assign(new Error(), mle.decryptVerify(error, cache.remoteKeys.sign));
+                        cache.auth = mle.decryptVerify(result, cache.remoteKeys.sign);
+                        cache.tokenInfo = JWT.decode(cache.auth.access_token);
+                    }
+
+                    if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
+                        const {body} = await httpPost({
+                            url: `${url}/rpc/login/token`,
+                            body: {
+                                grant_type: 'refresh_token',
+                                refresh_token: cache.auth.refresh_token
+                            },
+                            json: true
+                        });
+                        Object.assign(cache.auth, body);
+                        cache.tokenInfo = JWT.decode(body.access_token);
+                    }
+
+                    return {
+                        params: mle.signEncrypt(params, cache.auth.encrypt),
+                        headers: {
+                            authorization: 'Bearer ' + cache.auth.access_token
+                        },
+                        method
+                    };
+                },
+                decode: result => {
+                    if (!mle || !encrypt) return [result, {mtid: 'response', method}];
+                    return [mle.decryptVerify(result, cache.auth ? cache.auth.sign : cache.remoteKeys.sign), {mtid: 'response', method}];
+                }
+            };
         }
 
         return {
@@ -652,7 +652,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
                         const result = decode(body.result);
-                        if (/\.service\.get$/.test(method)) Object.assign(result[0], requestParams);
+                        if (/\.service\.get$/.test(method)) Object.assign(result, requestParams);
                         resolve(result);
                     } else {
                         reject(errors['bus.jsonRpcEmpty']());
