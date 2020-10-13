@@ -579,14 +579,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
         const op = ['start', 'stop', 'drain'].includes(event) ? event : methodType;
 
-        const requestParams = await discoverService(namespace);
-
         return {
             encode: params => ({params: [params, $meta]}),
             decode: result => result,
             requestParams: {
-                ...requestParams,
-                url: `http://${requestParams.host}:${requestParams.port}/rpc/ports/${namespace}/${op}`
+                ...await discoverService(namespace),
+                uri: `/rpc/ports/${namespace}/${op}`
             }
         };
     }
@@ -599,7 +597,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 followRedirect: false,
                 json: true,
                 method: 'POST',
-                url: requestParams.url,
+                url: requestParams.url || `http://${requestParams.host}:${requestParams.port}${requestParams.uri}`,
                 body: {
                     jsonrpc: '2.0',
                     method,
