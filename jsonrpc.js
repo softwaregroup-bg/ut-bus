@@ -550,12 +550,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             method
                         };
                     },
-                    decode: result => mle.decryptVerify(result, cache.auth ? cache.auth.sign : sign)
+                    decode: result => [mle.decryptVerify(result, cache.auth ? cache.auth.sign : sign), {mtid: 'response', method}]
                 };
             } else {
                 gatewayCache[key] = {
                     encode: params => ({params, method}),
-                    decode: result => result
+                    decode: result => [result, {mtid: 'response', method}]
                 };
             }
         }
@@ -652,7 +652,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
                         const result = decode(body.result);
-                        if (/\.service\.get$/.test(method)) Object.assign(result, requestParams);
+                        if (/\.service\.get$/.test(method)) Object.assign(result[0], requestParams);
                         resolve(result);
                     } else {
                         reject(errors['bus.jsonRpcEmpty']());
