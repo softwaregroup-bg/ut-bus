@@ -1,3 +1,12 @@
+## [7.30.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.30.0...v7.30.1) (2020-10-15)
+
+
+### Bug Fixes
+
+* log route errors ([3908e40](https://github.com/softwaregroup-bg/ut-bus/commit/3908e40f5e9d0fadb70f902f2d4e9b913d00611d))
+
+
+
 # [7.30.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.29.0...v7.30.0) (2020-08-25)
 
 

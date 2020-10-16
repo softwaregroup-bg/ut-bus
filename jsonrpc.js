@@ -686,7 +686,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     async function ready() {
-        server.route(utApi.routes());
+        try {
+            server.route(utApi.routes());
+        } catch (error) {
+            logger && logger.error && logger.error(error);
+            throw error;
+        }
     }
 
     function info() {
