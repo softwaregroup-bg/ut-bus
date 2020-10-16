@@ -497,7 +497,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             const cache = {};
             gatewayCache[key] = {
                 encode: async(params, $meta) => {
-                    if (!mle || !encrypt) return {params, method};
+                    if (!mle.keys.sign || !mle.keys.encrypt || !encrypt) return {params, method};
+
                     if (!cache.remoteKeys) {
                         const {body} = await httpGet({
                             url: `${url}/rpc/login/.well-known/mle`,
@@ -505,17 +506,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         });
                         cache.remoteKeys = body;
                     }
+
                     if (auth) {
                         cache.auth = auth;
                         cache.tokenInfo = JWT.decode(auth.access_token);
                     }
-                    if (!cache.auth) {
-                        if (!username || !password) {
-                            return {
-                                params: mle.signEncrypt(params, cache.remoteKeys.encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt}),
-                                method
-                            };
-                        }
+
+                    const login = async() => {
+                        const remoteKeys = cache.auth || cache.remoteKeys;
                         const {body: {result, error}} = await httpPost({
                             url: `${url}/rpc/login/identity/exchange`,
                             body: {
@@ -523,26 +521,42 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                                 method: 'login.identity.exchange',
                                 id: 1,
                                 ...$meta.timeout && $meta.timeout[0] && {timeout: spare($meta.timeout, socket.latency || 50)},
-                                params: mle.signEncrypt({username, password, channel}, cache.remoteKeys.encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
+                                params: mle.signEncrypt({username, password, channel}, remoteKeys.encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt})
                             },
                             json: true
                         });
-                        if (error) throw Object.assign(new Error(), mle.decryptVerify(error, cache.remoteKeys.sign));
-                        cache.auth = mle.decryptVerify(result, cache.remoteKeys.sign);
+                        if (error) throw Object.assign(new Error(), mle.decryptVerify(error, remoteKeys.sign));
+                        cache.auth = mle.decryptVerify(result, remoteKeys.sign);
                         cache.tokenInfo = JWT.decode(cache.auth.access_token);
+                    };
+
+                    if (!cache.auth) {
+                        if (!username || !password) {
+                            return {
+                                params: mle.signEncrypt(params, cache.remoteKeys.encrypt, {mlsk: mle.keys.sign, mlek: mle.keys.encrypt}),
+                                method
+                            };
+                        }
+                        await login();
                     }
 
-                    if (Math.floor(Date.now() / 1000) >= cache.tokenInfo.exp - 5) { // 5 seconds earlier just in case
-                        const {body} = await httpPost({
-                            url: `${url}/rpc/login/token`,
-                            body: {
-                                grant_type: 'refresh_token',
-                                refresh_token: cache.auth.refresh_token
-                            },
-                            json: true
-                        });
-                        Object.assign(cache.auth, body);
-                        cache.tokenInfo = JWT.decode(body.access_token);
+                    const exp = Math.floor(Date.now() / 1000) + 5; // add 5 seconds just in case
+
+                    if (exp > cache.tokenInfo.exp) {
+                        if (exp > cache.tokenInfo.exp + cache.auth.refresh_token_expires_in - cache.auth.expires_in) {
+                            await login();
+                        } else {
+                            const {body} = await httpPost({
+                                url: `${url}/rpc/login/token`,
+                                body: {
+                                    grant_type: 'refresh_token',
+                                    refresh_token: cache.auth.refresh_token
+                                },
+                                json: true
+                            });
+                            Object.assign(cache.auth, body);
+                            cache.tokenInfo = JWT.decode(body.access_token);
+                        }
                     }
 
                     return {
