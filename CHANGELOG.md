@@ -1,3 +1,12 @@
+# [7.31.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.30.1...v7.31.0) (2020-10-17)
+
+
+### Features
+
+* allow setting prototype to passed literals ([8514837](https://github.com/softwaregroup-bg/ut-bus/commit/851483745947fd5fb79ed6261c6ae88bec257a67))
+
+
+
 ## [7.30.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.30.0...v7.30.1) (2020-10-15)
 
 
