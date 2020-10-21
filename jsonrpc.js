@@ -649,8 +649,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }
                         };
                         reject(error);
-                    } else if (body && body.error) {
-                        reject(Object.assign(new Error(), body.jsonrpc ? decode(body.error) : body.error));
+                    } else if (body && body.error !== undefined) {
+                        if (body.jsonrpc) return reject(Object.assign(new Error(), decode(body.error)));
+                        if (typeof body.error === 'string') return reject(new Error(body.error));
+                        return reject(Object.assign(new Error(), body.error));
                     } else if (response.statusCode < 200 || response.statusCode >= 300) {
                         reject(errors['bus.jsonRpcHttp']({
                             statusCode: response.statusCode,
