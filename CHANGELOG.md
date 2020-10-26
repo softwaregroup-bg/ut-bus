@@ -1,3 +1,21 @@
+## [7.31.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.31.0...v7.31.1) (2020-10-23)
+
+
+### Bug Fixes
+
+* openid host and protocol handling ([b1275c1](https://github.com/softwaregroup-bg/ut-bus/commit/b1275c1e254c2b776a9315e5d80027865c81fb6f))
+
+
+
+# [7.31.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.30.1...v7.31.0) (2020-10-17)
+
+
+### Features
+
+* allow setting prototype to passed literals ([8514837](https://github.com/softwaregroup-bg/ut-bus/commit/851483745947fd5fb79ed6261c6ae88bec257a67))
+
+
+
 ## [7.30.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.30.0...v7.30.1) (2020-10-15)
 
 

@@ -30,15 +30,15 @@ function initConsul({discover, ...config}) {
     return consul;
 }
 
-const get = (url, errors, prefix, headers) => new Promise((resolve, reject) => {
+const get = (url, errors, prefix, headers, protocol) => new Promise((resolve, reject) => {
     request({
         json: true,
         method: 'GET',
         url,
         ...headers && {
             headers: {
-                'x-forwarded-proto': headers['x-forwarded-proto'],
-                'x-forwarded-host': headers['x-forwarded-host']
+                'x-forwarded-proto': headers['x-forwarded-proto'] || protocol,
+                'x-forwarded-host': headers['x-forwarded-host'] || headers.host
             }
         }
     }, (error, response, body) => {
@@ -362,7 +362,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return requestParams;
     }
 
-    async function openIdConfig(issuer, headers) {
+    async function openIdConfig(issuer, headers, protocol) {
         try {
             if (issuer === 'ut-login') {
                 const {host, port} = await loginService();
@@ -372,7 +372,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
                 headers = false;
             }
-            return await get(issuer, errors, 'bus.oidc', headers);
+            return await get(issuer, errors, 'bus.oidc', headers, protocol);
         } catch (error) {
             logger && logger.error && logger.error(error);
             throw error;
@@ -399,7 +399,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }
 
-    const issuers = headers => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers)));
+    const issuers = (headers, protocol) => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers, protocol)));
     const mle = jose(socket);
 
     async function createServer(port) {

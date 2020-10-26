@@ -9,17 +9,20 @@ exports[`test/jsonrpc.test.js TAP Bus > client.modules 1`] = `
 Object {
   "client": Object {
     "imported": Array [
-      Object {
-        "a": Object {
-          "b": Object {
-            "c": true,
+      Array [
+        Object {
+          "a": Object {
+            "b": Object {
+              "c": true,
+            },
           },
+          "d": Array [
+            true,
+          ],
+          "e": Object {},
         },
-        "d": Array [
-          true,
-        ],
-        "e": Object {},
-      },
+        undefined,
+      ],
     ],
     "methods": Object {
       "a.b.c": true,
@@ -31,7 +34,10 @@ Object {
   },
   "ut-port": Object {
     "imported": Array [
-      Object {},
+      Array [
+        Object {},
+        undefined,
+      ],
     ],
     "methods": Object {},
   },
