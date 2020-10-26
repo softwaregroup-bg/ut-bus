@@ -488,11 +488,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         protocol = server.info.protocol,
         host = 'localhost',
         port = server.info.port,
-        url = `${protocol}://${host}:${port}`,
-        key = url,
+        url,
+        key,
         auth,
         encrypt = true
     }, method) {
+        if (!url) url = `${protocol}://${host}:${port}`;
+        if (!key) key = url;
         if (!gatewayCache[key]) {
             const cache = {};
             gatewayCache[key] = {
