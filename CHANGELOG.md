@@ -1,3 +1,12 @@
+# [7.32.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.31.1...v7.32.0) (2020-10-27)
+
+
+### Features
+
+* joi provided by ut-run ([b59e913](https://github.com/softwaregroup-bg/ut-bus/commit/b59e913c4c5ac307dfc765888437fb627da78ac7))
+
+
+
 ## [7.31.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.31.0...v7.31.1) (2020-10-23)
 
 
