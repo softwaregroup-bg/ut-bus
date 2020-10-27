@@ -3,6 +3,7 @@ const tests = require('./tests');
 const request = require('request');
 const { JWT, JWK } = require('jose');
 const jose = require('../jose');
+const joi = require('joi');
 
 const logFactory = {
     createLog: () => ({
@@ -12,6 +13,7 @@ const logFactory = {
 };
 
 tap.test('Bus', test => tests(test, {
+    joi,
     logFactory,
     workDir: __dirname,
     jsonrpc: {
@@ -19,6 +21,7 @@ tap.test('Bus', test => tests(test, {
         api: true
     }
 }, {
+    joi,
     logFactory,
     workDir: __dirname,
     jsonrpc: {
@@ -32,6 +35,7 @@ tap.test('Bus routes', async test => {
     const encrypt = JWK.generateSync('EC', 'P-384', {use: 'enc'});
     const server = await tests(test, false, {
         workDir: __dirname,
+        joi,
         jsonrpc: {
             domain: true,
             api: true,
