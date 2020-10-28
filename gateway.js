@@ -48,7 +48,7 @@ module.exports = ({serverInfo, mle}) => {
                     params: mle.signEncrypt(params, cache.remoteKeys.encrypt, localKeys),
                     method
                 });
-                codec.decode = result => [mle.decryptVerify(result, cache.remoteKeys.sign), {mtid: 'response', method}]
+                codec.decode = result => [mle.decryptVerify(result, cache.remoteKeys.sign), {mtid: 'response', method}];
             } else {
                 codec.encode = params => ({params, method});
                 codec.decode = result => [result, {mtid: 'response', method}];
@@ -117,7 +117,7 @@ module.exports = ({serverInfo, mle}) => {
                 },
                 method
             });
-            codec.decode = result => [mle.decryptVerify(result, cache.auth.sign), {mtid: 'response', method}]
+            codec.decode = result => [mle.decryptVerify(result, cache.auth.sign), {mtid: 'response', method}];
         } else {
             codec.encode = params => ({
                 params,
