@@ -1,3 +1,12 @@
+## [7.32.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.32.1...v7.32.2) (2020-10-28)
+
+
+### Bug Fixes
+
+* update hapi ([5a81268](https://github.com/softwaregroup-bg/ut-bus/commit/5a8126869e1e7f17fa3a917849e3575ea231f023))
+
+
+
 ## [7.32.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.32.0...v7.32.1) (2020-10-27)
 
 
