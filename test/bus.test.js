@@ -1,9 +1,11 @@
 const tap = require('tap');
 
 const {Broker, ServiceBus} = require('../');
+const joi = require('joi');
 
 tap.test('bus', async function test(t) {
     const broker = new Broker({
+        joi,
         logLevel: 'trace',
         socket: 'test',
         id: 'broker',
@@ -16,6 +18,7 @@ tap.test('bus', async function test(t) {
     });
 
     const bus1 = new ServiceBus({
+        joi,
         logLevel: 'trace',
         socket: 'test',
         id: 'bus1',
@@ -23,6 +26,7 @@ tap.test('bus', async function test(t) {
     });
 
     const bus2 = new ServiceBus({
+        joi,
         logLevel: 'trace',
         socket: 'test',
         id: 'bus2',
@@ -30,6 +34,7 @@ tap.test('bus', async function test(t) {
     });
 
     const bus3 = new ServiceBus({
+        joi,
         logLevel: 'trace',
         socket: false,
         id: 'bus3',
@@ -37,6 +42,7 @@ tap.test('bus', async function test(t) {
     });
 
     const bus4 = new ServiceBus({
+        joi,
         logLevel: 'trace',
         socket: 'test',
         id: 'bus4',

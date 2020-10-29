@@ -2,7 +2,6 @@
 const Stream = require('stream');
 const url = require('url');
 const hapi = require('@hapi/hapi');
-const joi = require('joi'); // todo migrate to @hapi/joi
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
@@ -322,7 +321,7 @@ const domainResolver = domain => {
     };
 };
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi}) {
     let loginCache;
     async function loginService() {
         if (!loginCache) loginCache = discoverService('login');
@@ -703,7 +702,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         payload: joi.object({
                             jsonrpc: joi.string().valid('2.0').required(),
                             timeout: joi.number().optional(),
-                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')),
+                            id: joi.alternatives().try(joi.number(), joi.string()).example('1'),
                             method: joi.string().required(),
                             params: joi.array().required()
                         })
@@ -754,6 +753,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
+    function paramsSchema(params, method) {
+        const root = (params && (params._currentJoi || params.$_root)) || joi; // until we have a single joi
+        return root.object({
+            jsonrpc: root.string().valid('2.0').required(),
+            timeout: root.number().optional().allow(null),
+            id: root.alternatives().try(root.number(), root.string()).example('1'),
+            method: root.string().valid(method).required(),
+            params
+        });
+    }
+
     function localMethod(methods, moduleName, {version} = {}) {
         if (/\.validation|\.api|^validation$|^api$/.test(moduleName) && utApi && Object.entries(methods).length) {
             utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
@@ -791,13 +801,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         },
                         options: {abortEarly: false},
                         query: false,
-                        payload: jsonrpc ? joi.object({
-                            jsonrpc: '2.0',
-                            timeout: joi.number().optional().allow(null),
-                            id: joi.alternatives().try(joi.number().example(1), joi.string().example('1')).example('1'),
-                            method,
-                            params
-                        }) : (rest.body && rest.body.parse === false),
+                        payload: jsonrpc ? paramsSchema(params, method) : (rest.body && rest.body.parse === false),
                         ...validate
                     },
                     handler: (request, ...rest) => {

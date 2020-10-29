@@ -53,6 +53,7 @@ class Broker {
             isTLS: this.ssl,
             mapLocal: this.mapLocal,
             workDir: this.workDir,
+            joi: this.joi,
             processError: this.processError,
             service: this.service,
             errors: this.errors,
