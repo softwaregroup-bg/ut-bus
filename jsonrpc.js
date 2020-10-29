@@ -481,7 +481,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             const [namespace, op] = $meta.method.split('.', 2);
             if (['start', 'stop', 'drain'].includes(op)) methodType = op;
             const requestParams = await discoverService(namespace);
-            const sendRequest = callback => request({
+            const rqObj = {
                 followRedirect: false,
                 json: true,
                 method: 'POST',
@@ -496,11 +496,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 headers: Object.assign({
                     'x-envoy-decorator-operation': $meta.method
                 }, $meta.forward)
-            }, callback);
+            };
+            const sendRequest = callback => request(rqObj, callback);
 
             return new Promise((resolve, reject) => {
                 const callback = async(error, response, body) => {
                     if (error) {
+                        logger && logger.warn && [
+                            rqObj,
+                            {error, body}
+                        ].map(logger.warn);
+
                         if (resolver && requestParams.cache) { // invalidate cache and retry upon connection fail
                             switch (error.code) {
                                 case 'ETIMEDOUT':
