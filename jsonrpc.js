@@ -502,10 +502,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             return new Promise((resolve, reject) => {
                 const callback = async(error, response, body) => {
                     if (error) {
-                        logger && logger.warn && [
+                        logger && logger.trace && [
                             rqObj,
                             {error, body}
-                        ].map(logger.warn);
+                        ].map(logger.trace);
 
                         if (resolver && requestParams.cache) { // invalidate cache and retry upon connection fail
                             switch (error.code) {
