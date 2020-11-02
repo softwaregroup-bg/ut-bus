@@ -14,8 +14,9 @@ module.exports = ({serverInfo, mle}) => {
         url,
         key,
         auth,
-        encrypt = true
-    }, method) {
+        encrypt = true,
+        method
+    }) {
         // don't put a default value for uri in arguments as it can be empty string or null
         if (!url) url = `${protocol}://${host}:${port}`;
 
