@@ -477,14 +477,20 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     // wrap server.info in serverInfo function - hoisting not possible otherwise
-    const gateway = require('./gateway')({serverInfo: key => server.info[key], mle});
+    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mle});
+
+    function gateway($meta, methodName = $meta.method) {
+        const [prefix, method = prefix] = methodName.split('/');
+
+        if (socket.gateway && socket.gateway[prefix]) return {...socket.gateway[prefix], ...$meta.gateway, method};
+
+        if ($meta.gateway) return {...$meta.gateway, method: methodName};
+    }
 
     async function codec($meta, methodType) {
-        const [prefix, method = prefix] = $meta.method.split('/');
+        const gatewayConfig = gateway($meta);
 
-        if (socket.gateway && socket.gateway[prefix]) return gateway({...socket.gateway[prefix], ...$meta.gateway}, method);
-
-        if ($meta.gateway) return gateway($meta.gateway, $meta.method);
+        if (gatewayConfig) return gatewayCodec(gatewayConfig);
 
         const [namespace, event] = $meta.method.split('.');
 
@@ -841,6 +847,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         stop,
         start,
         ready,
+        gateway,
         exportMethod,
         removeMethod,
         brokerMethod,
