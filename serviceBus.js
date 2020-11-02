@@ -122,6 +122,7 @@ class Bus extends Broker {
                 }
             }
             if (!fn) {
+                // don't try skipping socket if there is a gateway configured
                 if (methodName && !(bus.rpc.gateway && bus.rpc.gateway($applyMeta, methodName))) {
                     bus.canSkipSocket && (fn = bus.findMethod(bus.mapLocal, methodName, methodType));
                     fn && (unpack = true);
