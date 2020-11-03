@@ -1,3 +1,12 @@
+# [7.33.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.32.3...v7.33.0) (2020-11-03)
+
+
+### Features
+
+* improve error logging ([99875d7](https://github.com/softwaregroup-bg/ut-bus/commit/99875d7813162533a63a7597cd12017d4cc2affd))
+
+
+
 ## [7.32.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.32.2...v7.32.3) (2020-10-28)
 
 
