@@ -522,7 +522,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         };
                         reject(error);
                     } else if (body && body.error) {
-                        reject(Object.assign(new Error(), body.error));
+                        const error = Object.assign(new Error(), body.error);
+                        if (error.type) Object.defineProperty(error, 'name', {value: error.type, configurable: true, enumerable: false});
+                        reject(error);
                     } else if (response.statusCode < 200 || response.statusCode >= 300) {
                         reject(errors['bus.jsonRpcHttp']({
                             statusCode: response.statusCode,
@@ -758,7 +760,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
-                            logger.error && logger.error(error);
+                            logger.error && logger.error(errors['bus.requestValidation']({cause: error, params: {message: error.message, path: request.path}}));
                             return h.response({
                                 ...jsonrpc && {
                                     jsonrpc: request.payload.jsonrpc,
