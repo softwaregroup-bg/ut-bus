@@ -760,7 +760,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
-                            logger.error && logger.error(errors['bus.requestValidation']({cause: error, params: {message: error.message, path: request.path}}));
+                            logger.error && logger.error(errors['bus.requestValidation']({
+                                cause: error,
+                                params: {
+                                    message: error.message,
+                                    path: request.path,
+                                    method
+                                }
+                            }));
                             return h.response({
                                 ...jsonrpc && {
                                     jsonrpc: request.payload.jsonrpc,

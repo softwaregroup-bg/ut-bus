@@ -10,7 +10,7 @@
     "bus.bindingFailed": "Method binding failed for {typeName} {methodType} {methodName}",
     "bus.cacheFailed": "Method cache failed for {typeName} {methodType} {methodName}",
     "bus.cacheOperationMissing": "Cache before and after operations missing for {typeName} {methodType} {methodName}",
-    "bus.requestValidation": {"message": "Request at {path} failed validation: {message}", "statusCode": 400},
+    "bus.requestValidation": {"message": "Validation for {method} failed: {message}", "statusCode": 400},
     "bus.responseValidation": "Response at {path} failed validation: {message}",
     "bus.consulServiceNotFound": "Service {namespace} not found in Consul",
     "bus.jwtMissingHeader": {"message": "Missing bearer authorization header", "statusCode": 401},
