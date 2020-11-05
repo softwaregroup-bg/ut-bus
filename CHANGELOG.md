@@ -1,3 +1,12 @@
+## [7.33.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.2...v7.33.3) (2020-11-05)
+
+
+### Bug Fixes
+
+* upgrade jose ([a7ec71c](https://github.com/softwaregroup-bg/ut-bus/commit/a7ec71c42b110d09187a6da771fdfab5a9ebedfd))
+
+
+
 ## [7.33.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.1...v7.33.2) (2020-11-05)
 
 
