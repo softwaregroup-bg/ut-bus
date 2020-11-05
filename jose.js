@@ -1,7 +1,7 @@
 const { JWS, JWE, JWK } = require('jose');
 
 function signEncrypt(message, signaturePrivateKey, encryptionPublicKey, protectedHeader, unprotectedHeader) {
-    const jwe = new JWE.Encrypt(JWS.sign(Buffer.isBuffer(message) ? message : JSON.stringify(message), signaturePrivateKey), protectedHeader, unprotectedHeader);
+    const jwe = new JWE.Encrypt(JWS.sign(Buffer.isBuffer(message) ? message : JSON.stringify(message), signaturePrivateKey), protectedHeader, undefined, unprotectedHeader);
     [].concat(encryptionPublicKey).forEach(key => jwe.recipient(...[].concat(key)));
     return jwe.encrypt('general');
 }
@@ -11,7 +11,7 @@ function decrypt(message, encryptionPrivateKey, options) {
 }
 
 function verify(decrypted, signaturePublicKey) {
-    return JWS.verify(decrypted.toString(), signaturePublicKey);
+    return JSON.parse(JWS.verify(decrypted.toString(), signaturePublicKey));
 }
 
 function decryptVerify(message, signaturePublicKey, encryptionPrivateKey) {
