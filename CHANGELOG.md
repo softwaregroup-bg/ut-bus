@@ -1,3 +1,12 @@
+## [7.33.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.1...v7.33.2) (2020-11-05)
+
+
+### Bug Fixes
+
+* support arrays ([e19ef73](https://github.com/softwaregroup-bg/ut-bus/commit/e19ef73a5a14c06a98a85311070b4c1d74895881))
+
+
+
 ## [7.33.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.0...v7.33.1) (2020-11-04)
 
 
