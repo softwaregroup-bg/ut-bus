@@ -18,10 +18,10 @@ module.exports = ({serverInfo, mle}) => {
     }) {
         // don't put a default value for uri in arguments as it can be empty string or null
         if (url) {
-            url = new URL(url);
-            hostname = url.hostname;
-            port = url.port;
-            protocol = url.protocol;
+            const parsed = new URL(url);
+            hostname = parsed.hostname;
+            port = parsed.port;
+            protocol = parsed.protocol;
         } else {
             url = `${protocol}://${hostname}:${port}`;
         }
@@ -61,7 +61,7 @@ module.exports = ({serverInfo, mle}) => {
                 codec.encode = params => ({params, method});
                 codec.decode = result => [result, {mtid: 'response', method}];
             }
-            return;
+            return codec;
         }
 
         async function login() {
