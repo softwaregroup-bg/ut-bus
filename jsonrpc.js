@@ -293,19 +293,19 @@ const prePlain = (checkAuth, workDir, method, version, logger) => [{
 
 const domainResolver = domain => {
     const resolver = require('mdns-resolver');
-    const getHostName = host => `${host}-${domain}.dns-discovery.local`;
+    const getHostName = service => `${service}-${domain}.dns-discovery.local`;
     const cache = {};
-    return async function resolve(host, invalidate) {
+    return async function resolve(service, invalidate) {
         const now = hrtime();
-        const hostName = getHostName(host);
+        const hostName = getHostName(service);
         if (invalidate) {
-            delete cache[getHostName(host)];
+            delete cache[hostName];
         } else {
             const cached = cache[hostName];
             if (cached) {
                 if (hrtime(cached[0])[0] < 3) {
                     cached[0] = now;
-                    return {...cached[1], cache: host};
+                    return {...cached[1], cache: service};
                 } else {
                     delete cache[hostName];
                 }
@@ -313,7 +313,7 @@ const domainResolver = domain => {
         }
         const resolved = await resolver.resolveSrv(hostName);
         const result = {
-            host: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
+            hostname: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
             port: resolved.port
         };
         cache[hostName] = [now, result];
@@ -334,8 +334,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     async function discoverService(namespace) {
+        const serviceName = (prefix + namespace.replace(/\//g, '-') + suffix);
         const params = {
-            host: socket.host || (prefix + namespace.replace(/\//g, '-') + suffix),
+            protocol: server.info.protocol,
+            hostname: socket.host || serviceName,
             port: socket.port || server.info.port,
             service
         };
@@ -346,15 +348,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 passing: true
             });
             if (!services || !services.length) {
-                throw errors['bus.consulServiceNotFound']({params: {namespace}});
+                throw errors['bus.consulServiceNotFound']({params: {serviceName}});
             }
             Object.assign(requestParams, {
-                host: services[0].Node.Address,
+                hostname: services[0].Node.Address,
                 port: services[0].Service.Port
             });
         }
         if (resolver) {
-            Object.assign(requestParams, await resolver(params.host));
+            Object.assign(requestParams, await resolver(serviceName));
         }
         return requestParams;
     }
@@ -497,11 +499,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         const op = ['start', 'stop', 'drain'].includes(event) ? event : methodType;
 
         return {
-            encode: params => ({params: [params, $meta]}),
+            encode: (...params) => ({params}),
             decode: result => result,
             requestParams: {
                 ...await discoverService(namespace),
-                uri: `/rpc/ports/${namespace}/${op}`
+                path: `/rpc/ports/${namespace}/${op}`
             }
         };
     }
@@ -509,12 +511,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function brokerMethod(typeName, methodType) {
         return async function(msg, $meta) {
             const {encode, decode, requestParams} = await codec($meta, methodType);
-            const {params, headers, method = $meta.method} = await encode(msg, $meta);
+            const {params, headers, method = $meta.method} = await encode(...arguments);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
                 method: 'POST',
-                url: requestParams.url || `http://${requestParams.host}:${requestParams.port}${requestParams.uri}`,
+                url: `http://${requestParams.hostname}:${requestParams.port}${requestParams.path}`,
                 body: {
                     jsonrpc: '2.0',
                     method,

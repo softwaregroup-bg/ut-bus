@@ -12,7 +12,7 @@
     "bus.cacheOperationMissing": "Cache before adn after operations missing for {typeName} {methodType} {methodName}",
     "bus.requestValidation": "Request at {path} failed validation",
     "bus.responseValidation": "Response at {path} failed validation",
-    "bus.consulServiceNotFound": "Service {namespace} not found in Consul",
+    "bus.consulServiceNotFound": "Service {serviceName} not found in Consul",
     "bus.jwtMissingHeader": {"message": "Missing bearer authorization header", "statusCode": 401},
     "bus.jwtInvalidKey": {"message": "Invalid bearer authorization key", "statusCode": 401},
     "bus.jwtInvalid": {"message": "Invalid authentication ({message})", "statusCode": 401},

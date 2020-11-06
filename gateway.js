@@ -9,26 +9,33 @@ module.exports = ({serverInfo, mle}) => {
         password,
         channel = 'web',
         protocol = serverInfo('protocol'),
-        host = 'localhost',
+        host: hostname = 'localhost',
         port = serverInfo('port'),
         url,
-        key,
         auth,
         encrypt = true,
         method
     }) {
         // don't put a default value for uri in arguments as it can be empty string or null
-        if (!url) url = `${protocol}://${host}:${port}`;
+        if (url) {
+            url = new URL(url);
+            hostname = url.hostname;
+            port = url.port;
+            protocol = url.protocol;
+        } else {
+            url = `${protocol}://${hostname}:${port}`;
+        }
 
         const codec = {
             requestParams: {
-                url: `${url}/rpc/${method.replace(/\./g, '/')}`
+                protocol,
+                hostname,
+                port,
+                path: `/rpc/${method.replace(/\./g, '/')}`
             }
         };
 
-        if (!key) key = url;
-
-        const cache = localCache[key] = localCache[key] || {};
+        const cache = localCache[url] = localCache[url] || {};
 
         if (localKeys && !cache.remoteKeys) {
             const {body} = await httpGet({
