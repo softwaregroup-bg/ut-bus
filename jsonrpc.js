@@ -576,7 +576,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
                         const result = decode(body.result);
-                        if (/\.service\.get$/.test(method)) Object.assign(result, requestParams);
+                        if (/\.service\.get$/.test(method)) Object.assign(result[0], requestParams);
                         resolve(result);
                     } else {
                         reject(errors['bus.jsonRpcEmpty']());
