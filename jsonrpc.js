@@ -364,8 +364,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     async function openIdConfig(issuer, headers, protocol) {
         try {
             if (issuer === 'ut-login') {
-                const {host, port} = await loginService();
-                issuer = `http://${host}:${port}/rpc/login/.well-known/openid-configuration`;
+                const {protocol, hostname, port} = await loginService();
+                issuer = `${protocol}://${hostname}:${port}/rpc/login/.well-known/openid-configuration`;
             } else {
                 if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
                 if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
@@ -381,8 +381,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     let actionsCache;
     async function actions(method) {
         if (actionsCache) return actionsCache[method];
-        const {host, port} = await loginService();
-        actionsCache = await get(`http://${host}:${port}/rpc/login/action`, errors, 'bus.action');
+        const {protocol, hostname, port} = await loginService();
+        actionsCache = await get(`${protocol}://${hostname}:${port}/rpc/login/action`, errors, 'bus.action');
         return actionsCache[method];
     }
 
