@@ -555,9 +555,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         };
                         reject(error);
                     } else if (body && body.error !== undefined) {
-                        if (body.jsonrpc) return reject(Object.assign(new Error(), decode(body.error)));
-                        if (typeof body.error === 'string') return reject(new Error(body.error));
-                        return reject(Object.assign(new Error(), body.error));
+                        const error =
+                            body.jsonrpc
+                                ? Object.assign(new Error(), decode(body.error))
+                                : typeof body.error === 'string'
+                                    ? new Error(body.error)
+                                    : Object.assign(new Error(), body.error);
+                        if (error.type) Object.defineProperty(error, 'name', {value: error.type, configurable: true, enumerable: false});
+                        reject(error);
                     } else if (response.statusCode < 200 || response.statusCode >= 300) {
                         reject(errors['bus.jsonRpcHttp']({
                             statusCode: response.statusCode,
@@ -794,7 +799,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
-                            logger.error && logger.error(error);
+                            logger.error && logger.error(errors['bus.requestValidation']({
+                                cause: error,
+                                params: {
+                                    message: error.message,
+                                    path: request.path,
+                                    method
+                                }
+                            }));
                             return h.response({
                                 ...jsonrpc && {
                                     jsonrpc: request.payload.jsonrpc,
