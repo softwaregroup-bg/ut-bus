@@ -1,3 +1,43 @@
+## [7.33.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.3...v7.33.4) (2020-11-05)
+
+
+
+## [7.33.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.2...v7.33.3) (2020-11-05)
+
+
+### Bug Fixes
+
+* upgrade jose ([a7ec71c](https://github.com/softwaregroup-bg/ut-bus/commit/a7ec71c42b110d09187a6da771fdfab5a9ebedfd))
+
+
+
+## [7.33.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.1...v7.33.2) (2020-11-05)
+
+
+### Bug Fixes
+
+* support arrays ([e19ef73](https://github.com/softwaregroup-bg/ut-bus/commit/e19ef73a5a14c06a98a85311070b4c1d74895881))
+
+
+
+## [7.33.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.0...v7.33.1) (2020-11-04)
+
+
+### Bug Fixes
+
+* improve logging ([63cf94f](https://github.com/softwaregroup-bg/ut-bus/commit/63cf94ff134b164bc2e27cb507b74eb3c46c8437))
+
+
+
+# [7.33.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.32.3...v7.33.0) (2020-11-03)
+
+
+### Features
+
+* improve error logging ([99875d7](https://github.com/softwaregroup-bg/ut-bus/commit/99875d7813162533a63a7597cd12017d4cc2affd))
+
+
+
 ## [7.32.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.32.2...v7.32.3) (2020-10-28)
 
 
