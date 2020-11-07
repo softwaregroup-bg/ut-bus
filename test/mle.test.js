@@ -11,8 +11,8 @@ tap.test('Bus to bus MLE', async test => {
             joi,
             jsonrpc: {
                 domain: 'bus1',
-                sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}),
-                encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'})
+                sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}).toJWK(true),
+                encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'}).toJWK(true)
             }
         });
     });
@@ -31,8 +31,10 @@ tap.test('Bus to bus MLE', async test => {
                         password: 'test'
                     }
                 },
-                sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}).toJWK(true),
-                encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'}).toJWK(true)
+                client: {
+                    sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}).toJWK(true),
+                    encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'}).toJWK(true)
+                }
             }
         });
     });
@@ -40,6 +42,7 @@ tap.test('Bus to bus MLE', async test => {
     test.test('Bus 3', async test => {
         const {uri: url} = bus1.rpc.info();
         const {hostname: host, port, protocol} = new URL(url);
+        const {uri: bus2url} = bus2.rpc.info();
         bus3 = await tests(test, false, {
             workDir: __dirname,
             joi,
@@ -49,7 +52,10 @@ tap.test('Bus to bus MLE', async test => {
                     bus1: {
                         host,
                         port,
-                        protocol,
+                        protocol
+                    },
+                    bus2: {
+                        url: bus2url,
                         username: 'test',
                         password: 'test'
                     }
@@ -63,7 +69,8 @@ tap.test('Bus to bus MLE', async test => {
         t.matchSnapshot(await bus2.importMethod('bus1/module.entity.echo')({echo: true}), 'Return encrypted boolean');
         t.matchSnapshot(await bus2.importMethod('bus1/module.entity.echo')({echo: 0}), 'Return encrypted integer');
         t.matchSnapshot(await bus2.importMethod('bus1/module.entity.echo')({echo: null}), 'Return encrypted null');
-        t.matchSnapshot(await bus3.importMethod('bus1/module.entity.public')({}), 'Call public');
+        t.matchSnapshot(await bus3.importMethod('bus1/module.entity.public')({}), 'Call bus 1 public');
+        t.matchSnapshot(await bus3.importMethod('bus2/module.entity.public')({}), 'Call bus 2 public');
     });
     await test.test('Bus 1 stop', () => bus1.stop());
     await test.test('Bus 2 stop', () => bus2.stop());

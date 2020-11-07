@@ -1,9 +1,42 @@
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const [httpGet, httpPost] = [request.get, request.post].map(require('util').promisify);
 const {JWT} = require('jose');
-module.exports = ({serverInfo, mle}) => {
+module.exports = ({serverInfo, mleClient}) => {
     const localCache = {};
-    const localKeys = mle.keys.sign && mle.keys.encrypt && {mlsk: mle.keys.sign, mlek: mle.keys.encrypt};
+    const localKeys = mleClient.keys.sign && mleClient.keys.encrypt && {mlsk: mleClient.keys.sign, mlek: mleClient.keys.encrypt};
+
+    async function login(cache, url, username, password, channel) {
+        const {sign, encrypt} = (localKeys && (cache.auth || cache.remoteKeys)) || {};
+        if (sign && encrypt) {
+            const {body: {result, error}} = await httpPost({
+                url: `${url}/rpc/login/identity/exchange`,
+                body: {
+                    jsonrpc: '2.0',
+                    method: 'login.identity.exchange',
+                    id: 1,
+                    params: mleClient.signEncrypt({username, password, channel}, encrypt, localKeys)
+                },
+                json: true
+            });
+            if (error) throw Object.assign(new Error(), mleClient.decryptVerify(error, sign));
+            cache.auth = mleClient.decryptVerify(result, sign);
+        } else {
+            const {body: {result, error}} = await httpPost({
+                url: `${url}/rpc/login/identity/check`,
+                body: {
+                    jsonrpc: '2.0',
+                    method: 'login.identity.check',
+                    id: 1,
+                    params: {username, password, channel}
+                },
+                json: true
+            });
+            if (error) throw Object.assign(new Error(), error);
+            cache.auth = result;
+        }
+        cache.tokenInfo = JWT.decode(cache.auth.access_token);
+    }
+
     return async function gateway({
         username,
         password,
@@ -54,10 +87,10 @@ module.exports = ({serverInfo, mle}) => {
         if (!cache.auth && !(username && password)) {
             if (cache.remoteKeys) {
                 codec.encode = params => ({
-                    params: mle.signEncrypt(params, cache.remoteKeys.encrypt, localKeys),
+                    params: mleClient.signEncrypt(params, cache.remoteKeys.encrypt, localKeys),
                     method
                 });
-                codec.decode = result => [mle.decryptVerify(result, cache.remoteKeys.sign), {mtid: 'response', method}];
+                codec.decode = result => [mleClient.decryptVerify(result, cache.remoteKeys.sign), {mtid: 'response', method}];
             } else {
                 codec.encode = params => ({params, method});
                 codec.decode = result => [result, {mtid: 'response', method}];
@@ -65,45 +98,13 @@ module.exports = ({serverInfo, mle}) => {
             return codec;
         }
 
-        async function login() {
-            const {sign, encrypt} = (localKeys && (cache.auth || cache.remoteKeys)) || {};
-            if (sign && encrypt) {
-                const {body: {result, error}} = await httpPost({
-                    url: `${url}/rpc/login/identity/exchange`,
-                    body: {
-                        jsonrpc: '2.0',
-                        method: 'login.identity.exchange',
-                        id: 1,
-                        params: mle.signEncrypt({username, password, channel}, encrypt, localKeys)
-                    },
-                    json: true
-                });
-                if (error) throw Object.assign(new Error(), mle.decryptVerify(error, sign));
-                cache.auth = mle.decryptVerify(result, sign);
-            } else {
-                const {body: {result, error}} = await httpPost({
-                    url: `${url}/rpc/login/identity/check`,
-                    body: {
-                        jsonrpc: '2.0',
-                        method: 'login.identity.check',
-                        id: 1,
-                        params: {username, password, channel}
-                    },
-                    json: true
-                });
-                if (error) throw Object.assign(new Error(), error);
-                cache.auth = result;
-            }
-            cache.tokenInfo = JWT.decode(cache.auth.access_token);
-        }
-
-        if (!cache.auth) await login();
+        if (!cache.auth) await login(cache, url, username, password, channel);
 
         const exp = Math.floor(Date.now() / 1000) + 5; // add 5 seconds just in case
 
         if (exp > cache.tokenInfo.exp) {
             if (exp > cache.tokenInfo.exp + cache.auth.refresh_token_expires_in - cache.auth.expires_in) {
-                await login();
+                await login(cache, url, username, password, channel);
             } else {
                 const {body} = await httpPost({
                     url: `${url}/rpc/login/token`,
@@ -120,13 +121,13 @@ module.exports = ({serverInfo, mle}) => {
 
         if (cache.auth.sign && cache.auth.encrypt) {
             codec.encode = params => ({
-                params: mle.signEncrypt(params, cache.auth.encrypt),
+                params: mleClient.signEncrypt(params, cache.auth.encrypt),
                 headers: {
                     authorization: 'Bearer ' + cache.auth.access_token
                 },
                 method
             });
-            codec.decode = result => [mle.decryptVerify(result, cache.auth.sign), {mtid: 'response', method}];
+            codec.decode = result => [mleClient.decryptVerify(result, cache.auth.sign), {mtid: 'response', method}];
         } else {
             codec.encode = params => ({
                 params,

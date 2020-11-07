@@ -272,7 +272,11 @@ exports[`test/mle.test.js TAP Bus to bus MLE Bus 3 Server getPath > method with 
 module.entity.action
 `
 
-exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call public 1`] = `
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 1 public 1`] = `
+public
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 2 public 1`] = `
 public
 `
 

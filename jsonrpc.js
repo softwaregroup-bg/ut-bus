@@ -400,6 +400,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     const issuers = (headers, protocol) => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers, protocol)));
     const mle = jose(socket);
+    const mleClient = jose(socket.client || {});
 
     async function createServer(port) {
         const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
@@ -479,7 +480,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     // wrap server.info in serverInfo function - hoisting not possible otherwise
-    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mle});
+    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient});
 
     function gateway($meta, methodName = $meta.method) {
         const [prefix, method = prefix] = methodName.split('/');
