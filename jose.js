@@ -26,7 +26,7 @@ module.exports = ({sign, encrypt}) => {
             sign: sign && signaturePrivateKey.toJWK(),
             encrypt: encrypt && encryptionPrivateKey.toJWK()
         },
-        signEncrypt: (message, key) => sign ? signEncrypt(message, signaturePrivateKey, JWK.asKey(key)) : message,
+        signEncrypt: (message, key, protectedHeader) => sign ? signEncrypt(message, signaturePrivateKey, JWK.asKey(key), protectedHeader) : message,
         decryptVerify: (message, key) => encrypt ? decryptVerify(message, JWK.asKey(key), encryptionPrivateKey) : message,
         decrypt: (message, options) => encrypt ? decrypt(message, encryptionPrivateKey, options) : message,
         verify

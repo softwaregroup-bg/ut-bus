@@ -4,8 +4,13 @@
         "deregistercriticalserviceafter",
         "etag",
         "fsplus",
+        "hemera",
+        "mdns",
         "mlek",
         "moleculer",
+        "nats",
+        "oidc",
+        "rabbot",
         "reqrep"
     ]
 }
