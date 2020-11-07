@@ -517,7 +517,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 followRedirect: false,
                 json: true,
                 method: 'POST',
-                url: `http://${requestParams.hostname}:${requestParams.port}${requestParams.path}`,
+                url: `${requestParams.protocol}://${requestParams.hostname}:${requestParams.port}${requestParams.path}`,
                 body: {
                     jsonrpc: '2.0',
                     method,

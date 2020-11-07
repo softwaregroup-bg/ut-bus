@@ -54,7 +54,7 @@ module.exports = ({serverInfo, mleClient}) => {
             const parsed = new URL(url);
             hostname = parsed.hostname;
             port = parsed.port;
-            protocol = parsed.protocol;
+            protocol = parsed.protocol.split(':')[0];
         } else {
             protocol = protocol && protocol.split(':')[0];
             url = `${protocol}://${hostname}:${port}`;
