@@ -1,3 +1,12 @@
+# [7.34.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.4...v7.34.0) (2020-11-07)
+
+
+### Features
+
+* bus to bus gateway with optional MLE ([#92](https://github.com/softwaregroup-bg/ut-bus/issues/92)) ([6e400ca](https://github.com/softwaregroup-bg/ut-bus/commit/6e400cae11d8bfe5343c3b7ef79eccb1c813c9ab))
+
+
+
 ## [7.33.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.3...v7.33.4) (2020-11-05)
 
 
