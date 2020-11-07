@@ -18,6 +18,7 @@
     "bus.jwtInvalid": {"message": "Invalid authentication ({message})", "statusCode": 401},
     "bus.oidcHttp": {"message": "OpenID returned HTTP error {code}", "statusCode": 401},
     "bus.oidcEmpty": {"message": "OpenID returned empty response", "statusCode": 401},
+    "bus.authenticationFailed": {"message": "Authentication failed", "statusCode": 401},
     "bus.actionHttp": {"message": "Listing actions returned HTTP error {code}", "statusCode": 403},
     "bus.actionEmpty": {"message": "Listing actions returned empty response", "statusCode": 403},
     "bus.oidcNoIssuer": {"message": "Missing issuer in authentication token", "statusCode": 401},

@@ -44,6 +44,7 @@ const api = (server, errors) => ({
     'login.request': async(params, {auth, method, httpRequest: {url}}) => {
         switch (method) {
             case 'login.identity.authenticate':
+                if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
                 return [
                     JWT.sign({
                         typ: 'Bearer',
@@ -58,6 +59,7 @@ const api = (server, errors) => ({
                 ];
             case 'login.identity.check':
             case 'login.identity.exchange': {
+                if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
                 const {sign, encrypt} = server.publicApi.info();
                 return [{
                     encrypt,
