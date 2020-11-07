@@ -293,19 +293,19 @@ const prePlain = (checkAuth, workDir, method, version, logger) => [{
 
 const domainResolver = domain => {
     const resolver = require('mdns-resolver');
-    const getHostName = host => `${host}-${domain}.dns-discovery.local`;
+    const getHostName = service => `${service}-${domain}.dns-discovery.local`;
     const cache = {};
-    return async function resolve(host, invalidate) {
+    return async function resolve(service, invalidate) {
         const now = hrtime();
-        const hostName = getHostName(host);
+        const hostName = getHostName(service);
         if (invalidate) {
-            delete cache[getHostName(host)];
+            delete cache[hostName];
         } else {
             const cached = cache[hostName];
             if (cached) {
                 if (hrtime(cached[0])[0] < 3) {
                     cached[0] = now;
-                    return {...cached[1], cache: host};
+                    return {...cached[1], cache: service};
                 } else {
                     delete cache[hostName];
                 }
@@ -313,7 +313,7 @@ const domainResolver = domain => {
         }
         const resolved = await resolver.resolveSrv(hostName);
         const result = {
-            host: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
+            hostname: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
             port: resolved.port
         };
         cache[hostName] = [now, result];
@@ -334,8 +334,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     async function discoverService(namespace) {
+        const serviceName = (prefix + namespace.replace(/\//g, '-') + suffix);
         const params = {
-            host: socket.host || (prefix + namespace.replace(/\//g, '-') + suffix),
+            protocol: server.info.protocol,
+            hostname: socket.host || serviceName,
             port: socket.port || server.info.port,
             service
         };
@@ -346,15 +348,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 passing: true
             });
             if (!services || !services.length) {
-                throw errors['bus.consulServiceNotFound']({params: {namespace}});
+                throw errors['bus.consulServiceNotFound']({params: {serviceName}});
             }
             Object.assign(requestParams, {
-                host: services[0].Node.Address,
+                hostname: services[0].Node.Address,
                 port: services[0].Service.Port
             });
         }
         if (resolver) {
-            Object.assign(requestParams, await resolver(params.host));
+            Object.assign(requestParams, await resolver(serviceName));
         }
         return requestParams;
     }
@@ -362,8 +364,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     async function openIdConfig(issuer, headers, protocol) {
         try {
             if (issuer === 'ut-login') {
-                const {host, port} = await loginService();
-                issuer = `http://${host}:${port}/rpc/login/.well-known/openid-configuration`;
+                const {protocol, hostname, port} = await loginService();
+                issuer = `${protocol}://${hostname}:${port}/rpc/login/.well-known/openid-configuration`;
             } else {
                 if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
                 if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
@@ -379,8 +381,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     let actionsCache;
     async function actions(method) {
         if (actionsCache) return actionsCache[method];
-        const {host, port} = await loginService();
-        actionsCache = await get(`http://${host}:${port}/rpc/login/action`, errors, 'bus.action');
+        const {protocol, hostname, port} = await loginService();
+        actionsCache = await get(`${protocol}://${hostname}:${port}/rpc/login/action`, errors, 'bus.action');
         return actionsCache[method];
     }
 
@@ -398,6 +400,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     const issuers = (headers, protocol) => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers, protocol)));
     const mle = jose(socket);
+    const mleClient = jose(socket.client || {});
 
     async function createServer(port) {
         const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
@@ -477,7 +480,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     // wrap server.info in serverInfo function - hoisting not possible otherwise
-    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mle});
+    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient});
 
     function gateway($meta, methodName = $meta.method) {
         const [prefix, method = prefix] = methodName.split('/');
@@ -497,11 +500,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         const op = ['start', 'stop', 'drain'].includes(event) ? event : methodType;
 
         return {
-            encode: params => ({params: [params, $meta]}),
+            encode: (...params) => ({params}),
             decode: result => result,
             requestParams: {
                 ...await discoverService(namespace),
-                uri: `/rpc/ports/${namespace}/${op}`
+                path: `/rpc/ports/${namespace}/${op}`
             }
         };
     }
@@ -509,12 +512,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function brokerMethod(typeName, methodType) {
         return async function(msg, $meta) {
             const {encode, decode, requestParams} = await codec($meta, methodType);
-            const {params, headers, method = $meta.method} = await encode(msg, $meta);
+            const {params, headers, method = $meta.method} = await encode(...arguments);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
                 method: 'POST',
-                url: requestParams.url || `http://${requestParams.host}:${requestParams.port}${requestParams.uri}`,
+                url: `http://${requestParams.hostname}:${requestParams.port}${requestParams.path}`,
                 body: {
                     jsonrpc: '2.0',
                     method,
@@ -553,9 +556,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         };
                         reject(error);
                     } else if (body && body.error !== undefined) {
-                        if (body.jsonrpc) return reject(Object.assign(new Error(), decode(body.error)));
-                        if (typeof body.error === 'string') return reject(new Error(body.error));
-                        return reject(Object.assign(new Error(), body.error));
+                        const error =
+                            body.jsonrpc
+                                ? Object.assign(new Error(), decode(body.error))
+                                : typeof body.error === 'string'
+                                    ? new Error(body.error)
+                                    : Object.assign(new Error(), body.error);
+                        if (error.type) Object.defineProperty(error, 'name', {value: error.type, configurable: true, enumerable: false});
+                        reject(error);
                     } else if (response.statusCode < 200 || response.statusCode >= 300) {
                         reject(errors['bus.jsonRpcHttp']({
                             statusCode: response.statusCode,
@@ -569,7 +577,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
                         const result = decode(body.result);
-                        if (/\.service\.get$/.test(method)) Object.assign(result, requestParams);
+                        if (/\.service\.get$/.test(method)) Object.assign(result[0], requestParams);
                         resolve(result);
                     } else {
                         reject(errors['bus.jsonRpcEmpty']());
@@ -661,7 +669,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     (jsonrpc && 'jsonrpc')
                 ).header('x-envoy-decorator-operation', method);
                 if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
-                return applyMeta(response, results && Array.isArray(results) && results[results.length - 1]);
+                return applyMeta(response, results && Array.isArray(results) && results.length > 1 && results[results.length - 1]);
             } catch (error) {
                 return h.response({
                     jsonrpc,
@@ -792,7 +800,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
-                            logger.error && logger.error(error);
+                            logger.error && logger.error(errors['bus.requestValidation']({
+                                cause: error,
+                                params: {
+                                    message: error.message,
+                                    path: request.path,
+                                    method
+                                }
+                            }));
                             return h.response({
                                 ...jsonrpc && {
                                     jsonrpc: request.payload.jsonrpc,

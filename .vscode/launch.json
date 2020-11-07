@@ -9,17 +9,28 @@
             "request": "launch",
             "name": "Test",
             "outputCapture": "std",
-            "program": "${workspaceFolder}/test/jsonrpc.test.js"
+            "program": "${workspaceFolder}/test/${input:test}"
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Test Snapshot",
             "outputCapture": "std",
-            "program": "${workspaceFolder}/test/jsonrpc.test.js",
+            "program": "${workspaceFolder}/test/${input:test}",
             "env": {
                 "TAP_SNAPSHOT": "1"
             }
         }
-    ]
+    ],
+    "inputs": [{
+        "id": "test",
+        "type": "pickString",
+        "description": "Pick test to run",
+        "options": [
+            "mle.test.js",
+            "bus.test.js",
+            "jsonrpc.test.js",
+            "utError.test.js"
+        ]
+    }]
 }
