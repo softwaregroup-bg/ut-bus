@@ -272,12 +272,117 @@ exports[`test/mle.test.js TAP Bus to bus MLE Bus 3 Server getPath > method with 
 module.entity.action
 `
 
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 > server.config 1`] = `
+undefined
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 > server.errors 1`] = `
+Object {
+  "errors": Array [
+    "bus",
+    "bus.actionEmpty",
+    "bus.actionHttp",
+    "bus.bindingFailed",
+    "bus.cacheFailed",
+    "bus.cacheOperationMissing",
+    "bus.consulServiceNotFound",
+    "bus.destinationNotFound",
+    "bus.jsonRpcEmpty",
+    "bus.jsonRpcHttp",
+    "bus.jwtInvalid",
+    "bus.jwtInvalidKey",
+    "bus.jwtMissingHeader",
+    "bus.methodNotFound",
+    "bus.missingMethod",
+    "bus.mleDecrypt",
+    "bus.mleEncrypt",
+    "bus.notInitialized",
+    "bus.oidcBadIssuer",
+    "bus.oidcEmpty",
+    "bus.oidcHttp",
+    "bus.oidcNoIssuer",
+    "bus.oidcNoKid",
+    "bus.remoteMethodNotFound",
+    "bus.requestValidation",
+    "bus.responseValidation",
+    "bus.timeout",
+    "bus.unauthorized",
+    "bus.unhandledError",
+    "defineError",
+    "fetchErrors",
+    "getError",
+  ],
+}
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 > server.performance after 1`] = `
+Object {
+  "prometheus": Function prometheus(),
+}
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 > server.performance before 1`] = `
+null
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server attach handlers > validation handlers 1`] = `
+undefined
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getOpcode > method with # 1`] = `
+action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getOpcode > method with / 1`] = `
+action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getOpcode > method with ? 1`] = `
+action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getOpcode > method with [] 1`] = `
+action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getPath > method with # 1`] = `
+module.entity.action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getPath > method with / 1`] = `
+destination/module.entity.action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getPath > method with ? 1`] = `
+module.entity.action
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Bus 4 Server getPath > method with [] 1`] = `
+module.entity.action
+`
+
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 1 public 1`] = `
+public
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 1 public cached 1`] = `
 public
 `
 
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 2 public 1`] = `
 public
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 2 public cached 1`] = `
+public
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 3 action 1`] = `
+TEXT
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 3 action cached 1`] = `
+TEXT
 `
 
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Return encrypted array 1`] = `
