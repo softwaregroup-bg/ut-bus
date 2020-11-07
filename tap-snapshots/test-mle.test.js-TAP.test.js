@@ -378,11 +378,11 @@ public
 `
 
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 3 action 1`] = `
-TEXT
+public
 `
 
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Call bus 3 action cached 1`] = `
-TEXT
+public
 `
 
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Return encrypted array 1`] = `

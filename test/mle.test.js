@@ -69,9 +69,7 @@ tap.test('Bus to bus MLE', async test => {
                 domain: 'bus4',
                 gateway: {
                     bus3: {
-                        url: bus3.rpc.info().uri,
-                        username: 'test',
-                        password: 'test'
+                        url: bus3.rpc.info().uri
                     }
                 },
                 client: {
@@ -92,8 +90,8 @@ tap.test('Bus to bus MLE', async test => {
         t.matchSnapshot(await bus3.importMethod('bus1/module.entity.public')({}), 'Call bus 1 public cached');
         t.matchSnapshot(await bus3.importMethod('bus2/module.entity.public')({}), 'Call bus 2 public');
         t.matchSnapshot(await bus3.importMethod('bus2/module.entity.public')({}), 'Call bus 2 public cached');
-        t.matchSnapshot(await bus4.importMethod('bus3/module.entity.action')({text: 'text'}), 'Call bus 3 action');
-        t.matchSnapshot(await bus4.importMethod('bus3/module.entity.action')({text: 'text'}), 'Call bus 3 action cached');
+        t.matchSnapshot(await bus4.importMethod('bus3/module.entity.public')({text: 'text'}), 'Call bus 3 action');
+        t.matchSnapshot(await bus4.importMethod('bus3/module.entity.public')({text: 'text'}), 'Call bus 3 action cached');
     });
     await test.test('Bus 1 stop', () => bus1.stop());
     await test.test('Bus 2 stop', () => bus2.stop());
