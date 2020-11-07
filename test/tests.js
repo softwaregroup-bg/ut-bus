@@ -25,6 +25,8 @@ const api = (server, errors) => ({
                 return ['Entity ' + entityId];
             case 'module.entity.empty':
                 return;
+            case 'module.entity.public':
+                return ['public'];
             case 'module.entity.echo':
                 return [echo];
             case 'module.entity.file':
@@ -54,6 +56,7 @@ const api = (server, errors) => ({
                         expiresIn: '8 h'
                     })
                 ];
+            case 'login.identity.check':
             case 'login.identity.exchange': {
                 const {sign, encrypt} = server.publicApi.info();
                 return [{
@@ -164,6 +167,13 @@ module.exports = async(test, clientConfig, serverConfig) => {
                     result: joi.object()
                 };
             },
+            'login.identity.check'() {
+                return {
+                    auth: false,
+                    params: joi.object(),
+                    result: joi.object()
+                };
+            },
             'login.oidc.getConfiguration'() {
                 return {
                     method: 'GET',
@@ -212,6 +222,12 @@ module.exports = async(test, clientConfig, serverConfig) => {
             },
             'module.entity.empty'() {
                 return {
+                };
+            },
+            'module.entity.public'() {
+                return {
+                    auth: false,
+                    params: joi.object()
                 };
             },
             'module.entity.echo'() {

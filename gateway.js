@@ -23,6 +23,7 @@ module.exports = ({serverInfo, mle}) => {
             port = parsed.port;
             protocol = parsed.protocol;
         } else {
+            protocol = protocol && protocol.split(':')[0];
             url = `${protocol}://${hostname}:${port}`;
         }
 
