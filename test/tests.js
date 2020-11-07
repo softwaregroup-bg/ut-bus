@@ -10,7 +10,7 @@ const jwks = new JWKS.KeyStore();
 jwks.add(key);
 
 const api = (server, errors) => ({
-    'module.request': async({text, entityId} = {}, {method}) => {
+    'module.request': async({text, entityId, echo} = {}, {method}) => {
         switch (method) {
             case 'module.entity.actionTimeout':
             case 'module.entity.actionCached':
@@ -25,6 +25,10 @@ const api = (server, errors) => ({
                 return ['Entity ' + entityId];
             case 'module.entity.empty':
                 return;
+            case 'module.entity.public':
+                return ['public'];
+            case 'module.entity.echo':
+                return [echo];
             case 'module.entity.file':
                 return [url.pathToFileURL(path.join(__dirname, 'file.txt'))];
             case 'module.entity.stream': {
@@ -37,9 +41,10 @@ const api = (server, errors) => ({
                 throw server.errors['bus.methodNotFound']({params: {method}});
         }
     },
-    'login.request': async(params, {method, httpRequest: {url}}) => {
+    'login.request': async(params, {auth, method, httpRequest: {url}}) => {
         switch (method) {
             case 'login.identity.authenticate':
+                if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
                 return [
                     JWT.sign({
                         typ: 'Bearer',
@@ -52,16 +57,42 @@ const api = (server, errors) => ({
                         expiresIn: '8 h'
                     })
                 ];
+            case 'login.identity.check':
+            case 'login.identity.exchange': {
+                if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
+                const {sign, encrypt} = server.publicApi.info();
+                return [{
+                    encrypt,
+                    sign,
+                    token_type: 'Bearer',
+                    scope: 'openid',
+                    access_token: JWT.sign({
+                        typ: 'Bearer',
+                        per: Buffer.from([31]).toString('Base64'),
+                        ...auth && auth.mlek && {enc: JWK.asKey(auth.mlek)},
+                        ...auth && auth.mlsk && {sig: JWK.asKey(auth.mlsk)}
+                    }, key, {
+                        issuer: 'ut-login',
+                        audience: 'ut-bus',
+                        expiresIn: '8 h'
+                    })
+                }];
+            }
             case 'login.oidc.getConfiguration':
                 return [{
                     jwks_uri: new URL('../jwks', url.href).href
                 }];
+            case 'login.oidc.mle': {
+                const {sign, encrypt} = server.publicApi.info();
+                return [{sign, encrypt}];
+            }
             case 'login.action.map':
                 return [{
                     'module.entity.action': 1,
                     'module.entity.get': 2,
                     'module.entity.file': 3,
-                    'module.entity.stream': 4
+                    'module.entity.stream': 4,
+                    'module.entity.echo': 5
                 }];
             case 'login.oidc.getKeys':
                 return [jwks.toJWKS()];
@@ -131,10 +162,31 @@ module.exports = async(test, clientConfig, serverConfig) => {
                     }
                 };
             },
+            'login.identity.exchange'() {
+                return {
+                    auth: 'exchange',
+                    params: joi.object(),
+                    result: joi.object()
+                };
+            },
+            'login.identity.check'() {
+                return {
+                    auth: false,
+                    params: joi.object(),
+                    result: joi.object()
+                };
+            },
             'login.oidc.getConfiguration'() {
                 return {
                     method: 'GET',
                     path: '/.well-known/openid-configuration',
+                    auth: false
+                };
+            },
+            'login.oidc.mle'() {
+                return {
+                    method: 'GET',
+                    path: '/.well-known/mle',
                     auth: false
                 };
             },
@@ -172,6 +224,17 @@ module.exports = async(test, clientConfig, serverConfig) => {
             },
             'module.entity.empty'() {
                 return {
+                };
+            },
+            'module.entity.public'() {
+                return {
+                    auth: false,
+                    params: joi.object()
+                };
+            },
+            'module.entity.echo'() {
+                return {
+                    params: joi.object()
                 };
             },
             'module.entity.file'() {

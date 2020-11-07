@@ -43,8 +43,8 @@ tap.test('Bus routes', async test => {
             openId: [
                 'https://accounts.google.com'
             ],
-            sign,
-            encrypt
+            sign: sign.toJWK(true),
+            encrypt: encrypt.toJWK(true)
         }
     });
     const {uri} = server.rpc.info();
