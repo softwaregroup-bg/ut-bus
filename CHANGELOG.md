@@ -1,3 +1,12 @@
+## [7.34.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.34.0...v7.34.1) (2020-11-10)
+
+
+### Bug Fixes
+
+* stream handling ([550c677](https://github.com/softwaregroup-bg/ut-bus/commit/550c677948fdfdb0643494fe1c0e3cfbde6a3417))
+
+
+
 # [7.34.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.33.4...v7.34.0) (2020-11-07)
 
 
