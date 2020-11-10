@@ -510,9 +510,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     function brokerMethod(typeName, methodType) {
-        return async function(msg, $meta) {
+        return async function(msg, ...rest) {
+            const {stream, ...$meta} = rest.pop();
             const {encode, decode, requestParams} = await codec($meta, methodType);
-            const {params, headers, method = $meta.method} = await encode(...arguments);
+            const {params, headers, method = $meta.method} = await encode(msg, ...rest, $meta);
             const sendRequest = callback => request({
                 followRedirect: false,
                 json: true,
@@ -530,7 +531,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     ...$meta.forward,
                     ...headers
                 }
-            }, callback);
+            }, stream ? undefined : callback);
 
             return new Promise((resolve, reject) => {
                 const callback = async(error, response, body) => {
@@ -583,7 +584,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         reject(errors['bus.jsonRpcEmpty']());
                     }
                 };
-                sendRequest(callback);
+                const response = sendRequest(callback);
+                if (stream) resolve([response]);
             });
         };
     }
@@ -652,20 +654,25 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 const result = shift ? results[0] : results;
                 const result0 = [].concat(result)[0];
                 const response = (type => {
-                    switch (type) {
-                        case 'file:': {
-                            const [file, options = {confine: workDir}] = [].concat(result);
-                            return h.file(url.fileURLToPath(file), options);
+                    try {
+                        switch (type) {
+                            case 'file:': {
+                                const [file, options = {confine: workDir}] = [].concat(result);
+                                return h.file(url.fileURLToPath(file), options);
+                            }
+                            case 'http:':
+                            case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
+                            case 'stream': return h.response(result0);
+                            case 'jsonrpc': return h.response({jsonrpc, id, result});
+                            default: return h.response(result);
                         }
-                        case 'http:':
-                        case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
-                        case 'stream': return h.response(result);
-                        case 'jsonrpc': return h.response({jsonrpc, id, result});
-                        default: return h.response(result);
+                    } catch (error) {
+                        logger && logger.error && logger.error(error);
+                        throw error;
                     }
                 })(
                     (result0 instanceof URL && result0.protocol) ||
-                    (result instanceof Stream && 'stream') ||
+                    (result0 instanceof Stream && 'stream') ||
                     (jsonrpc && 'jsonrpc')
                 ).header('x-envoy-decorator-operation', method);
                 if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
