@@ -1,3 +1,12 @@
+## [7.35.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.0...v7.35.1) (2020-11-12)
+
+
+### Bug Fixes
+
+* handle incorrect gateway url configuration ([#93](https://github.com/softwaregroup-bg/ut-bus/issues/93)) ([419d43e](https://github.com/softwaregroup-bg/ut-bus/commit/419d43e8f9b19aa3d002dd6087309547757ed90b))
+
+
+
 # [7.35.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.34.1...v7.35.0) (2020-11-12)
 
 
