@@ -1,7 +1,7 @@
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
-const [httpGet, httpPost] = [request.get, request.post].map(require('util').promisify);
+const [httpPost] = [request.post].map(require('util').promisify);
 const {JWT} = require('jose');
-module.exports = ({serverInfo, mleClient}) => {
+module.exports = ({serverInfo, mleClient, errors, get}) => {
     const localCache = {};
     const localKeys = mleClient.keys.sign && mleClient.keys.encrypt && {mlsk: mleClient.keys.sign, mlek: mleClient.keys.encrypt};
 
@@ -72,10 +72,7 @@ module.exports = ({serverInfo, mleClient}) => {
         const cache = localCache[url] = localCache[url] || {};
 
         if (localKeys && !cache.remoteKeys) {
-            const {body} = await httpGet({
-                url: `${url}/rpc/login/.well-known/mle`,
-                json: true
-            });
+            const body = await get(`${url}/rpc/login/.well-known/mle`, errors, 'bus.jsonRpc');
             if (body.sign && body.encrypt) cache.remoteKeys = body;
         }
 

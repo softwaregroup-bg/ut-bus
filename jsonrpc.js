@@ -480,7 +480,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     // wrap server.info in serverInfo function - hoisting not possible otherwise
-    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient});
+    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient, errors, get});
 
     function gateway($meta, methodName = $meta.method) {
         const [prefix, method = prefix] = methodName.split('/');

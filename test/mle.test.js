@@ -80,6 +80,11 @@ tap.test('Bus to bus MLE', async test => {
                     },
                     bus3: {
                         url: bus3.rpc.info().uri
+                    },
+                    busX: {
+                        url: bus3.rpc.info().uri + '/wrong',
+                        username: 'whatever',
+                        password: 'whatever'
                     }
                 },
                 client: {
@@ -104,6 +109,7 @@ tap.test('Bus to bus MLE', async test => {
         t.rejects(bus4.importMethod('bus2/module.entity.public')({}), {type: 'bus.authenticationFailed'}, 'Authentication failed');
         t.matchSnapshot(await bus4.importMethod('bus3/module.entity.public')({}), 'Call bus 3 action');
         t.matchSnapshot(await bus4.importMethod('bus3/module.entity.public')({}), 'Call bus 3 action cached');
+        t.rejects(bus4.importMethod('busX/module.entity.public')({}), {type: 'bus.jsonRpcHttp'}, 'Incorrect gateway url');
     });
     await test.test('Bus 1 stop', () => bus1.stop());
     await test.test('Bus 2 stop', () => bus2.stop());
