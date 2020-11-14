@@ -1,3 +1,12 @@
+## [7.35.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.1...v7.35.2) (2020-11-14)
+
+
+### Bug Fixes
+
+* resolve upload on finish ([1047711](https://github.com/softwaregroup-bg/ut-bus/commit/10477112395d68b8686a478490400d8260661e31))
+
+
+
 ## [7.35.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.0...v7.35.1) (2020-11-12)
 
 
