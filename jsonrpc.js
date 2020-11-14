@@ -229,8 +229,7 @@ const uploads = async(workDir, request, logger) => {
                             logger.error && logger.error(error);
                             reject(error);
                         });
-                        part.on('end', resolve);
-                        part.pipe(fs.createWriteStream(filename));
+                        part.pipe(fs.createWriteStream(filename)).on('finish', resolve);
                     }));
                 }
             })
