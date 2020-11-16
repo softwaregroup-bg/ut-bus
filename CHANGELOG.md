@@ -1,3 +1,12 @@
+## [7.35.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.2...v7.35.3) (2020-11-16)
+
+
+### Bug Fixes
+
+* remote host ip DNS discovery ([70bba70](https://github.com/softwaregroup-bg/ut-bus/commit/70bba7015a840dc08bdc183a7faef12125fe58ea))
+
+
+
 ## [7.35.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.1...v7.35.2) (2020-11-14)
 
 
