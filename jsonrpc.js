@@ -291,7 +291,7 @@ const prePlain = (checkAuth, workDir, method, version, logger) => [{
 }];
 
 const domainResolver = domain => {
-    const resolver = require('mdns-resolver');
+    const resolver = require('./resolver');
     const getHostName = service => `${service}-${domain}.dns-discovery.local`;
     const cache = {};
     return async function resolve(service, invalidate) {
@@ -310,7 +310,7 @@ const domainResolver = domain => {
                 }
             }
         }
-        const resolved = await resolver.resolveSrv(hostName);
+        const resolved = await resolver(hostName, 'SRV');
         const result = {
             hostname: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
             port: resolved.port
