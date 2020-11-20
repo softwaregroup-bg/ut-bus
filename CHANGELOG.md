@@ -1,3 +1,12 @@
+## [7.35.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.3...v7.35.4) (2020-11-20)
+
+
+### Bug Fixes
+
+* display impl version in api docs ([1bbb9df](https://github.com/softwaregroup-bg/ut-bus/commit/1bbb9df601486bb9606375b324c0d955c6b406ee))
+
+
+
 ## [7.35.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.2...v7.35.3) (2020-11-16)
 
 
