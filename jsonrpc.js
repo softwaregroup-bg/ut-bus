@@ -320,7 +320,7 @@ const domainResolver = domain => {
     };
 };
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi, version}) {
     let loginCache;
     async function loginService() {
         if (!loginCache) loginCache = discoverService('login');
@@ -449,7 +449,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         this.error(error);
         throw error;
     }));
-    const utApi = await require('ut-api')({service, auth: 'openId', ...socket.api}, errors, issuers, internal);
+    const utApi = await require('ut-api')({service, version, auth: 'openId', ...socket.api}, errors, issuers, internal);
 
     utApi.route([{
         method: 'GET',
