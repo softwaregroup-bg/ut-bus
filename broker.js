@@ -54,6 +54,7 @@ class Broker {
             mapLocal: this.mapLocal,
             workDir: this.workDir,
             joi: this.joi,
+            version: this.version,
             processError: this.processError,
             service: this.service,
             errors: this.errors,
