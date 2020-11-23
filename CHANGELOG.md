@@ -1,3 +1,12 @@
+## [7.35.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.4...v7.35.5) (2020-11-23)
+
+
+### Bug Fixes
+
+* pipe returned stream ([a0a21a3](https://github.com/softwaregroup-bg/ut-bus/commit/a0a21a3fc139b2763ab51e463433b05672de5165))
+
+
+
 ## [7.35.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.3...v7.35.4) (2020-11-20)
 
 
