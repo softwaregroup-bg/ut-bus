@@ -670,7 +670,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }
                             case 'http:':
                             case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
-                            case 'stream': return h.response(result0);
+                            case 'stream': return h.response(result0.pipe(new Stream.PassThrough()));
                             case 'jsonrpc': return h.response({jsonrpc, id, result});
                             default: return h.response(result);
                         }
