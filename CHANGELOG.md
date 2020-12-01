@@ -1,3 +1,14 @@
+# [7.36.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.5...v7.36.0) (2020-12-01)
+
+
+### Features
+
+* allow capture of http requests and responses ([4ddf577](https://github.com/softwaregroup-bg/ut-bus/commit/4ddf577c5e576d7e8b9465fb3b369ab989c9b01e))
+* allow jsonrpc client only mode ([a6f57b8](https://github.com/softwaregroup-bg/ut-bus/commit/a6f57b816312db18ac8efa6088f57b8f77889827))
+* allow passing credentials in the URL ([14dbc76](https://github.com/softwaregroup-bg/ut-bus/commit/14dbc764a96ffe69c71db8b575b13454eba34673))
+
+
+
 ## [7.35.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.4...v7.35.5) (2020-11-23)
 
 
