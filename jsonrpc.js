@@ -2,10 +2,12 @@
 const Stream = require('stream');
 const url = require('url');
 const hapi = require('@hapi/hapi');
-const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
+const req = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const Boom = require('@hapi/boom');
 const Inert = require('@hapi/inert');
 const H2o2 = require('@hapi/h2o2');
+const bourne = require('@hapi/bourne');
+const querystring = require('querystring');
 const os = require('os');
 const osName = [os.type(), os.platform(), os.release()].join(':');
 const hrtime = require('browser-process-hrtime');
@@ -26,39 +28,6 @@ function initConsul({discover, ...config}) {
 
     return consul;
 }
-
-const get = (url, errors, prefix, headers, protocol) => new Promise((resolve, reject) => {
-    request({
-        json: true,
-        method: 'GET',
-        url,
-        ...headers && {
-            headers: {
-                'x-forwarded-proto': headers['x-forwarded-proto'] || protocol,
-                'x-forwarded-host': headers['x-forwarded-host'] || headers.host
-            }
-        }
-    }, (error, response, body) => {
-        if (error) {
-            reject(error);
-        } else if (response.statusCode < 200 || response.statusCode >= 300) {
-            reject(errors[prefix + 'Http']({
-                statusCode: response.statusCode,
-                statusText: response.statusText,
-                statusMessage: response.statusMessage,
-                validation: response.body && response.body.validation,
-                debug: response.body && response.body.debug,
-                params: {
-                    code: response.statusCode
-                }
-            }));
-        } else if (body) {
-            resolve(body);
-        } else {
-            reject(errors[prefix + 'Empty']());
-        }
-    });
-});
 
 function forward(headers) {
     return [
@@ -133,11 +102,22 @@ async function failPreRpc(request, h, error) {
         .takeover();
 }
 
-const preArray = [{
+const preArray = capture => [capture && {
+    assign: 'body',
+    failAction: 'error',
+    method: ({payload, mime}) => {
+        switch (mime) {
+            case 'application/json':
+                return payload.length ? bourne.parse(payload.toString('utf8')) : null; // see https://hueniverse.com/a-tale-of-prototype-poisoning-2610fa170061
+            case 'application/x-www-form-urlencoded':
+                return payload.length ? querystring.parse(payload.toString('utf8')) : {};
+        }
+    }
+}, {
     assign: 'utBus',
     failAction: failPre,
     method: (request, h) => {
-        const {jsonrpc, id, method, params: [...params]} = request.payload;
+        const {jsonrpc, id, method, params: [...params]} = capture ? request.pre.body : request.payload;
         const meta = params.pop();
         return {
             jsonrpc,
@@ -154,7 +134,7 @@ const preArray = [{
             ]
         };
     }
-}];
+}].filter(Boolean);
 
 const preJsonRpc = (checkAuth, version, logger) => [{
     assign: 'utBus',
@@ -321,6 +301,40 @@ const domainResolver = domain => {
 };
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi, version}) {
+    const request = socket.capture ? require('ut-function.capture-request')(req, {name: `${socket.capture}/client`}) : req;
+    const get = (url, errors, prefix, headers, protocol) => new Promise((resolve, reject) => {
+        request({
+            json: true,
+            method: 'GET',
+            url,
+            ...headers && {
+                headers: {
+                    'x-forwarded-proto': headers['x-forwarded-proto'] || protocol,
+                    'x-forwarded-host': headers['x-forwarded-host'] || headers.host
+                }
+            }
+        }, (error, response, body) => {
+            if (error) {
+                reject(error);
+            } else if (response.statusCode < 200 || response.statusCode >= 300) {
+                reject(errors[prefix + 'Http']({
+                    statusCode: response.statusCode,
+                    statusText: response.statusText,
+                    statusMessage: response.statusMessage,
+                    validation: response.body && response.body.validation,
+                    debug: response.body && response.body.debug,
+                    params: {
+                        code: response.statusCode
+                    }
+                }));
+            } else if (body) {
+                resolve(body);
+            } else {
+                reject(errors[prefix + 'Empty']());
+            }
+        });
+    });
+
     let loginCache;
     async function loginService() {
         if (!loginCache) loginCache = discoverService('login');
@@ -432,6 +446,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 }
             }
         ]);
+
+        if (socket.capture) {
+            await result.register({
+                plugin: require('ut-function.capture-hapi'),
+                options: {
+                    name: `${socket.capture}/server`
+                }
+            });
+        }
 
         result.events.on('start', () => {
             logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: result.info});
@@ -700,6 +723,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             route.settings.handler = handler;
             return route;
         }
+        const pre = preArray(socket.capture);
 
         return Promise.resolve()
             .then(() => consul && consul.agent.service.register({
@@ -722,10 +746,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 method: 'POST',
                 path,
                 options: {
-                    pre: preArray,
+                    pre,
                     payload: {
                         output: 'data',
-                        parse: true,
+                        parse: socket.capture ? 'gunzip' : true,
+                        allow: ['application/json', 'application/x-www-form-urlencoded'],
                         maxBytes: socket.maxBytes
                     },
                     validate: {
