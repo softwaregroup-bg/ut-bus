@@ -335,7 +335,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     async function discoverService(namespace) {
         const serviceName = (prefix + namespace.replace(/\//g, '-') + suffix);
         const params = {
-            protocol: server.info.protocol,
+            protocol: socket.protocol || server.info.protocol,
             hostname: socket.host || serviceName,
             port: socket.port || server.info.port,
             service
@@ -602,6 +602,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function start() {
         if (!packages['ut-port']) throw new Error('Unsupported ut-port version (ut-port@6.28.0 or newer expected)');
+        if (socket.server != null && !socket.server) return;
         const port = server && server.info.port;
         if (server) await server.stop();
         server = await createServer(port);
@@ -610,7 +611,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function ready() {
         try {
-            server.route(utApi.routes());
+            server && server.route(utApi.routes());
         } catch (error) {
             logger && logger.error && logger.error(error);
             throw error;
@@ -625,7 +626,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     async function stop() {
-        const result = await server.stop();
+        const result = server && await server.stop();
         server = false;
         await (discover && new Promise(resolve => {
             discover.destroy(resolve);
@@ -694,7 +695,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             }
         };
 
-        const route = server.match('POST', path);
+        const route = server && server.match('POST', path);
         if (route && route.settings.handler === deleted) {
             route.settings.handler = handler;
             return route;
@@ -748,7 +749,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function unregisterRoute(namespace, name) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
-        const route = server.match('POST', path);
+        const route = server && server.match('POST', path);
         if (route) route.settings.handler = deleted;
         utApi.deleteRoute({namespace, method: 'POST', path});
     }
