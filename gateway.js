@@ -55,6 +55,8 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
             hostname = parsed.hostname;
             port = parsed.port;
             protocol = parsed.protocol.split(':')[0];
+            if (parsed.username) username = parsed.username;
+            if (parsed.password) password = parsed.password;
         } else {
             protocol = protocol && protocol.split(':')[0];
             url = `${protocol}://${hostname}:${port}`;
