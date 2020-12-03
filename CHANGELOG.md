@@ -1,3 +1,12 @@
+## [7.36.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.0...v7.36.1) (2020-12-03)
+
+
+### Bug Fixes
+
+* extend bus.jsonRpcHttp error details ([709deff](https://github.com/softwaregroup-bg/ut-bus/commit/709deff111220b8e35372aadfab9a55147387853))
+
+
+
 # [7.36.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.35.5...v7.36.0) (2020-12-01)
 
 
