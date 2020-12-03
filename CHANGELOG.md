@@ -1,3 +1,12 @@
+## [7.36.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.1...v7.36.2) (2020-12-03)
+
+
+### Bug Fixes
+
+* improve error logging ([0f1c52c](https://github.com/softwaregroup-bg/ut-bus/commit/0f1c52c2343152d61ea059ce66f1fcbeccdbed15))
+
+
+
 ## [7.36.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.0...v7.36.1) (2020-12-03)
 
 
