@@ -601,10 +601,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             statusCode: response.statusCode,
                             statusText: response.statusText,
                             statusMessage: response.statusMessage,
+                            httpVersion: response.httpVersion,
                             validation: response.body && response.body.validation,
                             debug: response.body && response.body.debug,
                             params: {
                                 code: response.statusCode
+                            },
+                            ...response.request && {
+                                url: response.request.href,
+                                method: response.request.method
                             }
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
