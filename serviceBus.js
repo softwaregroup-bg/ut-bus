@@ -42,7 +42,7 @@ class Bus extends Broker {
         this.importCache = {};
         this.modules = {};
         this.last = {};
-        this.decay = {};
+        this.decay = this.decay || {};
         this.performance = null;
     }
 
