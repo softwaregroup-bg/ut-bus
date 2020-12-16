@@ -121,7 +121,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                     json: true
                 });
                 Object.assign(cache.auth, body);
-                cache.tokenInfo = tokenInfo(body.access_token);
+                cache.tokenInfo = tokenInfo(body);
             }
         }
 
