@@ -1,9 +1,16 @@
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const [httpPost] = [request.post].map(require('util').promisify);
-const {JWT} = require('jose');
 module.exports = ({serverInfo, mleClient, errors, get}) => {
     const localCache = {};
     const localKeys = mleClient.keys.sign && mleClient.keys.encrypt && {mlsk: mleClient.keys.sign, mlek: mleClient.keys.encrypt};
+
+    function tokenInfo(auth) {
+        const now = Date.now() - 5000; // latency tolerance of 5 seconds
+        return {
+            tokenExpire: now + auth.expires_in * 1000,
+            refreshTokenExpire: now + auth.refresh_token_expires_in * 1000
+        };
+    }
 
     async function login(cache, url, username, password, channel) {
         const {sign, encrypt} = (localKeys && (cache.auth || cache.remoteKeys)) || {};
@@ -34,7 +41,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
             if (error) throw Object.assign(new Error(), error);
             cache.auth = result;
         }
-        cache.tokenInfo = JWT.decode(cache.auth.access_token);
+        cache.tokenInfo = tokenInfo(cache.auth);
     }
 
     return async function gateway({
@@ -80,7 +87,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
 
         if (auth) {
             cache.auth = auth;
-            cache.tokenInfo = JWT.decode(auth.access_token);
+            cache.tokenInfo = tokenInfo(auth);
         }
 
         if (!cache.auth && !(username && password)) {
@@ -99,10 +106,10 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
 
         if (!cache.auth) await login(cache, url, username, password, channel);
 
-        const exp = Math.floor(Date.now() / 1000) + 5; // add 5 seconds just in case
+        const exp = Date.now();
 
-        if (exp > cache.tokenInfo.exp) {
-            if (exp > cache.tokenInfo.exp + cache.auth.refresh_token_expires_in - cache.auth.expires_in) {
+        if (exp > cache.tokenInfo.tokenExpire) {
+            if (exp > cache.tokenInfo.refreshTokenExpire) {
                 await login(cache, url, username, password, channel);
             } else {
                 const {body} = await httpPost({
@@ -114,7 +121,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                     json: true
                 });
                 Object.assign(cache.auth, body);
-                cache.tokenInfo = JWT.decode(body.access_token);
+                cache.tokenInfo = tokenInfo(body.access_token);
             }
         }
 
