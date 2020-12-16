@@ -74,8 +74,10 @@ const api = (server, errors) => ({
                     }, key, {
                         issuer: 'ut-login',
                         audience: 'ut-bus',
-                        expiresIn: '8 h'
-                    })
+                        expiresIn: 30 + ' seconds'
+                    }),
+                    expires_in: 30,
+                    refresh_token_expires_in: 60
                 }];
             }
             case 'login.oidc.getConfiguration':
