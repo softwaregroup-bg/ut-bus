@@ -57,6 +57,8 @@ const api = (server, errors) => ({
                         expiresIn: '8 h'
                     })
                 ];
+            case 'login.oauth.token':
+                auth = JSON.parse(params.refresh_token); // eslint-disable-line no-fallthrough
             case 'login.identity.check':
             case 'login.identity.exchange': {
                 if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
@@ -74,8 +76,11 @@ const api = (server, errors) => ({
                     }, key, {
                         issuer: 'ut-login',
                         audience: 'ut-bus',
-                        expiresIn: '8 h'
-                    })
+                        expiresIn: 3 + ' seconds'
+                    }),
+                    expires_in: 3,
+                    refresh_token: auth && JSON.stringify(auth),
+                    refresh_token_expires_in: 5
                 }];
             }
             case 'login.oidc.getConfiguration':
@@ -174,6 +179,16 @@ module.exports = async(test, clientConfig, serverConfig) => {
                     auth: false,
                     params: joi.object(),
                     result: joi.object()
+                };
+            },
+            'login.oauth.token'() {
+                return {
+                    method: 'POST',
+                    path: '/token',
+                    auth: false,
+                    validate: {
+                        payload: joi.object()
+                    }
                 };
             },
             'login.oidc.getConfiguration'() {

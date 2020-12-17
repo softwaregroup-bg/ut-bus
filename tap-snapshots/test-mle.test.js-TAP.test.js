@@ -408,3 +408,11 @@ null
 exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Return encrypted object 1`] = `
 TEXT
 `
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Return encrypted object after re-login 1`] = `
+TEXT
+`
+
+exports[`test/mle.test.js TAP Bus to bus MLE Call methods through gateway > Return encrypted object after using refresh token 1`] = `
+TEXT
+`
