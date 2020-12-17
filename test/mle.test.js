@@ -101,6 +101,10 @@ tap.test('Bus to bus MLE', async test => {
         t.matchSnapshot(await bus2.importMethod('bus1/module.entity.echo')({echo: true}), 'Return encrypted boolean');
         t.matchSnapshot(await bus2.importMethod('bus1/module.entity.echo')({echo: 0}), 'Return encrypted integer');
         t.matchSnapshot(await bus2.importMethod('bus1/module.entity.echo')({echo: null}), 'Return encrypted null');
+        await new Promise(resolve => setTimeout(resolve, 3001));
+        t.matchSnapshot(await bus2.importMethod('bus1/module.entity.action')({text: 'text'}), 'Return encrypted object after using refresh token');
+        await new Promise(resolve => setTimeout(resolve, 5001));
+        t.matchSnapshot(await bus2.importMethod('bus1/module.entity.action')({text: 'text'}), 'Return encrypted object after re-login');
         t.matchSnapshot(await bus3.importMethod('bus1/module.entity.public')({}), 'Call bus 1 public');
         t.matchSnapshot(await bus3.importMethod('bus1/module.entity.public')({}), 'Call bus 1 public cached');
         t.matchSnapshot(await bus3.importMethod('bus2/module.entity.public')({}), 'Call bus 2 public');
