@@ -1,3 +1,13 @@
+## [7.36.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.2...v7.36.3) (2020-12-17)
+
+
+### Bug Fixes
+
+* do not override decay in configuration ([639b0d4](https://github.com/softwaregroup-bg/ut-bus/commit/639b0d4a417c1901e106dbeeb37808b0c4cee192))
+* don't rely on the fact that access_token is JWT ([8cfeddd](https://github.com/softwaregroup-bg/ut-bus/commit/8cfeddd25e50e9dbee302fcc1246db7f5b588538))
+
+
+
 ## [7.36.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.1...v7.36.2) (2020-12-03)
 
 
