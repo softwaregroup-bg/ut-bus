@@ -102,7 +102,7 @@ async function failPreRpc(request, h, error) {
         .takeover();
 }
 
-const preArray = capture => [capture && {
+const setBody = {
     assign: 'body',
     failAction: 'error',
     method: ({payload, mime}) => {
@@ -112,8 +112,11 @@ const preArray = capture => [capture && {
             case 'application/x-www-form-urlencoded':
                 return payload.length ? querystring.parse(payload.toString('utf8')) : {};
         }
+        return null;
     }
-}, {
+};
+
+const preArray = capture => [capture && setBody, {
     assign: 'utBus',
     failAction: failPre,
     method: (request, h) => {
@@ -136,12 +139,12 @@ const preArray = capture => [capture && {
     }
 }].filter(Boolean);
 
-const preJsonRpc = (checkAuth, version, logger) => [{
+const preJsonRpc = (capture, checkAuth, version, logger) => [capture && setBody, {
     assign: 'utBus',
     failAction: failPreRpc,
     method: async(request, h) => {
         try {
-            const {jsonrpc, id, method, params, timeout} = request.payload;
+            const {jsonrpc, id, method, params, timeout} = capture ? request.pre.body : request.payload;
             if (request.auth.strategy && !['exchange', 'preauthorized'].includes(request.auth.strategy)) {
                 await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
             }
@@ -166,7 +169,7 @@ const preJsonRpc = (checkAuth, version, logger) => [{
             throw error;
         }
     }
-}];
+}].filter(Boolean);
 
 const assertDir = dir => {
     if (!dir) throw new Error('Missing workDir in configuration (ut-run@10.20.0 or newer expected)');
@@ -230,7 +233,7 @@ const uploads = async(workDir, request, logger) => {
     });
 };
 
-const prePlain = (checkAuth, workDir, method, version, logger) => [{
+const prePlain = (capture, checkAuth, workDir, method, version, logger) => [capture && setBody, {
     assign: 'utBus',
     failAction: failPre,
     method: async(request, h) => {
@@ -257,8 +260,8 @@ const prePlain = (checkAuth, workDir, method, version, logger) => [{
                     method,
                     params: [
                         (request.route && request.route.settings && request.route.settings.payload && !request.route.settings.payload.parse)
-                            ? {payload: request.payload, query: request.query, params: request.params}
-                            : {...request.payload, ...request.query, ...request.params},
+                            ? {payload: capture ? request.pre.body : request.payload, query: request.query, params: request.params}
+                            : {...(capture ? request.pre.body : request.payload), ...request.query, ...request.params},
                         $meta
                     ]
                 };
@@ -268,7 +271,7 @@ const prePlain = (checkAuth, workDir, method, version, logger) => [{
             throw error;
         }
     }
-}];
+}].filter(Boolean);
 
 const domainResolver = domain => {
     const resolver = require('./resolver');
@@ -764,7 +767,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         maxBytes: socket.maxBytes
                     },
                     validate: {
-                        payload: joi.object({
+                        payload: socket.capture ? true : joi.object({
                             jsonrpc: joi.string().valid('2.0').required(),
                             timeout: joi.number().optional(),
                             id: joi.alternatives().try(joi.number(), joi.string()).example('1'),
@@ -843,12 +846,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 } = typeof validation === 'function' ? validation() : validation;
                 const rpc = '/rpc/ports/' + method.split('.')[0] + '/request';
                 const jsonrpc = params && (!rest.body || rest.body.parse || rest.body.parse === undefined);
+                const isGetHead = ['get', 'head'].includes(httpMethod && httpMethod.toLowerCase());
                 return {
                     method,
                     route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
-                    pre: jsonrpc ? preJsonRpc(checkAuth, version, logger) : prePlain(checkAuth, dir || workDir, method, version, logger),
+                    pre: jsonrpc ? preJsonRpc(socket.capture, checkAuth, version, logger) : prePlain(socket.capture, checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
                             logger.error && logger.error(errors['bus.requestValidation']({
@@ -874,7 +878,18 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         options: {abortEarly: false},
                         query: false,
                         payload: jsonrpc ? paramsSchema(params, method) : (rest.body && rest.body.parse === false),
-                        ...validate
+                        ...validate,
+                        ...socket.capture && {
+                            payload: !isGetHead
+                        }
+                    },
+                    ...socket.capture && !isGetHead && {
+                        body: {
+                            output: 'data',
+                            parse: socket.capture ? 'gunzip' : true,
+                            allow: ['application/json', 'application/x-www-form-urlencoded'],
+                            maxBytes: socket.maxBytes
+                        }
                     },
                     handler: (request, ...rest) => {
                         const route = server.match('POST', rpc);

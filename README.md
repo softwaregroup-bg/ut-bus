@@ -67,6 +67,27 @@ http transport over json-rpc 2.0 protocol.
 * `suffix` (string) [optional] - suffix to be used in conjunction
   with the namespace to construct a `host` when resolving
   service locations. (e.g. host will become `namespace + suffix`)
+* `capture` (string) [optional] - enable capturing of requests and responses in
+  individual `<capture>/*.http` files for debugging purposes.
+  Note that this is not suitable for use in production and the folder
+  specified in this setting must exist. Also due to hapi API constraints,
+  some validations are turned off when capture is activated.
+* `gateway` (object) [optional] - call remote methods from bus running within different
+  security context. This is an easy way to integrate two separate implementations
+  where the gateway calls the other side with dedicated credentials for server to
+  server calls.
+  * `<prefix>` (object) - configuration to apply for calls with this prefix, i.e.
+  calls like `utMethod('prefix/x.x.x')(...params)`
+    * `url` - specifies the base URL of the remote bus. This is alternative to
+    specifying the individual configuration options below, as all of them can
+    form an URL `https://username:passsword@example.com`
+    * `protocol` - remote bus protocol
+    * `host`  - remote bus host
+    * `port`  - remote bus port
+    * `username` - specifies a username to use for authentication against
+    the remote bus
+    * `password` - specifies a password to use for authentication against
+    the remote bus
 
 Configuration examples:
 
