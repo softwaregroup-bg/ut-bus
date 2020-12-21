@@ -1,3 +1,12 @@
+# [7.37.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.3...v7.37.0) (2020-12-21)
+
+
+### Features
+
+* capture ([35e21f2](https://github.com/softwaregroup-bg/ut-bus/commit/35e21f2029c1c28a2d942828524c4483852a89dd))
+
+
+
 ## [7.36.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.2...v7.36.3) (2020-12-17)
 
 
