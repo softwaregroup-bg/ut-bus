@@ -31,15 +31,16 @@ function initConsul({discover, ...config}) {
 
 function forward(headers) {
     return [
-        'x-request-id',
-        'x-b3-traceid',
-        'x-b3-spanid',
-        'x-b3-parentspanid',
-        'x-b3-sampled',
-        'x-b3-flags',
-        'x-ot-span-context'
-    ].reduce(function(object, key) {
+        ['x-request-id'],
+        ['x-b3-traceid', () => uuid.v4().replace(/-/g, '')],
+        ['x-b3-spanid'],
+        ['x-b3-parentspanid'],
+        ['x-b3-sampled'],
+        ['x-b3-flags'],
+        ['x-ot-span-context']
+    ].reduce(function(object, [key, value]) {
         if (Object.prototype.hasOwnProperty.call(headers, key)) object[key] = headers[key];
+        else if (value) object[key] = value();
         return object;
     }, {});
 }
