@@ -1,3 +1,12 @@
+## [7.37.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.37.0...v7.37.1) (2021-01-07)
+
+
+### Bug Fixes
+
+* generate default value for .forward['x-b3-traceid'] ([545de69](https://github.com/softwaregroup-bg/ut-bus/commit/545de693c0ce3de7a5aadb8eabc35a1a2469e1a8))
+
+
+
 # [7.37.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.36.3...v7.37.0) (2020-12-21)
 
 
