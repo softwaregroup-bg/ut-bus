@@ -1,5 +1,6 @@
 const Broker = require('./broker');
 const hrtime = require('browser-process-hrtime');
+const uuid = require('uuid').v4;
 const flattenAPI = (data, pkg) => {
     const result = {};
     function recurse(cur, prop, depth) {
@@ -106,12 +107,17 @@ class Bus extends Broker {
 
         async function busMethod(...params) {
             const $meta = (params.length > 1 && params[params.length - 1]);
-            let $applyMeta;
+            const metaId = uuid();
+            const $applyMeta = {};
             if (!$meta) {
-                params.push($applyMeta = {method: methodName});
+                $applyMeta.method = methodName;
+                $applyMeta.graph = {nodes: {}, edges: {}};
+                params.push($applyMeta);
             } else {
-                $applyMeta = params[params.length - 1] = Object.assign({}, $meta);
+                $meta.graph.edges[metaId] = $meta.id;
+                params[params.length - 1] = Object.assign($applyMeta, $meta);
             }
+            $applyMeta.id = metaId;
             if (options && options.timeout && !$applyMeta.timeout) {
                 $applyMeta.timeout = hrtime();
                 $applyMeta.timeout[1] += timeoutNSec;
