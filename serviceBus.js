@@ -110,7 +110,7 @@ class Bus extends Broker {
             if (!$meta) {
                 params.push($applyMeta = {method: methodName});
             } else {
-                $applyMeta = params[params.length - 1] = Object.assign({}, $meta);
+                $applyMeta = params[params.length - 1] = {...$meta, forward: {...$meta.forward}};
             }
             if (options && options.timeout && !$applyMeta.timeout) {
                 $applyMeta.timeout = hrtime();
