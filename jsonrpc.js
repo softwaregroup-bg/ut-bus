@@ -465,6 +465,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             });
         }
 
+        result.ext('onPreResponse', ({response, route}, h) => {
+            response && response.isBoom &&
+            route && route.settings && route.settings.app && route.settings.app.logError &&
+            logger && logger.error && logger.error(response);
+            return h.continue;
+        });
+
         result.events.on('start', () => {
             logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: result.info});
         });
