@@ -1,3 +1,13 @@
+# [7.38.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.37.1...v7.38.0) (2021-01-15)
+
+
+### Features
+
+* expose openid api ([a918b21](https://github.com/softwaregroup-bg/ut-bus/commit/a918b216320e33803eb3fdc1a1b7c80b1e0e4836))
+* log errors per route config ([d19634b](https://github.com/softwaregroup-bg/ut-bus/commit/d19634b9a7674f2fcc8afe19776c856609586e6f))
+
+
+
 ## [7.37.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.37.0...v7.37.1) (2021-01-07)
 
 
