@@ -1,3 +1,12 @@
+# [7.39.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.38.0...v7.39.0) (2021-01-15)
+
+
+### Features
+
+* pass x-ut-stack header to .forward ([#101](https://github.com/softwaregroup-bg/ut-bus/issues/101)) ([c1de1b6](https://github.com/softwaregroup-bg/ut-bus/commit/c1de1b66412f329b2ae021360afa6485cbe67633))
+
+
+
 # [7.38.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.37.1...v7.38.0) (2021-01-15)
 
 
