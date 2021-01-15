@@ -18,6 +18,7 @@ function decryptVerify(message, signaturePublicKey, encryptionPrivateKey) {
     return verify(decrypt(message, encryptionPrivateKey), signaturePublicKey);
 }
 
+// required by other modules with require('ut-bus/jose')
 module.exports = ({sign, encrypt}) => {
     const encryptionPrivateKey = encrypt && JWK.asKey(encrypt);
     const signaturePrivateKey = sign && JWK.asKey(sign);

@@ -111,11 +111,13 @@ Configuration examples:
             jsonrpc: {
                 port: 9876,
                 openId: [
-                    'https://accounts.google.com'
+                    'https://accounts.google.com/.well-known/openid-configuration'
                 ],
                 ui: {
-                    clientId: 'someClientId'
-                    clientSecret: 'someClientSecret'
+                    initOAuth: {
+                        clientId: 'someClientId'
+                        clientSecret: 'someClientSecret'
+                    }
                 }
             }
         }

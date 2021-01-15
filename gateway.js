@@ -1,5 +1,7 @@
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const [httpPost] = [request.post].map(require('util').promisify);
+
+// required by other modules with require('ut-bus/gateway')
 module.exports = ({serverInfo, mleClient, errors, get}) => {
     const localCache = {};
     const localKeys = mleClient.keys.sign && mleClient.keys.encrypt && {mlsk: mleClient.keys.sign, mlek: mleClient.keys.encrypt};
@@ -81,7 +83,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
         const cache = localCache[url] = localCache[url] || {};
 
         if (localKeys && !cache.remoteKeys) {
-            const body = await get(`${url}/rpc/login/.well-known/mle`, errors, 'bus.jsonRpc');
+            const body = await get(`${url}/rpc/login/.well-known/mle`, errors['bus.jsonRpcHttp'], errors['bus.jsonRpcEmpty']);
             if (body.sign && body.encrypt) cache.remoteKeys = body;
         }
 

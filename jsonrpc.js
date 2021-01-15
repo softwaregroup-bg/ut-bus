@@ -29,6 +29,7 @@ function initConsul({discover, ...config}) {
     return consul;
 }
 
+// https://github.com/openzipkin/b3-propagation
 function forward(headers) {
     return [
         ['x-request-id'],
@@ -306,54 +307,6 @@ const domainResolver = domain => {
 
 module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi, version}) {
     const request = socket.capture ? require('ut-function.capture-request')(req, {name: `${socket.capture}/client`}) : req;
-    const get = (url, errors, prefix, headers, protocol) => new Promise((resolve, reject) => {
-        request({
-            json: true,
-            method: 'GET',
-            url,
-            ...headers && {
-                headers: {
-                    'x-forwarded-proto': headers['x-forwarded-proto'] || protocol,
-                    'x-forwarded-host': headers['x-forwarded-host'] || headers.host
-                }
-            }
-        }, (error, response, body) => {
-            if (error) {
-                reject(error);
-            } else if (response.statusCode < 200 || response.statusCode >= 300) {
-                reject(errors[prefix + 'Http']({
-                    statusCode: response.statusCode,
-                    statusText: response.statusText,
-                    statusMessage: response.statusMessage,
-                    httpVersion: response.httpVersion,
-                    validation: response.body && response.body.validation,
-                    debug: response.body && response.body.debug,
-                    params: {
-                        code: response.statusCode
-                    },
-                    ...response.request && {
-                        url: response.request.href,
-                        method: response.request.method
-                    }
-                }));
-            } else if (body) {
-                resolve(body);
-            } else {
-                reject(errors[prefix + 'Empty']());
-            }
-        });
-    });
-
-    let loginCache;
-    async function loginService() {
-        if (!loginCache) loginCache = discoverService('login');
-        try {
-            return await loginCache;
-        } catch (error) {
-            loginCache = false;
-            throw error;
-        }
-    }
 
     async function discoverService(namespace) {
         const serviceName = (prefix + namespace.replace(/\//g, '-') + suffix);
@@ -383,50 +336,18 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return requestParams;
     }
 
-    async function openIdConfig(issuer, headers, protocol) {
-        try {
-            if (issuer === 'ut-login') {
-                const {protocol, hostname, port} = await loginService();
-                issuer = `${protocol}://${hostname}:${port}/rpc/login/.well-known/openid-configuration`;
-            } else {
-                if (!issuer.replace('https://', '').includes('/')) issuer = issuer + '/.well-known/openid-configuration';
-                if (!issuer.startsWith('https://') && !issuer.startsWith('http://')) issuer = issuer + 'https://';
-                headers = false;
-            }
-            return await get(issuer, errors, 'bus.oidc', headers, protocol);
-        } catch (error) {
-            logger && logger.error && logger.error(error);
-            throw error;
-        }
-    };
+    const {verify, checkAuth, getIssuers, get} = require('./oidc')({
+        request,
+        discoverService,
+        errorPrefix: 'bus.',
+        errors,
+        issuers: socket.openId || [socket.utLogin !== false && 'ut-login']
+    });
 
-    let actionsCache;
-    async function actions(method) {
-        if (actionsCache) return actionsCache[method];
-        const {protocol, hostname, port} = await loginService();
-        actionsCache = await get(`${protocol}://${hostname}:${port}/rpc/login/action`, errors, 'bus.action');
-        return actionsCache[method];
-    }
-
-    async function checkAuthSingle(method, map) {
-        const bit = await actions(method) - 1;
-        const index = Math.floor(bit / 8);
-        return (Number.isInteger(index) && (index < map.length) && (map[index] & (1 << (bit % 8))));
-    }
-
-    async function checkAuth(method, map) {
-        if (!await checkAuthSingle(method, map) && !await checkAuthSingle('%', map)) {
-            throw errors['bus.unauthorized']({params: {method}});
-        }
-    }
-
-    const issuers = (headers, protocol) => Promise.all([socket.utLogin !== false && 'ut-login'].concat(socket.openId).filter(issuer => typeof issuer === 'string').map(issuer => openIdConfig(issuer, headers, protocol)));
     const mle = jose(socket);
     const mleClient = jose(socket.client || {});
 
     async function createServer(port) {
-        const jwks = async issuer => get((await openIdConfig(issuer)).jwks_uri, errors, 'bus.oidc');
-
         const result = new hapi.Server({
             port: port || socket.port
         });
@@ -440,7 +361,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     options: socket,
                     logger,
                     errors,
-                    jwks
+                    verify
                 }
             },
             {
@@ -488,7 +409,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         this.error(error);
         throw error;
     }));
-    const utApi = await require('ut-api')({service, version, auth: 'openId', ...socket.api}, errors, issuers, internal);
+    const utApi = await require('ut-api')(
+        {
+            service,
+            version,
+            auth: 'openId',
+            ...socket.api
+        },
+        errors,
+        getIssuers,
+        internal
+    );
 
     utApi.route([{
         method: 'GET',
@@ -678,7 +609,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return result;
     }
 
-    function localRegister(nameSpace, name, fn) {
+    function localRegister(nameSpace, name, fn, reqrep) {
         const local = mapLocal[nameSpace + '.' + name];
         if (local) {
             local.method = fn;
