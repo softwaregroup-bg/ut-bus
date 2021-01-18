@@ -99,8 +99,14 @@ module.exports = ({
         }
     }
 
+    const loadIssuers = () => Promise.all(
+        issuers
+            .filter(issuer => typeof issuer === 'string')
+            .map(issuer => (async() => [issuer, await openIdConfig(issuer)])())
+    );
+
     async function cache() {
-        return (await getIssuers()).reduce((prev, config) => ({...prev, [config.issuer]: config}), {});
+        return (await loadIssuers()).reduce((prev, [issuer, config]) => ({...prev, [config.issuer]: config, [issuer]: config}), {});
     }
 
     const getIssuers = (headers, protocol) => Promise.all(
@@ -159,5 +165,5 @@ module.exports = ({
         return decoded;
     }
 
-    return {get, verify, getIssuers, checkAuth};
+    return {get, verify, getIssuers, checkAuth, issuerConfig};
 };
