@@ -1,3 +1,12 @@
+# [7.40.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.39.0...v7.40.0) (2021-01-18)
+
+
+### Features
+
+* **oidc:** API to find issuer by config URL ([f373923](https://github.com/softwaregroup-bg/ut-bus/commit/f373923df24ac4a40e55be64318e7b663c141e62))
+
+
+
 # [7.39.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.38.0...v7.39.0) (2021-01-15)
 
 
