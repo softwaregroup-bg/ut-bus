@@ -28,5 +28,6 @@
     "bus.unauthorized": {"message": "Operation {method} is not allowed for this user", "statusCode": 403},
     "bus.oidcBadIssuer": {"message": "OpenID issuer '{issuerId}' is not supported", "statusCode": 401},
     "bus.jsonRpcHttp": "JSON RPC returned HTTP error {code}",
-    "bus.jsonRpcEmpty": "JSON RPC response without response and error"
+    "bus.jsonRpcEmpty": "JSON RPC response without response and error",
+    "bus.noMeta": "$meta not passed to method: {method}"
 }
