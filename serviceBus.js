@@ -53,10 +53,12 @@ class Bus extends Broker {
                 break;
             }
             case 'error':
+            case 'fatal':
             case true: {
+                const logLevel = requireMeta === true ? 'error' : requireMeta;
                 this.requireMeta = method => {
                     const error = this.errors['bus.noMeta']({params: {method}});
-                    this.log.error && this.log.error(error);
+                    this.log[logLevel] && this.log[logLevel](error);
                     throw error;
                 };
                 break;
