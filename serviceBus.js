@@ -37,24 +37,24 @@ const defaultConfig = {
 };
 
 class Bus extends Broker {
-    constructor({forceMeta, ...config}) {
+    constructor({requireMeta, ...config}) {
         super(Object.assign({}, defaultConfig, config));
         this.importCache = {};
         this.modules = {};
         this.last = {};
         this.decay = this.decay || {};
         this.performance = null;
-        switch (forceMeta) {
+        switch (requireMeta) {
             case 'trace':
             case 'debug':
             case 'info':
             case 'warn': {
-                this.forceMeta = method => this.log[forceMeta] && this.log[forceMeta](this.errors['bus.noMeta']({params: {method}}));
+                this.requireMeta = method => this.log[requireMeta] && this.log[requireMeta](this.errors['bus.noMeta']({params: {method}}));
                 break;
             }
             case 'error':
             case true: {
-                this.forceMeta = method => {
+                this.requireMeta = method => {
                     const error = this.errors['bus.noMeta']({params: {method}});
                     this.log.error && this.log.error(error);
                     throw error;
@@ -62,7 +62,7 @@ class Bus extends Broker {
                 break;
             }
             default:
-                this.forceMeta = false;
+                this.requireMeta = false;
                 break;
         }
     }
@@ -129,7 +129,7 @@ class Bus extends Broker {
             const $meta = (params.length > 1 && params[params.length - 1]);
             let $applyMeta;
             if (!$meta) {
-                bus.forceMeta && bus.forceMeta(methodName);
+                bus.requireMeta && bus.requireMeta(methodName);
                 params.push($applyMeta = {method: methodName});
             } else {
                 $applyMeta = params[params.length - 1] = {...$meta, ...$meta.forward && {forward: {...$meta.forward}}};
