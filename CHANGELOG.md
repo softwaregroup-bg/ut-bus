@@ -1,3 +1,12 @@
+# [7.41.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.40.0...v7.41.0) (2021-01-20)
+
+
+### Features
+
+* add utBus.serviceBus.requireMeta configuration ([#102](https://github.com/softwaregroup-bg/ut-bus/issues/102)) ([62eac78](https://github.com/softwaregroup-bg/ut-bus/commit/62eac78bcfbc33885a23998214403057a5e04a64))
+
+
+
 # [7.40.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.39.0...v7.40.0) (2021-01-18)
 
 
