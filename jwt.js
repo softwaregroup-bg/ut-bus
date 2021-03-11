@@ -1,15 +1,19 @@
 const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
+const LRUCache = require('lru-cache');
 
 module.exports = {
     plugin: {
-        register(server, {options: {openId}, logger, errors, verify}) {
+        register(server, {options: {openId, tokenCache}, logger, errors, verify}) {
             function jose() {
+                const cache = (![0, false, 'false'].includes(tokenCache)) && new LRUCache({max: 1000, ...tokenCache});
                 return {
                     async authenticate(request, h) {
                         try {
                             const token = request.headers.authorization && request.headers.authorization.match(/^bearer\s+(.+)$/i);
                             if (!token) throw errors['bus.jwtMissingHeader']();
+                            const cachedCredentials = cache && cache.get(token[1]);
+                            if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
                             const decoded = await verify(token[1], {issuer: openId, audience: 'ut-bus'});
                             const {
                                 // standard
@@ -32,16 +36,16 @@ module.exports = {
                                 // arbitrary
                                 ...rest
                             } = decoded.payload;
-                            return h.authenticated({
-                                credentials: {
-                                    mlek,
-                                    mlsk,
-                                    permissionMap: Buffer.from(per, 'base64'),
-                                    actorId,
-                                    sessionId,
-                                    ...rest
-                                }
-                            });
+                            const credentials = {
+                                mlek,
+                                mlsk,
+                                permissionMap: Buffer.from(per, 'base64'),
+                                actorId,
+                                sessionId,
+                                ...rest
+                            };
+                            if (cache) cache.set(token[1], credentials, exp * 1000 - Date.now());
+                            return h.authenticated({credentials});
                         } catch (error) {
                             logger && logger.error && logger.error(error);
                             return h.unauthenticated(Boom.unauthorized(error.message));

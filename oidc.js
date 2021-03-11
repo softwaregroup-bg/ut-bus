@@ -4,6 +4,7 @@ module.exports = ({
     issuers,
     request = require('request'),
     discoverService = false,
+    session = false,
     errorPrefix,
     errors: {
         [`${errorPrefix}oidcEmpty`]: errorOidcEmpty,
@@ -99,10 +100,19 @@ module.exports = ({
         }
     }
 
+    const issuerUrl = (base, url) => (base === 'ut-login' ? 'ut-login' : new URL(url, base.replace(/\/?$/, '/')).href);
+
     const loadIssuers = () => Promise.all(
-        issuers
-            .filter(issuer => typeof issuer === 'string')
-            .map(issuer => (async() => [issuer, await openIdConfig(issuer)])())
+        Object.entries(issuers)
+            .filter(([, config]) => config)
+            .map(([issuer, {
+                configuration,
+                url = '.well-known/openid-configuration',
+                audience = 'ut-bus'
+            }]) => (async() => [issuer, {
+                ...await openIdConfig(configuration || issuerUrl(issuer, url)),
+                audience
+            }])())
     );
 
     async function cache() {
@@ -110,9 +120,12 @@ module.exports = ({
     }
 
     const getIssuers = (headers, protocol) => Promise.all(
-        issuers
-            .filter(issuer => typeof issuer === 'string')
-            .map(issuer => openIdConfig(issuer, headers, protocol))
+        Object.entries(issuers)
+            .filter(([, config]) => config)
+            .map(([issuer, {
+                configuration,
+                url = '.well-known/openid-configuration'
+            }]) => openIdConfig(configuration || issuerUrl(issuer, url), headers, protocol))
     );
 
     let issuersCache;
@@ -146,13 +159,14 @@ module.exports = ({
         return result;
     }
 
-    async function verify(token, {nonce, audience}, isId) {
+    async function verify(token, {nonce}, isId) {
         let decoded;
         try {
             decoded = JWT.decode(token, {complete: true});
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
+        const audience = (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss)).audience) || 'ut-bus';
         try {
             if (isId) {
                 JWT.IdToken.verify(token, await getKey(decoded), {issuer: decoded.payload.iss, nonce, audience});
@@ -162,6 +176,7 @@ module.exports = ({
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
+        if (session && !decoded.payload.ses) await session(decoded);
         return decoded;
     }
 

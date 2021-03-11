@@ -40,10 +40,14 @@ tap.test('Bus routes', async test => {
             domain: true,
             api: true,
             metrics: true,
-            openId: [
-                'ut-login',
-                'https://accounts.google.com/.well-known/openid-configuration'
-            ],
+            openId: {
+                'ut-login': {
+                    audience: 'ut-bus'
+                },
+                'https://accounts.google.com': {
+                    audience: 'audience'
+                }
+            },
             sign: sign.toJWK(true),
             encrypt: encrypt.toJWK(true)
         }

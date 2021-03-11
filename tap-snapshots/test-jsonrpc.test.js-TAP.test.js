@@ -309,6 +309,7 @@ Object {
   },
   "iss": "ut-login",
   "per": "Dw==",
+  "ses": "test",
   "sig": Object {
     "crv": "P-384",
     "kty": "EC",

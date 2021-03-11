@@ -48,6 +48,7 @@ const api = (server, errors) => ({
                 return [
                     JWT.sign({
                         typ: 'Bearer',
+                        ses: 'test',
                         per: Buffer.from([15]).toString('Base64'),
                         enc: JWK.asKey(params.encrypt),
                         sig: JWK.asKey(params.sign)
@@ -70,6 +71,7 @@ const api = (server, errors) => ({
                     scope: 'openid',
                     access_token: JWT.sign({
                         typ: 'Bearer',
+                        ses: 'test',
                         per: Buffer.from([31]).toString('Base64'),
                         ...auth && auth.mlek && {enc: JWK.asKey(auth.mlek)},
                         ...auth && auth.mlsk && {sig: JWK.asKey(auth.mlsk)}

@@ -337,11 +337,27 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return requestParams;
     }
 
+    const brokerRequest = brokerMethod(false, 'request');
+    const session = async(token) => {
+        const result = await brokerRequest({username: token.payload.oid || token.payload.sub, type: 'oidc', password: '*', channel: 'web'}, {method: 'identity.checkInternal'});
+        const [{
+            'identity.check': {
+                actorId,
+                sessionId
+            },
+            permissionMap
+        }] = result;
+        token.payload.per = permissionMap;
+        token.payload.ses = sessionId;
+        token.payload.subject = String(actorId);
+    };
+
     const {verify, checkAuth, getIssuers, get} = require('./oidc')({
         request,
         discoverService,
         errorPrefix: 'bus.',
         errors,
+        session,
         issuers: socket.openId || [socket.utLogin !== false && 'ut-login']
     });
 
@@ -401,7 +417,6 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return result;
     }
 
-    const brokerRequest = brokerMethod(false, 'request');
     const internal = socket.api && socket.api.internal && (() => Promise.all(socket.api.internal.map(name =>
         brokerRequest({}, {method: name + '.service.get'})
             .then(([result]) => ({namespace: name, ...result}))
