@@ -1,3 +1,12 @@
+# [7.42.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.41.0...v7.42.0) (2021-03-11)
+
+
+### Features
+
+* create session for openid issuers ([ec89dbb](https://github.com/softwaregroup-bg/ut-bus/commit/ec89dbb4219725a1c8baa385c98f947811022525))
+
+
+
 # [7.41.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.40.0...v7.41.0) (2021-01-20)
 
 
