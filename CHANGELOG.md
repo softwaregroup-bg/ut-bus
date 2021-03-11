@@ -1,3 +1,12 @@
+## [7.42.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.0...v7.42.1) (2021-03-11)
+
+
+### Bug Fixes
+
+* typo ([19a5139](https://github.com/softwaregroup-bg/ut-bus/commit/19a5139fe2bd3782ca777896a7f0911964ec9460))
+
+
+
 # [7.42.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.41.0...v7.42.0) (2021-03-11)
 
 
