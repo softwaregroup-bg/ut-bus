@@ -310,6 +310,7 @@ class Bus extends Broker {
                     return method.apply(undefined, arguments);
                 }
             }, method);
+            Object.defineProperty(result, 'name', {value: methodName, configurable: true, enumerable: false});
         }
 
         return result;
