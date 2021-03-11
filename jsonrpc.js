@@ -349,7 +349,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }] = result;
         token.payload.per = permissionMap;
         token.payload.ses = sessionId;
-        token.payload.subject = String(actorId);
+        token.payload.sub = String(actorId);
     };
 
     const {verify, checkAuth, getIssuers, get} = require('./oidc')({
