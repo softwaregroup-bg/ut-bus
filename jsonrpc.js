@@ -358,7 +358,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         errorPrefix: 'bus.',
         errors,
         session,
-        issuers: socket.openId || [socket.utLogin !== false && 'ut-login']
+        issuers: socket.openId || {...socket.utLogin !== false && {'ut-login': {audience: 'ut-bus'}}}
     });
 
     const mle = jose(socket);
