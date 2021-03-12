@@ -1,5 +1,6 @@
 const request = (process.type === 'renderer') ? require('ut-browser-request') : require('request');
 const [httpPost] = [request.post].map(require('util').promisify);
+const decode = (result, method, unpack) => unpack ? result : [result, {method, mtid: 'response'}];
 
 // required by other modules with require('ut-bus/gateway')
 module.exports = ({serverInfo, mleClient, errors, get}) => {
@@ -98,10 +99,10 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                     params: mleClient.signEncrypt(params, cache.remoteKeys.encrypt, localKeys),
                     method
                 });
-                codec.decode = result => [mleClient.decryptVerify(result, cache.remoteKeys.sign), {mtid: 'response', method}];
+                codec.decode = (result, unpack) => decode(mleClient.decryptVerify(result, cache.remoteKeys.sign), method, unpack);
             } else {
                 codec.encode = params => ({params, method});
-                codec.decode = result => [result, {mtid: 'response', method}];
+                codec.decode = (result, unpack) => decode(result, method, unpack);
             }
             return codec;
         }
@@ -135,7 +136,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                 },
                 method
             });
-            codec.decode = result => [mleClient.decryptVerify(result, cache.auth.sign), {mtid: 'response', method}];
+            codec.decode = (result, unpack) => decode(mleClient.decryptVerify(result, cache.auth.sign), method, unpack);
         } else {
             codec.encode = params => ({
                 params,
@@ -144,7 +145,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                 },
                 method
             });
-            codec.decode = result => [result, {mtid: 'response', method}];
+            codec.decode = (result, unpack) => decode(result, method, unpack);
         }
 
         return codec;
