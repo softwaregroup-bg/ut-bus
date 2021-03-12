@@ -305,7 +305,9 @@ const domainResolver = (domain, errors) => {
             cache[hostName] = [now, result];
             return result;
         } catch (e) {
-            throw errors['bus.mdns.resolver']({params: {service: `${service}-${domain}`}});
+            const err = errors['bus.mdns.resolver']({params: {service: `${service}-${domain}`}});
+            err.cause = e;
+            throw err;
         };
     };
 };
