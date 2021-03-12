@@ -1,3 +1,12 @@
+## [7.42.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.1...v7.42.2) (2021-03-12)
+
+
+### Bug Fixes
+
+* error when generating swagger.json ([aadda41](https://github.com/softwaregroup-bg/ut-bus/commit/aadda41d83d92915dfa043dff865118d2fdd43bc))
+
+
+
 ## [7.42.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.0...v7.42.1) (2021-03-11)
 
 
