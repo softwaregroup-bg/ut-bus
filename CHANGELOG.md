@@ -1,3 +1,12 @@
+## [7.42.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.2...v7.42.3) (2021-03-14)
+
+
+### Bug Fixes
+
+* don't pack errors received in gateway ([#104](https://github.com/softwaregroup-bg/ut-bus/issues/104)) ([24d2e46](https://github.com/softwaregroup-bg/ut-bus/commit/24d2e4603b9ff38512e70910899a7389f5dd409b))
+
+
+
 ## [7.42.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.1...v7.42.2) (2021-03-12)
 
 
