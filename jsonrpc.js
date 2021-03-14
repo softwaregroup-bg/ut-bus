@@ -544,7 +544,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     } else if (body && body.error !== undefined) {
                         const error =
                             body.jsonrpc
-                                ? Object.assign(new Error(), decode(body.error))
+                                ? Object.assign(new Error(), decode(body.error, true))
                                 : typeof body.error === 'string'
                                     ? new Error(body.error)
                                     : Object.assign(new Error(), body.error);
