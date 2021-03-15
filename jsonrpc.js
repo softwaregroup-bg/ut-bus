@@ -276,33 +276,39 @@ const prePlain = (capture, checkAuth, workDir, method, version, logger) => [capt
     }
 }].filter(Boolean);
 
-const domainResolver = domain => {
+const domainResolver = (domain, errors) => {
     const resolver = require('./resolver');
     const getHostName = service => `${service}-${domain}.dns-discovery.local`;
     const cache = {};
     return async function resolve(service, invalidate) {
-        const now = hrtime();
-        const hostName = getHostName(service);
-        if (invalidate) {
-            delete cache[hostName];
-        } else {
-            const cached = cache[hostName];
-            if (cached) {
-                if (hrtime(cached[0])[0] < 3) {
-                    cached[0] = now;
-                    return {...cached[1], cache: service};
-                } else {
-                    delete cache[hostName];
+        try {
+            const now = hrtime();
+            const hostName = getHostName(service);
+            if (invalidate) {
+                delete cache[hostName];
+            } else {
+                const cached = cache[hostName];
+                if (cached) {
+                    if (hrtime(cached[0])[0] < 3) {
+                        cached[0] = now;
+                        return {...cached[1], cache: service};
+                    } else {
+                        delete cache[hostName];
+                    }
                 }
             }
-        }
-        const resolved = await resolver(hostName, 'SRV');
-        const result = {
-            hostname: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
-            port: resolved.port
+            const resolved = await resolver(hostName, 'SRV');
+            const result = {
+                hostname: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
+                port: resolved.port
+            };
+            cache[hostName] = [now, result];
+            return result;
+        } catch (e) {
+            const err = errors['bus.mdnsResolver']({params: {service: `${service}-${domain}`}});
+            err.cause = e;
+            throw err;
         };
-        cache[hostName] = [now, result];
-        return result;
     };
 };
 
@@ -457,7 +463,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const consul = socket.consul && initConsul(socket.consul);
     const consulDiscover = socket.consul && socket.consul.discover;
     const discover = socket.domain && require('dns-discovery')();
-    const resolver = socket.domain && domainResolver(domain);
+    const resolver = socket.domain && domainResolver(domain, errors);
     const prefix = socket.prefix || '';
     const suffix = socket.suffix || '-service';
     const deleted = (request, h) => {
