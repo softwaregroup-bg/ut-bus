@@ -30,6 +30,5 @@
     "bus.jsonRpcHttp": "JSON RPC returned HTTP error {code}",
     "bus.jsonRpcEmpty": "JSON RPC response without response and error",
     "bus.noMeta": "$meta not passed to method: {method}",
-    "bus.mdns": "Multicast generic.",
     "bus.mdnsResolver": "Multicast dns resolve. Can not resolve {service}"
 }
