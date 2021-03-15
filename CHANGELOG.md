@@ -1,3 +1,12 @@
+## [7.42.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.3...v7.42.4) (2021-03-15)
+
+
+### Bug Fixes
+
+* Return mDns error with message field. ([#103](https://github.com/softwaregroup-bg/ut-bus/issues/103)) ([cb6c825](https://github.com/softwaregroup-bg/ut-bus/commit/cb6c8253d9f08c6c6d83ba82b6e6cb73ec0ebd6e))
+
+
+
 ## [7.42.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.2...v7.42.3) (2021-03-14)
 
 
