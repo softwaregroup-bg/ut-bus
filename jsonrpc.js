@@ -475,8 +475,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     function gateway($meta, methodName = $meta.method) {
         const [prefix, method = prefix] = methodName.split('/');
-
-        if (socket.gateway && socket.gateway[prefix]) return {...socket.gateway[prefix], ...$meta.gateway, method};
+        const namespace = method.split('.').shift();
+        if (socket.gateway) {
+            const gw = socket.gateway[prefix] || socket.gateway[namespace];
+            if (gw) return {...gw, ...$meta.gateway, method};
+        }
 
         if ($meta.gateway) return {...$meta.gateway, method: methodName};
     }
