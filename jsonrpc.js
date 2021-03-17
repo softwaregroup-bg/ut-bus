@@ -477,7 +477,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         const [prefix, method = prefix] = methodName.split('/');
         const namespace = method.split('.').shift();
         if (socket.gateway) {
-            const gw = socket.gateway[prefix] || socket.gateway[namespace];
+            const gw = prefix === method
+                ? socket.gateway[namespace]
+                : socket.gateway[prefix];
+
             if (gw) return {...gw, ...$meta.gateway, method};
         }
 
