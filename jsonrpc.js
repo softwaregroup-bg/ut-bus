@@ -474,9 +474,16 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient, errors, get});
 
     function gateway($meta, methodName = $meta.method) {
-        const [prefix, method = prefix] = methodName.split('/');
-
-        if (socket.gateway && socket.gateway[prefix]) return {...socket.gateway[prefix], ...$meta.gateway, method};
+        if (socket.gateway) {
+            const [prefix, method] = methodName.split('/');
+            if (method) {
+                if (socket.gateway[prefix]) return {...socket.gateway[prefix], ...$meta.gateway, method};
+            } else {
+                const [namespace] = prefix.split('.');
+                const gw = socket.gateway[namespace] || socket.gateway[prefix];
+                if (gw) return {...gw, ...$meta.gateway, method: prefix};
+            }
+        }
 
         if ($meta.gateway) return {...$meta.gateway, method: methodName};
     }
