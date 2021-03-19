@@ -1,3 +1,12 @@
+## [7.42.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.4...v7.42.5) (2021-03-19)
+
+
+### Bug Fixes
+
+* allow defining gateways per namespace ([#106](https://github.com/softwaregroup-bg/ut-bus/issues/106)) ([8c357f0](https://github.com/softwaregroup-bg/ut-bus/commit/8c357f0bf811c550a419ec8e206d4412a3b39187))
+
+
+
 ## [7.42.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.3...v7.42.4) (2021-03-15)
 
 
