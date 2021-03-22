@@ -312,7 +312,7 @@ const domainResolver = (domain, errors) => {
     };
 };
 
-module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi, version}) {
+module.exports = async function create({id, socket, channel, logLevel, logger, mapLocal, errors, findMethodIn, metrics, service, workDir, packages, joi, test, version}) {
     const request = socket.capture ? require('ut-function.capture-request')(req, {name: `${socket.capture}/client`}) : req;
 
     async function discoverService(namespace) {
@@ -664,6 +664,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             const {params, jsonrpc, id, shift, method} = pre.utBus;
             try {
                 const results = await fn.apply(object, params);
+                const $meta = results && Array.isArray(results) && results.length > 1 && results[results.length - 1];
                 const result = shift ? results[0] : results;
                 const result0 = [].concat(result)[0];
                 const response = (type => {
@@ -676,7 +677,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             case 'http:':
                             case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
                             case 'stream': return h.response(result0.pipe(new Stream.PassThrough()));
-                            case 'jsonrpc': return h.response({jsonrpc, id, result});
+                            case 'jsonrpc': return h.response({jsonrpc, id, result, ...shift && test && {$meta: {validation: $meta.validation, calls: $meta.calls}}});
                             default: return h.response(result);
                         }
                     } catch (error) {
@@ -689,7 +690,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     (jsonrpc && 'jsonrpc')
                 ).header('x-envoy-decorator-operation', method);
                 if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
-                return applyMeta(response, results && Array.isArray(results) && results.length > 1 && results[results.length - 1]);
+                return applyMeta(response, $meta);
             } catch (error) {
                 return h.response({
                     jsonrpc,
