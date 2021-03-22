@@ -283,7 +283,7 @@ class Bus extends Broker {
     }
 
     importMethod(methodName, options) {
-        let result = this.importCache[methodName];
+        let result = !options && this.importCache[methodName];
 
         const startRetry = (fn, {timeout, retry}) => {
             return new Promise((resolve, reject) => {
@@ -303,13 +303,14 @@ class Bus extends Broker {
 
         if (!result) {
             const method = this.getMethod('req', 'request', methodName, options);
-            result = this.importCache[methodName] = Object.assign(function(msg, $meta) {
+            result = Object.assign(function(msg, $meta) {
                 if ($meta && $meta.timeout && $meta.retry) {
                     return startRetry(() => method.apply(undefined, arguments), $meta);
                 } else {
                     return method.apply(undefined, arguments);
                 }
             }, method);
+            if (!options) this.importCache[methodName] = result;
             Object.defineProperty(result, 'name', {value: methodName, configurable: true, enumerable: false});
         }
 
