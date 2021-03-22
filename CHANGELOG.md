@@ -1,3 +1,17 @@
+# [7.43.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.5...v7.43.0) (2021-03-22)
+
+
+### Bug Fixes
+
+* do not cache when options are passed ([c559479](https://github.com/softwaregroup-bg/ut-bus/commit/c5594796ebc7a014b4f1fbdac066a72d29ee986b))
+
+
+### Features
+
+* return some $meta properties during tests ([7f0f8a2](https://github.com/softwaregroup-bg/ut-bus/commit/7f0f8a2635fbd52a18ce2ac057e807822b11ef5a))
+
+
+
 ## [7.42.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.4...v7.42.5) (2021-03-19)
 
 
