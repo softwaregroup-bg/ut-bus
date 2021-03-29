@@ -1,3 +1,12 @@
+## [7.43.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.43.0...v7.43.1) (2021-03-29)
+
+
+### Bug Fixes
+
+* do not webpack tls ([4dc63bb](https://github.com/softwaregroup-bg/ut-bus/commit/4dc63bba976e68775138f35a3551f89fe6ea20a1))
+
+
+
 # [7.43.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.42.5...v7.43.0) (2021-03-22)
 
 
