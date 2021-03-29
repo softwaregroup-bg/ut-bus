@@ -71,6 +71,7 @@
     "request": "ut-browser-request",
     "fs": "./browser/fs",
     "joi": "./browser/joi",
+    "tls": "./browser/tls",
     "net": "./browser/net"
   },
   "license": "Apache-2.0"
