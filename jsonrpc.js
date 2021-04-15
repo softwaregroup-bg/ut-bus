@@ -447,6 +447,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         method: 'GET',
         path: '/healthz',
         options: {
+            cors: socket.cors || false,
             auth: false,
             handler: (request, h) => 'ok'
         }
@@ -657,7 +658,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return response;
     }
 
-    function registerRoute(namespace, name, fn, object, {version}) {
+    async function registerRoute(namespace, name, fn, object, {version}) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         const handler = async function({pre}, h) {
             if (Boom.isBoom(pre.utBus)) return pre.utBus;
@@ -706,52 +707,50 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             return route;
         }
         const pre = preArray(socket.capture);
-
-        return Promise.resolve()
-            .then(() => consul && consul.agent.service.register({
-                name: name.split('.')[0],
-                port: server.info.port,
-                check: {
-                    http: `http://${server.info.host}:${server.info.port}/healthz`,
-                    interval: '5s',
-                    deregistercriticalserviceafter: '1m'
-                }
-            }))
-            .then(() => discover && new Promise((resolve, reject) => {
-                discover.announce(
-                    prefix + name.split('.')[0].replace(/\//g, '-') + suffix + '-' + domain,
-                    server.info.port,
-                    error => error ? reject(error) : resolve()
-                );
-            }))
-            .then(() => utApi.route({
-                method: 'POST',
-                path,
-                options: {
-                    pre,
-                    payload: {
-                        output: 'data',
-                        parse: socket.capture ? 'gunzip' : true,
-                        allow: ['application/json', 'application/x-www-form-urlencoded'],
-                        maxBytes: socket.maxBytes
-                    },
-                    validate: {
-                        payload: socket.capture ? true : joi.object({
-                            jsonrpc: joi.string().valid('2.0').required(),
-                            timeout: joi.number().optional(),
-                            id: joi.alternatives().try(joi.number(), joi.string()).example('1'),
-                            method: joi.string().required(),
-                            params: joi.array().required()
-                        })
-                    }
+        consul && await consul.agent.service.register({
+            name: name.split('.')[0],
+            port: server.info.port,
+            check: {
+                http: `http://${server.info.host}:${server.info.port}/healthz`,
+                interval: '5s',
+                deregistercriticalserviceafter: '1m'
+            }
+        });
+        discover && await (new Promise((resolve, reject) => {
+            discover.announce(
+                prefix + name.split('.')[0].replace(/\//g, '-') + suffix + '-' + domain,
+                server.info.port,
+                error => error ? reject(error) : resolve()
+            );
+        }));
+        await utApi.route({
+            method: 'POST',
+            path,
+            options: {
+                pre,
+                payload: {
+                    output: 'data',
+                    parse: socket.capture ? 'gunzip' : true,
+                    allow: ['application/json', 'application/x-www-form-urlencoded'],
+                    maxBytes: socket.maxBytes
                 },
-                handler
-            }, 'utBus.jsonrpc'))
-            .then(() => utApi && name.endsWith('.request') && utApi.restRoutes({
-                namespace: name.split('.')[0],
-                fn,
-                object
-            }));
+                validate: {
+                    payload: socket.capture ? true : joi.object({
+                        jsonrpc: joi.string().valid('2.0').required(),
+                        timeout: joi.number().optional(),
+                        id: joi.alternatives().try(joi.number(), joi.string()).example('1'),
+                        method: joi.string().required(),
+                        params: joi.array().required()
+                    })
+                }
+            },
+            handler
+        }, 'utBus.jsonrpc');
+        utApi && name.endsWith('.request') && await utApi.restRoutes({
+            namespace: name.split('.')[0],
+            fn,
+            object
+        });
     }
 
     function unregisterRoute(namespace, name) {
@@ -821,6 +820,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
+                    cors: socket.cors || false,
                     pre: jsonrpc ? preJsonRpc(socket.capture, checkAuth, version, logger) : prePlain(socket.capture, checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
