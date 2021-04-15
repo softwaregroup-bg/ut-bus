@@ -88,6 +88,9 @@ http transport over json-rpc 2.0 protocol.
     the remote bus
     * `password` - specifies a password to use for authentication against
     the remote bus
+* `cors` (object | boolean) [optional] - enables cors for all routes,
+additional place where cors can be enabled or/and overwritten
+is in validations.
 
 Configuration examples:
 
