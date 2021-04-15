@@ -1,3 +1,12 @@
+# [7.44.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.43.1...v7.44.0) (2021-04-15)
+
+
+### Features
+
+* enable global CORS config for JSON-RPC routes ([e99dea7](https://github.com/softwaregroup-bg/ut-bus/commit/e99dea76026bad6576ff1abf2c279a368e620038))
+
+
+
 ## [7.43.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.43.0...v7.43.1) (2021-03-29)
 
 
