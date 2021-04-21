@@ -1,3 +1,12 @@
+# [7.45.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.44.0...v7.45.0) (2021-04-21)
+
+
+### Features
+
+* improve api docs ([2fdf1ab](https://github.com/softwaregroup-bg/ut-bus/commit/2fdf1ab3d491fede2d7ce2053eb41bbd3eaaa349))
+
+
+
 # [7.44.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.43.1...v7.44.0) (2021-04-15)
 
 
