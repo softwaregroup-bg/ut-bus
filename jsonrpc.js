@@ -280,7 +280,7 @@ const domainResolver = (domain, errors) => {
     const resolver = require('./resolver');
     const getHostName = service => `${service}-${domain}.dns-discovery.local`;
     const cache = {};
-    return async function resolve(service, invalidate) {
+    return async function resolve(service, invalidate, namespace) {
         try {
             const now = hrtime();
             const hostName = getHostName(service);
@@ -291,7 +291,7 @@ const domainResolver = (domain, errors) => {
                 if (cached) {
                     if (hrtime(cached[0])[0] < 3) {
                         cached[0] = now;
-                        return {...cached[1], cache: service};
+                        return {...cached[1], cache: service, namespace};
                     } else {
                         delete cache[hostName];
                     }
@@ -305,7 +305,7 @@ const domainResolver = (domain, errors) => {
             cache[hostName] = [now, result];
             return result;
         } catch (e) {
-            const err = errors['bus.mdnsResolver']({params: {service: `${service}-${domain}`}});
+            const err = errors['bus.mdnsResolver']({params: {namespace}});
             err.cause = e;
             throw err;
         };
@@ -338,7 +338,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             });
         }
         if (resolver) {
-            Object.assign(requestParams, await resolver(serviceName));
+            Object.assign(requestParams, await resolver(serviceName, false, namespace));
         }
         return requestParams;
     }
@@ -426,7 +426,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const internal = socket.api && socket.api.internal && (() => Promise.all(socket.api.internal.map(name =>
         brokerRequest({}, {method: name + '.service.get'})
             .then(([result]) => ({namespace: name, ...result}))
-            .catch(() => ({namespace: name, version: '?'}))
+            .catch(error => ({namespace: name, version: '?', error}))
     )).catch(error => {
         this.error(error);
         throw error;
@@ -439,7 +439,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             ...socket.api
         },
         errors,
-        getIssuers,
+        async(...params) => {
+            try {
+                return await getIssuers(...params);
+            } catch (error) {
+                logger && logger.error && logger.error(error);
+                throw error;
+            }
+        },
         internal
     );
 
@@ -544,7 +551,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                                 case 'ENOTFOUND':
                                 case 'ECONNREFUSED':
                                     try {
-                                        Object.assign(requestParams, await resolver(requestParams.cache, true));
+                                        Object.assign(requestParams, await resolver(requestParams.cache, true, requestParams.namespace));
                                         delete requestParams.cache;
                                     } catch (resolverError) {
                                         reject(resolverError);
