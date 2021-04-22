@@ -14,6 +14,7 @@ const hrtime = require('browser-process-hrtime');
 const Content = require('content');
 const Pez = require('pez');
 const fs = require('fs');
+const path = require('path');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
 const mlePlugin = require('./mle');
@@ -205,7 +206,7 @@ const uploads = async(workDir, request, logger) => {
                 if (part.name && typeof params[part.name] === 'undefined') {
                     // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
                     files.push(new Promise((resolve, reject) => {
-                        const filename = workDir + '/' + uuid.v4() + '.upload';
+                        const filename = path.join(workDir, uuid.v4() + '.upload');
                         params[part.name] = {
                             originalFilename: part.filename,
                             headers: part.headers,
@@ -229,6 +230,13 @@ const uploads = async(workDir, request, logger) => {
                     const {value, error} = payload.validate(params);
                     return error ? reject(error) : resolve(value);
                 }
+                const renamedFile = params.file.filename.split('.').shift() + '.' + params.file.originalFilename.split('.').pop();
+                fs.rename(params.file.filename, renamedFile, (error) => {
+                    if (error) { 
+                      reject(error);
+                    }
+                });
+                params.file.filename = renamedFile;
                 return resolve(params);
             }, reject));
 
