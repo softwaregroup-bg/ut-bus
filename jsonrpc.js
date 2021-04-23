@@ -230,14 +230,16 @@ const uploads = async(workDir, request, logger) => {
                     const {value, error} = payload.validate(params);
                     return error ? reject(error) : resolve(value);
                 }
-                const renamedFile = params.file.filename.split('.').shift() + '.' + params.file.originalFilename.split('.').pop();
+                const fileDetails = path.parse(params.file.filename);
+                const renamedFile = path.join(fileDetails.dir, fileDetails.name + path.extname(params.file.originalFilename));
+                //const renamedFile = params.file.filename.split('.').shift() + '.' + params.file.originalFilename.split('.').pop();
                 fs.rename(params.file.filename, renamedFile, (error) => {
                     if (error) { 
                       reject(error);
                     }
+                    params.file.filename = renamedFile;
+                    return resolve(params);
                 });
-                params.file.filename = renamedFile;
-                return resolve(params);
             }, reject));
 
         request.payload.pipe(dispenser);
