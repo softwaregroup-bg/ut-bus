@@ -232,10 +232,9 @@ const uploads = async(workDir, request, logger) => {
                 }
                 const fileDetails = path.parse(params.file.filename);
                 const renamedFile = path.join(fileDetails.dir, fileDetails.name + path.extname(params.file.originalFilename));
-                //const renamedFile = params.file.filename.split('.').shift() + '.' + params.file.originalFilename.split('.').pop();
                 fs.rename(params.file.filename, renamedFile, (error) => {
-                    if (error) { 
-                      reject(error);
+                    if (error) {
+                        return reject(error);
                     }
                     params.file.filename = renamedFile;
                     return resolve(params);
