@@ -1,3 +1,12 @@
+## [7.45.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.45.0...v7.45.1) (2021-06-01)
+
+
+### Bug Fixes
+
+* oidc mle [UTCORE-121] ([e74762d](https://github.com/softwaregroup-bg/ut-bus/commit/e74762de24fcfb6a47c5bb801bcb546ba5d408e4))
+
+
+
 # [7.45.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.44.0...v7.45.0) (2021-04-21)
 
 
