@@ -1,3 +1,12 @@
+# [7.46.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.45.1...v7.46.0) (2021-06-01)
+
+
+### Features
+
+* enable TLS configuration ([cc2edd0](https://github.com/softwaregroup-bg/ut-bus/commit/cc2edd023163c3548f9d8c0d8955d9f557680f51))
+
+
+
 ## [7.45.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.45.0...v7.45.1) (2021-06-01)
 
 
