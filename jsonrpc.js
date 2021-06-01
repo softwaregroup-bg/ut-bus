@@ -345,16 +345,25 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     const brokerRequest = brokerMethod(false, 'request');
     const session = async(token) => {
-        const result = await brokerRequest({username: token.payload.oid || token.payload.sub, type: 'oidc', password: '*', channel: 'web'}, {method: 'identity.checkInternal'});
+        const result = await brokerRequest({
+            username: token.payload.oid || token.payload.sub,
+            installationId: token.payload.oid || token.payload.sub,
+            type: 'oidc',
+            password: '*',
+            channel: 'web'
+        }, {method: 'identity.checkInternal'});
         const [{
             'identity.check': {
                 actorId,
                 sessionId
             },
-            permissionMap
+            permissionMap,
+            mle
         }] = result;
         token.payload.per = permissionMap;
         token.payload.ses = sessionId;
+        if (mle && mle.mlek) token.payload.enc = JSON.parse(mle.mlek);
+        if (mle && mle.mlsk) token.payload.sig = JSON.parse(mle.mlsk);
         token.payload.sub = String(actorId);
     };
 
