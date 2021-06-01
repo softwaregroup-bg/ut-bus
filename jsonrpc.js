@@ -20,6 +20,7 @@ const mlePlugin = require('./mle');
 const jwt = require('./jwt');
 const jose = require('./jose');
 const {after, spare} = require('ut-function.timing');
+const cert = require('./cert');
 
 function initConsul({discover, ...config}) {
     const consul = require('consul')(Object.assign({
@@ -276,8 +277,8 @@ const prePlain = (capture, checkAuth, workDir, method, version, logger) => [capt
     }
 }].filter(Boolean);
 
-const domainResolver = (domain, errors) => {
-    const resolver = require('./resolver');
+const domainResolver = (domain, errors, tls) => {
+    const multicastResolver = require('./resolver');
     const getHostName = service => `${service}-${domain}.dns-discovery.local`;
     const cache = {};
     return async function resolve(service, invalidate, namespace) {
@@ -297,9 +298,9 @@ const domainResolver = (domain, errors) => {
                     }
                 }
             }
-            const resolved = await resolver(hostName, 'SRV');
+            const resolved = await multicastResolver(hostName, 'SRV', tls);
             const result = {
-                hostname: (resolved.target === '0.0.0.0' ? '127.0.0.1' : resolved.target),
+                hostname: (resolved.target === '0.0.0.0' ? 'localhost' : resolved.target),
                 port: resolved.port
             };
             cache[hostName] = [now, result];
@@ -367,12 +368,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         token.payload.sub = String(actorId);
     };
 
+    const tlsClient = cert(socket.client);
     const {verify, checkAuth, getIssuers, get} = require('./oidc')({
         request,
         discoverService,
         errorPrefix: 'bus.',
         errors,
         session,
+        tls: tlsClient,
         issuers: socket.openId || {...socket.utLogin !== false && {'ut-login': {audience: 'ut-bus'}}}
     });
 
@@ -381,7 +384,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
     async function createServer(port) {
         const result = new hapi.Server({
-            port: port || socket.port
+            port: port || socket.port,
+            tls: cert(socket)
         });
 
         await result.register([
@@ -476,13 +480,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
     }].filter(Boolean), 'utBus.jsonrpc');
 
-    const domain = (socket.domain === true) ? require('os').hostname() : socket.domain;
+    const tld = socket.tls ? '.' + channel : ''; // similar to top level domain
+    const domain = (socket.domain === true) ? require('os').hostname() + tld : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
     const consulDiscover = socket.consul && socket.consul.discover;
     const discover = socket.domain && require('dns-discovery')();
-    const resolver = socket.domain && domainResolver(domain, errors);
+    const resolver = socket.domain && domainResolver(domain, errors, !!socket.tls);
     const prefix = socket.prefix || '';
-    const suffix = socket.suffix || '-service';
+    const suffix = socket.suffix || '-service' + tld;
     const deleted = (request, h) => {
         return h.response('Method was deleted').code(404);
     };
@@ -530,6 +535,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             const {encode, decode, requestParams} = await codec($meta, methodType);
             const {params, headers, method = $meta.method} = await encode(msg, ...rest, $meta);
             const sendRequest = callback => request({
+                ...tlsClient,
                 followRedirect: false,
                 json: true,
                 method: 'POST',

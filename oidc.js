@@ -2,6 +2,7 @@ const { JWKS, JWT } = require('jose');
 
 module.exports = ({
     issuers,
+    tls,
     request = require('request'),
     discoverService = false,
     session = false,
@@ -23,6 +24,7 @@ module.exports = ({
             json: true,
             method: 'GET',
             url,
+            ...tls,
             ...headers && {
                 headers: {
                     'x-forwarded-proto': headers['x-forwarded-proto'] || protocol,

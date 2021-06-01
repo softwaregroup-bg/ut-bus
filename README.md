@@ -88,9 +88,30 @@ http transport over json-rpc 2.0 protocol.
     the remote bus
     * `password` - specifies a password to use for authentication against
     the remote bus
+* `tls` (object) [optional] - can be used to enable TLS. Accepts any of the options
+  passed to node.js [https.createServer](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
+  Specifically, the following options, are interpreted as filesystem paths:
+  * `cert` - Server certificate
+  * `key` - Server private key
+  * `ca` - Trusted root certificate for mutual TSL with self signed
+  (client) certificates. To enable mutual TLS, use this option
+  together with setting `tls.requestCert` to `true`.
+  * `crl` - certificate revocation lists
+
+  For more information consult [tls.createSecureContext](https://nodejs.org/api/tls.html#tls_tls_createsecurecontext_options).
 * `cors` (object | boolean) [optional] - enables cors for all routes,
 additional place where cors can be enabled or/and overwritten
 is in validations.
+* `client` (object) [optional] - HTTP/HTTPS client configuration options:
+  * `client.tls` (object) [optional] - use this option to enable
+  TLS or mutual TLS for bus to bus communication.
+  These options are passed to the
+  [request](https://www.npmjs.com/package/request)
+  module, and the following ones are interpreted as file paths:
+    * `cert` - Client certificate
+    * `key` - Client private key
+    * `ca` - Trusted root certificate for mutual TSL with self signed
+    (server) certificates.
 
 Configuration examples:
 

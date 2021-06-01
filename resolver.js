@@ -1,8 +1,14 @@
 // fixed https://www.npmjs.com/package/mdns-resolver
 const MDNS = require('multicast-dns');
 const util = require('util');
+const os = require('os');
 
-module.exports = util.promisify((hostname, rrtype, callback) => {
+module.exports = util.promisify((hostname, rrtype, tls, callback) => {
+    const localhost = tls && [].concat(...Object.values(os.networkInterfaces()))
+        .map(({address}) => address)
+        .filter(Boolean)
+        .reduce((prev, address) => [...prev, address], ['0.0.0.0']);
+
     const mdns = MDNS();
     if (hostname.charAt(hostname.length - 1) === '.') {
         hostname = hostname.substring(0, hostname.length - 1);
@@ -23,7 +29,13 @@ module.exports = util.promisify((hostname, rrtype, callback) => {
             clearInterval(retryHandler);
             mdns.removeListener('response', responseHandler);
             mdns.destroy();
-            if (rrtype === 'SRV' && answer.data && answer.data.target === '0.0.0.0') answer.data.target = info.address;
+            if (rrtype === 'SRV' && answer.data) {
+                if (tls) {
+                    if (localhost.includes(answer.data.target)) answer.data.target = 'localhost';
+                } else {
+                    if (answer.data.target === '0.0.0.0') answer.data.target = info.address;
+                }
+            }
             callback(null, answer.data);
         }
     };
