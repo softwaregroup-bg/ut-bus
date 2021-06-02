@@ -1,3 +1,12 @@
+# [7.47.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.46.0...v7.47.0) (2021-06-02)
+
+
+### Features
+
+* security headers [UTCORE-121] ([4cac035](https://github.com/softwaregroup-bg/ut-bus/commit/4cac035323f8bbafc3839c0dfdf8778e4c32e7b6))
+
+
+
 # [7.46.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.45.1...v7.46.0) (2021-06-01)
 
 
