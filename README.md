@@ -99,9 +99,11 @@ http transport over json-rpc 2.0 protocol.
   * `crl` - certificate revocation lists
 
   For more information consult [tls.createSecureContext](https://nodejs.org/api/tls.html#tls_tls_createsecurecontext_options).
-* `cors` (object | boolean) [optional] - enables cors for all routes,
-additional place where cors can be enabled or/and overwritten
-is in validations.
+* `cors` (object | boolean) [optional] - Enables cors for all routes.
+  Additional place where cors can be enabled or/and overwritten
+  is in validations. For detailed configuration, see docs for hapi `route.options.cors`
+* `security` (object | boolean) [optional] - Enables security headers on all routes.
+  For detailed configuration, see docs for hapi `route.options.security`
 * `client` (object) [optional] - HTTP/HTTPS client configuration options:
   * `client.tls` (object) [optional] - use this option to enable
   TLS or mutual TLS for bus to bus communication.

@@ -468,6 +468,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         path: '/healthz',
         options: {
             cors: socket.cors || false,
+            security: socket.security || false,
             auth: false,
             handler: (request, h) => 'ok'
         }
@@ -843,6 +844,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     httpMethod,
                     version,
                     cors: socket.cors || false,
+                    security: socket.security || false,
                     pre: jsonrpc ? preJsonRpc(socket.capture, checkAuth, version, logger) : prePlain(socket.capture, checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
@@ -896,12 +898,19 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 const {
                     file,
                     directory,
+                    security = {
+                        hsts: {
+                            maxAge: 63072000,
+                            includeSubDomains: true,
+                            preload: true
+                        }
+                    },
                     auth = false
                 } = typeof validation === 'function' ? validation() : validation;
                 return {
                     method: 'GET',
                     path: '/a/' + (directory ? method + '/{path*}' : method),
-                    options: {auth},
+                    options: {auth, security},
                     handler: {
                         ...file && {file},
                         ...directory && {directory}
