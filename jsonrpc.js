@@ -649,7 +649,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function info() {
         return {
             ...server.info,
-            ...mle.keys
+            ...mle.keys,
+            ...test && {
+                exchange: server
+                    .table()
+                    .filter(({settings: {auth}}) => auth && Array.isArray(auth.strategies) && auth.strategies.includes('exchange'))
+                    .map(({path}) => path)
+            }
         };
     }
 
