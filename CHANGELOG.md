@@ -1,3 +1,12 @@
+## [7.47.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.0...v7.47.1) (2021-06-18)
+
+
+### Bug Fixes
+
+* minimum TLS is defaulted to 1.3 [UTCORE-121] ([e1361d1](https://github.com/softwaregroup-bg/ut-bus/commit/e1361d1d6cc9a0e450cd8f0c13964f17983604c0))
+
+
+
 # [7.47.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.46.0...v7.47.0) (2021-06-02)
 
 
