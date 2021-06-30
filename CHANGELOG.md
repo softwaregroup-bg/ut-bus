@@ -1,3 +1,7 @@
+## [7.47.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.2...v7.47.3) (2021-06-30)
+
+
+
 ## [7.47.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.1...v7.47.2) (2021-06-30)
 
 
