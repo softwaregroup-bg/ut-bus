@@ -1,3 +1,12 @@
+## [7.47.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.3...v7.47.4) (2021-07-02)
+
+
+### Bug Fixes
+
+* error details [UTCORE-121] ([379edda](https://github.com/softwaregroup-bg/ut-bus/commit/379eddace4d0ca6b90612d7a04f8f6668e2cf25b))
+
+
+
 ## [7.47.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.2...v7.47.3) (2021-06-30)
 
 
