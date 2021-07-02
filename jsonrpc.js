@@ -719,7 +719,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return h.response({
                     jsonrpc,
                     id,
-                    error
+                    error: socket.debug ? error : {
+                        type: error.type,
+                        message: error.message
+                    }
                 }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500);
             }
         };
