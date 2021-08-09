@@ -1,3 +1,12 @@
+# [7.48.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.4...v7.48.0) (2021-08-09)
+
+
+### Features
+
+* custom headers #UTCORE-121 ([660c7fa](https://github.com/softwaregroup-bg/ut-bus/commit/660c7fa00c6805e27aaa5804e010ead0a4fba5df)), closes [#UTCORE-121](https://github.com/softwaregroup-bg/ut-bus/issues/UTCORE-121)
+
+
+
 ## [7.47.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.3...v7.47.4) (2021-07-02)
 
 
