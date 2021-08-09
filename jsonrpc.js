@@ -51,9 +51,8 @@ function forward(headers) {
 function extendMeta(req, version, serviceName) {
     const {
         'user-agent': frontEnd,
-        latitude,
-        longitude,
-        deviceId,
+        'geo-position': gps, // https://datatracker.ietf.org/doc/html/draft-daviel-http-geo-header-05
+        'x-ut-device': deviceId,
         'x-forwarded-host': forwardedHost,
         'x-forwarded-for': forwardedIp
     } = req.headers || {};
@@ -61,6 +60,7 @@ function extendMeta(req, version, serviceName) {
         localAddress,
         localPort
     } = (req.raw && req.raw.req && req.raw.req.socket && req.raw.req.socket) || {};
+    const [latitude, longitude] = gps ? gps.split(' ', 1)[0].split(';') : [req.headers.latitude, req.headers.longitude];
     const {language, ...auth} = req.auth.credentials || {};
     return {
         forward: forward(req.headers),
