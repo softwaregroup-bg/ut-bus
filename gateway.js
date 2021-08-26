@@ -15,7 +15,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
         };
     }
 
-    async function login(cache, url, username, password, channel) {
+    async function login({url, username, password, channel, ...cache}) {
         const {sign, encrypt} = (localKeys && (cache.auth || cache.remoteKeys)) || {};
         if (sign && encrypt) {
             const {body: {result, error}} = await httpPost({
@@ -81,7 +81,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
             }
         };
 
-        const cache = localCache[url] = localCache[url] || {};
+        const cache = localCache[url] = localCache[url] || {url, username, password, channel};
 
         if (localKeys && !cache.remoteKeys) {
             const body = await get(`${url}/rpc/login/.well-known/mle`, errors['bus.jsonRpcHttp'], errors['bus.jsonRpcEmpty']);
@@ -107,13 +107,13 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
             return codec;
         }
 
-        if (!cache.auth) await login(cache, url, username, password, channel);
+        if (!cache.auth) await login(cache);
 
         const exp = Date.now();
 
         if (exp > cache.tokenInfo.tokenExpire) {
             if (exp > cache.tokenInfo.refreshTokenExpire) {
-                await login(cache, url, username, password, channel);
+                await login(cache);
             } else {
                 const {body} = await httpPost({
                     url: `${url}/rpc/login/token`,
