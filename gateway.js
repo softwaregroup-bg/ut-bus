@@ -15,7 +15,8 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
         };
     }
 
-    async function login({url, username, password, channel, ...cache}) {
+    async function login(cache) {
+        const {url, username, password, channel} = cache;
         const {sign, encrypt} = (localKeys && (cache.auth || cache.remoteKeys)) || {};
         if (sign && encrypt) {
             const {body: {result, error}} = await httpPost({
