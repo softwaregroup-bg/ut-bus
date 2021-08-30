@@ -1,3 +1,12 @@
+# [7.49.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.48.0...v7.49.0) (2021-08-30)
+
+
+### Features
+
+* configureable timeout ([686b49f](https://github.com/softwaregroup-bg/ut-bus/commit/686b49fb41ccc51e52fae36907c5fa26c182c4b0))
+
+
+
 # [7.48.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.47.4...v7.48.0) (2021-08-09)
 
 
