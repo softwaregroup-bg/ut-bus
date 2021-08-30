@@ -58,17 +58,14 @@ module.exports = ({logFactory, logLevel}) => {
         },
         register(errorsMap) {
             const result = {};
-            Object.entries(errorsMap).forEach(([type, errDefinition]) => {
+            Object.entries(errorsMap).forEach(([type, message]) => {
                 if (!typeRegex.test(type)) {
                     warn(`Invalid error type format: '${type}'!`, {
                         args: {type, expectedFormat: typeRegex.toString()},
                         method: 'utError.register'
                     });
                 }
-                const definition = (typeof errDefinition === 'string')
-                    ? {message: errDefinition}
-                    : errDefinition;
-                const props = {message: definition.message};
+                const props = typeof message === 'string' ? {message} : message;
                 if (!props.message) throw new Error(`Missing message for error '${type}'`);
                 if (errors[type]) {
                     if (errors[type].message !== props.message) {
@@ -89,8 +86,8 @@ module.exports = ({logFactory, logLevel}) => {
                     Object.defineProperty(error, 'name', {value: type, configurable: true, enumerable: false});
                     error.type = type;
                     error.message = interpolate(props.message, params.params);
-                    if (definition.transformer) {
-                        error = definition.transformer(error);
+                    if (props.transformer) {
+                        error = props.transformer(error);
                     }
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
