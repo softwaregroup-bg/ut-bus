@@ -848,6 +848,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     version,
                     cors: socket.cors || false,
                     security: socket.security || false,
+                    timeout: {server: false, ...socket.timeout},
                     pre: jsonrpc ? preJsonRpc(socket.capture, checkAuth, version, logger) : prePlain(socket.capture, checkAuth, dir || workDir, method, version, logger),
                     validate: {
                         failAction(request, h, error) {
