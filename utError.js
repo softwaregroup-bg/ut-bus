@@ -76,7 +76,7 @@ module.exports = ({logFactory, logLevel}) => {
                 }
 
                 const handler = (params = {}, $meta) => {
-                    let error = new Error();
+                    const error = new Error();
                     if (params instanceof Error) {
                         error.cause = params;
                     } else {
@@ -86,8 +86,8 @@ module.exports = ({logFactory, logLevel}) => {
                     Object.defineProperty(error, 'name', {value: type, configurable: true, enumerable: false});
                     error.type = type;
                     error.message = interpolate(props.message, params.params);
-                    if (props.transformer) {
-                        error = props.transformer(error);
+                    if (props.transformer && typeof props.transformer === 'function') {
+                        props.transformer(error);
                     }
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
