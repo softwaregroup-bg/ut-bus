@@ -775,7 +775,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         utApi && name.endsWith('.request') && await utApi.restRoutes({
             namespace: name.split('.')[0],
             fn,
-            object
+            object,
+            logger,
+            debug: socket.debug
         });
     }
 
@@ -897,6 +899,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     ...!jsonrpc && params && {app: {payload: params, ...rest.app}}
                 };
             }), moduleName);
+        } else if (/\.openApi$|^openApi$/.test(moduleName) && utApi) {
+            utApi.registerOpenApi?.(methods);
         } else if (moduleName.endsWith('.asset') && utApi && Object.entries(methods).length) {
             utApi.route(Object.entries(methods).map(([method, validation]) => {
                 const {
