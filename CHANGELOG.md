@@ -1,3 +1,12 @@
+# [7.50.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.49.0...v7.50.0) (2021-09-02)
+
+
+### Features
+
+* modular openAPI ([309c546](https://github.com/softwaregroup-bg/ut-bus/commit/309c546624ad75d0737d8d1161f1048a68886a38))
+
+
+
 # [7.49.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.48.0...v7.49.0) (2021-08-30)
 
 
