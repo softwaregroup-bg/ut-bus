@@ -1,3 +1,12 @@
+# [7.51.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.50.0...v7.51.0) (2021-09-08)
+
+
+### Features
+
+* cache.instead ([63523ab](https://github.com/softwaregroup-bg/ut-bus/commit/63523ab64e5a80f4f7f6fee21d55c972d2b3ba89))
+
+
+
 # [7.50.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.49.0...v7.50.0) (2021-09-02)
 
 
