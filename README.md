@@ -414,6 +414,10 @@ when importing a bus method.
         }
         ```
 
+    * `instead` - **string** - cache operation called instead of calling the method,
+        can be one of 'get', 'set', 'drop', undefined
+        This property is optional.
+
     * `after` - **string** - cache operation before calling the method,
         can be one of 'get', 'set', 'drop', undefined
         This property is optional.

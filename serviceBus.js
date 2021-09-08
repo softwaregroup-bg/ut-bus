@@ -173,7 +173,7 @@ class Bus extends Broker {
                     $applyMeta.mtid = 'request';
                     $applyMeta.method = methodName;
                     if (cache) {
-                        const before = cache.before || {
+                        const before = cache.instead || cache.before || {
                             get: 'get',
                             fetch: 'get',
                             add: false,
@@ -231,6 +231,7 @@ class Bus extends Broker {
                 try {
                     const cached = fnCache && $metaBefore && $metaBefore.cache.key && await fnCache.call(this, params[0], $metaBefore);
                     if (cached && cached[0] !== null) return cached[0];
+                    if (cache && cache.instead) return cached && cached[0];
                     applyFn = fn;
                     const result = await fn.apply(this, params);
                     if (fnCache && $metaAfter && $metaAfter.cache.key && typeof result[0] !== 'undefined') await fnCache.call(this, result[0], $metaAfter);
