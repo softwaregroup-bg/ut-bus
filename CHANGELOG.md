@@ -1,3 +1,12 @@
+# [7.52.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.51.0...v7.52.0) (2021-09-09)
+
+
+### Features
+
+* expose error params ([1a7da51](https://github.com/softwaregroup-bg/ut-bus/commit/1a7da514679e470e6c253e9668d4abfe0cad6821))
+
+
+
 # [7.51.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.50.0...v7.51.0) (2021-09-08)
 
 
