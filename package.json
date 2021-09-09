@@ -26,7 +26,7 @@
     "uuid": "3.3.2"
   },
   "devDependencies": {
-    "joi": "17.3.0",
+    "joi": "17.4.2",
     "consul": "^0.37.0",
     "moleculer": "^0.13.5",
     "nats-hemera": "^6.1.1",
