@@ -1,10 +1,10 @@
 const typeRegex = /^[a-z]\w*(\.!?\w+)*$/;
-
+const paramsRegex = /\{([^}]*)\}/g;
 const interpolate = (regExp => (msg, params = {}) => {
     return msg.replace(regExp, (placeholder, label) => {
         return typeof params[label] === 'undefined' ? `?${label}?` : params[label];
     });
-})(/\{([^}]*)\}/g);
+})(paramsRegex);
 
 const getWarnHandler = ({logFactory, logLevel}) => {
     if (logFactory) {
@@ -90,6 +90,7 @@ module.exports = ({logFactory, logLevel}) => {
                 };
                 handler.type = type;
                 handler.message = props.message;
+                handler.params = handler.message.match(paramsRegex)?.map(param => param.replace('{', '').replace('}', ''));
                 result[type] = errors[type] = handler;
             });
             return result;
