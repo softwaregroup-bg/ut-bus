@@ -32,6 +32,12 @@ Object {
       "message",
       "interpolation {placeholder}",
     ],
+    Array [
+      "params",
+      Array [
+        "placeholder",
+      ],
+    ],
   ],
 }
 `
@@ -53,6 +59,10 @@ Object {
     Array [
       "message",
       "simple error text",
+    ],
+    Array [
+      "params",
+      undefined,
     ],
   ],
 }
