@@ -1,3 +1,12 @@
+# [7.53.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.52.0...v7.53.0) (2021-09-10)
+
+
+### Features
+
+* asset auth strategy ([14a05ef](https://github.com/softwaregroup-bg/ut-bus/commit/14a05efee01503cfc59bdaa38b465f72b1e11bd4))
+
+
+
 # [7.52.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.51.0...v7.52.0) (2021-09-09)
 
 
