@@ -14,6 +14,7 @@
     "bus.responseValidation": "Response at {path} failed validation: {message}",
     "bus.consulServiceNotFound": "Service {serviceName} not found in Consul",
     "bus.jwtMissingHeader": {"message": "Missing bearer authorization header", "statusCode": 401},
+    "bus.jwtMissingAssetCookie": {"message": "Missing asset access cookie", "statusCode": 401},
     "bus.jwtInvalidKey": {"message": "Invalid bearer authorization key", "statusCode": 401},
     "bus.jwtInvalid": {"message": "Invalid authentication ({message})", "statusCode": 401},
     "bus.oidcHttp": {"message": "OpenID returned HTTP error {code}", "statusCode": 401},

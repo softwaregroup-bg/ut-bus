@@ -674,10 +674,16 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function applyMeta(response, {
         httpResponse
     } = {}) {
-        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type', 'state', 'header'].forEach(method =>
-            Object.prototype.hasOwnProperty.call(httpResponse, method) &&
-            response[method](...[].concat(httpResponse[method]))
-        );
+        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type', 'state', 'header'].forEach(method => {
+            if (Object.prototype.hasOwnProperty.call(httpResponse, method)) {
+                const params = httpResponse[method];
+                if (Array.isArray(params?.[0])) { // setting multiple headers and cookies require nested arrays
+                    params.forEach(param => response[method](...[].concat(param)));
+                } else {
+                    response[method](...[].concat(params));
+                }
+            }
+        });
         return response;
     }
 
@@ -845,7 +851,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 const isGetHead = ['get', 'head'].includes(httpMethod && httpMethod.toLowerCase());
                 return {
                     method,
-                    route: path ? `/rpc/${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
+                    route: path ? `${rest.auth === 'asset' ? '/aa/' : '/rpc/'}${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
                     cors: socket.cors || false,

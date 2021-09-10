@@ -161,14 +161,14 @@ module.exports = ({
         return result;
     }
 
-    async function verify(token, {nonce}, isId) {
+    async function verify(token, {nonce, audience: aud}, isId) {
         let decoded;
         try {
             decoded = JWT.decode(token, {complete: true});
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        const audience = (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss)).audience) || 'ut-bus';
+        const audience = aud || (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss)).audience) || 'ut-bus';
         try {
             if (isId) {
                 JWT.IdToken.verify(token, await getKey(decoded), {issuer: decoded.payload.iss, nonce, audience});

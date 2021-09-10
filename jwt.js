@@ -4,17 +4,17 @@ const LRUCache = require('lru-cache');
 
 module.exports = {
     plugin: {
-        register(server, {options: {openId, tokenCache}, logger, errors, verify}) {
-            function jose() {
-                const cache = (![0, false, 'false'].includes(tokenCache)) && new LRUCache({max: 1000, ...tokenCache});
+        register(server, {options: {openId, tokenCache, assetTokenCache}, logger, errors, verify}) {
+            const checker = (audience, cacheConfig, errorId, getToken) => function jose() {
+                const cache = (![0, false, 'false'].includes(cacheConfig)) && new LRUCache({max: 1000, ...cacheConfig});
                 return {
                     async authenticate(request, h) {
                         try {
-                            const token = request.headers.authorization && request.headers.authorization.match(/^bearer\s+(.+)$/i);
-                            if (!token) throw errors['bus.jwtMissingHeader']();
-                            const cachedCredentials = cache && cache.get(token[1]);
+                            const token = getToken(request);
+                            if (!token) throw errors[errorId]();
+                            const cachedCredentials = cache && cache.get(token);
                             if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
-                            const decoded = await verify(token[1], {issuer: openId, audience: 'ut-bus'});
+                            const decoded = await verify(token, {issuer: openId, audience});
                             const {
                                 // standard
                                 aud,
@@ -44,7 +44,7 @@ module.exports = {
                                 sessionId,
                                 ...rest
                             };
-                            if (cache) cache.set(token[1], credentials, exp * 1000 - Date.now());
+                            if (cache) cache.set(token, credentials, exp * 1000 - Date.now());
                             return h.authenticated({credentials});
                         } catch (error) {
                             logger && logger.error && logger.error(error);
@@ -52,10 +52,23 @@ module.exports = {
                         }
                     }
                 };
-            }
-            server.auth.scheme('jwt', jose);
+            };
+
+            server.auth.scheme('jwt', checker(
+                'ut-bus',
+                tokenCache,
+                'bus.jwtMissingHeader',
+                request => request.headers.authorization && request.headers.authorization.match(/^bearer\s+(.+)$/i)?.[1]
+            ));
+            server.auth.scheme('asset-cookie', checker(
+                'ut-bus/asset',
+                assetTokenCache,
+                'bus.jwtMissingAssetCookie',
+                request => request.state['ut-bus-asset']
+            ));
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
+            server.auth.strategy('asset', 'asset-cookie');
         },
         pkg: {
             ...pkg,
