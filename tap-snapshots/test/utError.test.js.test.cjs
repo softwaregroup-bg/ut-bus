@@ -8,6 +8,7 @@
 exports[`test/utError.test.js TAP utError > Create child error 1`] = `
 parent.child: Child error {
   "message": "Child error",
+  "print": "An error ocurred. Please try again later.",
   "type": "parent.child",
 }
 `
@@ -18,6 +19,7 @@ parent.interpolated: Error interpolated {
   "params": Object {
     "name": "interpolated",
   },
+  "print": "An error ocurred. Please try again later.",
   "type": "parent.interpolated",
 }
 `
@@ -25,6 +27,7 @@ parent.interpolated: Error interpolated {
 exports[`test/utError.test.js TAP utError > Create interpolated error without params 1`] = `
 parent.interpolated: Error ?name? {
   "message": "Error ?name?",
+  "print": "An error ocurred. Please try again later.",
   "type": "parent.interpolated",
 }
 `
@@ -32,6 +35,7 @@ parent.interpolated: Error ?name? {
 exports[`test/utError.test.js TAP utError > Create parent error 1`] = `
 parent: Parent error {
   "message": "Parent error",
+  "print": "An error ocurred. Please try again later.",
   "type": "parent",
 }
 `
@@ -65,6 +69,7 @@ Array [
 exports[`test/utError.test.js TAP utError > Get root error 1`] = `
 root: Root error {
   "message": "Root error",
+  "print": "An error ocurred. Please try again later.",
   "type": "root",
 }
 `
