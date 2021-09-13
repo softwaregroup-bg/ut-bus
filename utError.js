@@ -78,11 +78,8 @@ module.exports = ({logFactory, logLevel, errorPrint}) => {
                     result[type] = errors[type];
                     return;
                 }
-                if (!props.print) {
-                    if (!errorPrint) props.print = 'An error ocurred. Please try again later.';
-                    else if (typeof errorPrint === 'string') props.print = errorPrint;
-                    else props.print = props.message;
-                }
+
+                if (!props.print && errorPrint) props.print = typeof errorPrint === 'string' ? errorPrint : props.message;
 
                 const handler = (params = {}, $meta) => {
                     const error = new Error();
@@ -94,13 +91,13 @@ module.exports = ({logFactory, logLevel, errorPrint}) => {
                     Object.assign(error, props);
                     Object.defineProperty(error, 'name', {value: type, configurable: true, enumerable: false});
                     error.type = type;
-                    error.print = props.print;
+                    if (props.print) error.print = props.print;
                     error.message = interpolate(props.message, params.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
                 handler.type = type;
                 handler.message = props.message;
-                handler.print = props.print;
+                if (props.print) handler.print = props.print;
                 handler.params = handler.message.match(paramsRegex)?.map(param => param.replace('{', '').replace('}', ''));
                 result[type] = errors[type] = handler;
             });
