@@ -17,6 +17,7 @@ error.interpolation: interpolation test {
   "params": Object {
     "placeholder": "test",
   },
+  "print": "An error ocurred. Please try again later.",
   "type": "error.interpolation",
 }
 `
@@ -33,6 +34,10 @@ Object {
       "interpolation {placeholder}",
     ],
     Array [
+      "print",
+      "An error ocurred. Please try again later.",
+    ],
+    Array [
       "params",
       Array [
         "placeholder",
@@ -45,6 +50,7 @@ Object {
 exports[`test/bus.test.js TAP bus Call errors > error.simple error 1`] = `
 error.simple: simple error text {
   "message": "simple error text",
+  "print": "An error ocurred. Please try again later.",
   "type": "error.simple",
 }
 `
@@ -61,6 +67,10 @@ Object {
       "simple error text",
     ],
     Array [
+      "print",
+      "An error ocurred. Please try again later.",
+    ],
+    Array [
       "params",
       undefined,
     ],
@@ -74,6 +84,7 @@ error.interpolation: interpolation test {
   "params": Object {
     "placeholder": "test",
   },
+  "print": "An error ocurred. Please try again later.",
   "type": "error.interpolation",
 }
 `
@@ -87,6 +98,7 @@ Array [
 exports[`test/bus.test.js TAP bus Call errors > simple error 1`] = `
 error.simple: simple error text {
   "message": "simple error text",
+  "print": "An error ocurred. Please try again later.",
   "type": "error.simple",
 }
 `

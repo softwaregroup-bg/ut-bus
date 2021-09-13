@@ -78,6 +78,11 @@ module.exports = ({logFactory, logLevel, errorPrint}) => {
                     result[type] = errors[type];
                     return;
                 }
+                if (!props.print) {
+                    if (!errorPrint) props.print = 'An error ocurred. Please try again later.';
+                    else if (typeof errorPrint === 'string') props.print = errorPrint;
+                    else props.print = props.message;
+                }
 
                 const handler = (params = {}, $meta) => {
                     const error = new Error();
@@ -90,11 +95,6 @@ module.exports = ({logFactory, logLevel, errorPrint}) => {
                     Object.defineProperty(error, 'name', {value: type, configurable: true, enumerable: false});
                     error.type = type;
                     error.print = props.print;
-                    if (!error.print) {
-                        if (!errorPrint) error.print = 'An error ocurred. Please try again later.';
-                        else if (typeof errorPrint === 'string') error.print = errorPrint;
-                        else error.print = error.message;
-                    }
                     error.message = interpolate(props.message, params.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
