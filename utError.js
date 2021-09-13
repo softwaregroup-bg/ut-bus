@@ -29,7 +29,7 @@ const getWarnHandler = ({logFactory, logLevel}) => {
     return () => {};
 };
 
-module.exports = ({logFactory, logLevel}) => {
+module.exports = ({logFactory, logLevel, errorPrint}) => {
     const warn = getWarnHandler({logFactory, logLevel});
     const errors = {};
     const api = {
@@ -65,7 +65,11 @@ module.exports = ({logFactory, logLevel}) => {
                         method: 'utError.register'
                     });
                 }
-                const props = typeof message === 'string' ? {message} : message;
+                const props = typeof message === 'string'
+                    ? {message}
+                    : Array.isArray(message)
+                        ? {message: message[0], print: message[1]}
+                        : message;
                 if (!props.message) throw new Error(`Missing message for error '${type}'`);
                 if (errors[type]) {
                     if (errors[type].message !== props.message) {
@@ -85,11 +89,18 @@ module.exports = ({logFactory, logLevel}) => {
                     Object.assign(error, props);
                     Object.defineProperty(error, 'name', {value: type, configurable: true, enumerable: false});
                     error.type = type;
+                    error.print = props.print;
+                    if (!error.print) {
+                        if (!errorPrint) error.print = 'An error ocurred. Please try again later.';
+                        else if (typeof errorPrint === 'string') error.print = errorPrint;
+                        else error.print = error.message;
+                    }
                     error.message = interpolate(props.message, params.params);
                     return $meta ? [error] : error; // to do - fix once bus.register allows to configure unpack
                 };
                 handler.type = type;
                 handler.message = props.message;
+                handler.print = props.print;
                 handler.params = handler.message.match(paramsRegex)?.map(param => param.replace('{', '').replace('}', ''));
                 result[type] = errors[type] = handler;
             });
