@@ -1,3 +1,12 @@
+## [7.53.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.53.0...v7.53.1) (2021-09-14)
+
+
+### Bug Fixes
+
+* utBus.serviceBus.errorPrint - string|boolean #UTCORE-121 ([#112](https://github.com/softwaregroup-bg/ut-bus/issues/112)) ([b1d09fc](https://github.com/softwaregroup-bg/ut-bus/commit/b1d09fc3775165c2e94d721862c9c98a70bf3e8d)), closes [#UTCORE-121](https://github.com/softwaregroup-bg/ut-bus/issues/UTCORE-121)
+
+
+
 # [7.53.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.52.0...v7.53.0) (2021-09-10)
 
 
