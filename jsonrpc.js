@@ -727,7 +727,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     id,
                     error: socket.debug ? error : {
                         type: error.type,
-                        message: error.message
+                        message: error.message,
+                        print: error.print,
+                        params: error.params
                     }
                 }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500);
             }
