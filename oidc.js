@@ -168,7 +168,7 @@ module.exports = ({
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        const audience = aud || (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss)).audience) || 'ut-bus';
+        const audience = (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss)).audience) || aud || 'ut-bus';
         try {
             if (isId) {
                 JWT.IdToken.verify(token, await getKey(decoded), {issuer: decoded.payload.iss, nonce, audience});
