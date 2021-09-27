@@ -1,3 +1,12 @@
+## [7.53.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.53.1...v7.53.2) (2021-09-27)
+
+
+### Bug Fixes
+
+* audience priority #UTCORE-121 ([be2de39](https://github.com/softwaregroup-bg/ut-bus/commit/be2de39d4c0ca6555dbf2f896e91c0307d22496f)), closes [#UTCORE-121](https://github.com/softwaregroup-bg/ut-bus/issues/UTCORE-121)
+
+
+
 ## [7.53.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.53.0...v7.53.1) (2021-09-14)
 
 
