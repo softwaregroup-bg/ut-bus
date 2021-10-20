@@ -2,7 +2,7 @@ const { JWKS, JWT } = require('jose');
 
 module.exports = ({
     issuers,
-    tls,
+    tls = {},
     request = require('request'),
     discoverService = false,
     session = false,
@@ -107,13 +107,16 @@ module.exports = ({
     const loadIssuers = () => Promise.all(
         Object.entries(issuers)
             .filter(([, config]) => config)
-            .map(([issuer, {
+            .map(([issuerId, {
                 configuration,
                 url = '.well-known/openid-configuration',
-                audience = 'ut-bus'
-            }]) => (async() => [issuer, {
-                ...await openIdConfig(configuration || issuerUrl(issuer, url)),
-                audience
+                audience = 'ut-bus',
+                ...rest
+            }]) => (async() => [issuerId, {
+                ...await openIdConfig(configuration || issuerUrl(issuerId, url)),
+                audience,
+                issuerId,
+                ...rest
             }])())
     );
 
@@ -161,25 +164,28 @@ module.exports = ({
         return result;
     }
 
-    async function verify(token, {nonce, audience: aud}, isId) {
+    async function verify(token, {nonce, audience = 'ut-bus'}, isId) {
         let decoded;
         try {
             decoded = JWT.decode(token, {complete: true});
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        const audience = (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss)).audience) || aud || 'ut-bus';
+        const config = (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss))) || {audience};
         try {
             if (isId) {
-                JWT.IdToken.verify(token, await getKey(decoded), {issuer: decoded.payload.iss, nonce, audience});
+                JWT.IdToken.verify(token, await getKey(decoded), {issuer: decoded.payload.iss, nonce, audience: config.audience});
             } else {
-                JWT.verify(token, await getKey(decoded), {audience});
+                JWT.verify(token, await getKey(decoded), {audience: config.audience});
             }
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
         if (session && !decoded.payload.ses) await session(decoded);
-        return decoded;
+        return {
+            ...decoded,
+            config
+        };
     }
 
     return {get, verify, getIssuers, checkAuth, issuerConfig};
