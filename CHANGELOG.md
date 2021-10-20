@@ -1,3 +1,12 @@
+# [7.54.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.53.2...v7.54.0) (2021-10-20)
+
+
+### Features
+
+* return oidc issuer config during verify ([4314baa](https://github.com/softwaregroup-bg/ut-bus/commit/4314baa8dcdb5697b80013a6877d5a0ac056c269))
+
+
+
 ## [7.53.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.53.1...v7.53.2) (2021-09-27)
 
 
