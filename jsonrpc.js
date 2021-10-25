@@ -431,6 +431,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
         result.events.on('start', () => {
             logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: result.info});
+            logger && logger.info && logger.info(`${result.info.protocol}://localhost:${result.info.port}/api`);
         });
 
         return result;
