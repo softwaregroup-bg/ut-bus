@@ -1,11 +1,24 @@
 const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
 const LRUCache = require('lru-cache');
+const {
+    resolveService,
+    requestPostForm
+} = require('./helpers');
 
-module.exports = {
+module.exports = ({
+    discoverService,
+    request = require('request'),
+    errorPrefix,
+    tls,
+    errors: {
+        [`${errorPrefix}basicAuthEmpty`]: errorEmpty,
+        [`${errorPrefix}basicAuthHttp`]: errorHttp
+    }
+}) => ({
     plugin: {
         register(server, {options: {openId, tokenCache, assetTokenCache}, logger, errors, verify}) {
-            const checker = (audience, cacheConfig, errorId, getToken) => function jose() {
+            const jwtChecker = (audience, cacheConfig, errorId, getToken) => function jose() {
                 const cache = (![0, false, 'false'].includes(cacheConfig)) && new LRUCache({max: 1000, ...cacheConfig});
                 return {
                     async authenticate(request, h) {
@@ -53,22 +66,65 @@ module.exports = {
                     }
                 };
             };
+            const basicAuthChecker = (cacheConfig, getToken) => () => {
+                const cache = (![0, false, 'false'].includes(cacheConfig)) && new LRUCache({max: 1000, ...cacheConfig});
+                return {
+                    async authenticate(req, h) {
+                        try {
+                            const token = getToken(req);
+                            if (!token) throw errors['bus.basicAuthMissingHeader']();
+                            const cachedCredentials = cache && cache.get(token);
+                            if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
+                            const [username, password] = Buffer.from(token, 'base64')
+                                    .toString('utf8')
+                                    .split(':');
+                            const {
+                                protocol: loginProtocol,
+                                hostname,
+                                port
+                            } = await resolveService(discoverService);
+                            const {actorId} = await requestPostForm(
+                                `${loginProtocol}://${hostname}:${port}/rpc/login/auth`,
+                                errorHttp,
+                                errorEmpty,
+                                {},
+                                undefined,
+                                tls,
+                                request,
+                                {username, password, channel: 'web'}
+                            );
+                            if (cache) cache.set(token, {}, Date.now());
+                            return h.authenticated({credentials: {actorId}});
+                        } catch (error) {
+                            logger && logger.error && logger.error(error);
+                            return h.unauthenticated(Boom.unauthorized(error.message));
+                        }
+                    }
+                };
+            };
 
-            server.auth.scheme('jwt', checker(
+            server.auth.scheme('jwt', jwtChecker(
                 'ut-bus',
                 tokenCache,
                 'bus.jwtMissingHeader',
                 request => request.headers.authorization && request.headers.authorization.match(/^bearer\s+(.+)$/i)?.[1]
             ));
-            server.auth.scheme('asset-cookie', checker(
+            server.auth.scheme('asset-cookie', jwtChecker(
                 'ut-bus/asset',
                 assetTokenCache,
                 'bus.jwtMissingAssetCookie',
                 request => request.state['ut-bus-asset']
             ));
+            server.auth.scheme('basicauth.basic', basicAuthChecker(
+                tokenCache,
+                request => request.headers.authorization && request.headers.authorization.match(/^basic\s+(.+)$/i)?.[1]
+            ));
+            
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
             server.auth.strategy('asset', 'asset-cookie');
+            server.auth.strategy('jwt.apikey', 'jwt');
+            server.auth.strategy('basicauth.basic', 'basicauth.basic');
         },
         pkg: {
             ...pkg,
@@ -78,4 +134,4 @@ module.exports = {
             hapi: '>=18'
         }
     }
-};
+});
