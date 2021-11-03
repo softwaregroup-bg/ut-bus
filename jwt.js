@@ -7,6 +7,7 @@ const {
 } = require('./helpers');
 
 module.exports = ({
+    config,
     discoverService,
     request = require('request'),
     errorPrefix,
@@ -78,21 +79,39 @@ module.exports = ({
                             const [username, password] = Buffer.from(token, 'base64')
                                 .toString('utf8')
                                 .split(':');
-                            const {
-                                protocol: loginProtocol,
-                                hostname,
-                                port
-                            } = await resolveService(discoverService);
-                            const {actorId} = await requestPostForm(
-                                `${loginProtocol}://${hostname}:${port}/rpc/login/auth`,
-                                errorHttp,
-                                errorEmpty,
-                                {},
-                                undefined,
-                                tls,
-                                request,
-                                {username, password, channel: 'web'}
-                            );
+                            let actorId;
+                            if (config.auth && config.auth['basicauth.basic']) {
+                                const found = config.auth['basicauth.basic']
+                                    .find(({username: u, password: p}) => {
+                                        return username === u && password === p
+                                    });
+                                if (!found) {
+                                    throw errorHttp({
+                                        statusCode: 500,
+                                        params: {
+                                            code: 500
+                                        }
+                                    });
+                                }
+                                actorId = found.username;
+                            } else {
+                                const {
+                                    protocol: loginProtocol,
+                                    hostname,
+                                    port
+                                } = await resolveService(discoverService);
+                                const {actorId: aId} = await requestPostForm(
+                                    `${loginProtocol}://${hostname}:${port}/rpc/login/auth`,
+                                    errorHttp,
+                                    errorEmpty,
+                                    {},
+                                    undefined,
+                                    tls,
+                                    request,
+                                    {username, password, channel: 'web'}
+                                );
+                                actorId = aId;
+                            }
                             if (cache) cache.set(token, {}, Date.now());
                             return h.authenticated({credentials: {actorId}});
                         } catch (error) {

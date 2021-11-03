@@ -393,6 +393,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             H2o2,
             {
                 plugin: jwt({
+                    config: socket,
                     request,
                     tls: tlsClient,
                     errorPrefix: 'bus.',
