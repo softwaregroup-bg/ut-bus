@@ -49,6 +49,8 @@ module.exports = ({
             `${protocol}://${hostname}:${port}/rpc/login/action`,
             errorActionHttp,
             errorActionEmpty,
+            {},
+            undefined,
             tls,
             request
         );
