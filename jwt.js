@@ -82,9 +82,9 @@ module.exports = ({
                             let actorId;
                             if (config.auth && config.auth['basicauth.basic']) {
                                 const found = config.auth['basicauth.basic']
-                                    .find(({username: u, password: p}) => {
-                                        return username === u && password === p
-                                    });
+                                    .find(({username: u, password: p}) =>
+                                        username === u && password === p
+                                    );
                                 if (!found) {
                                     throw errorHttp({
                                         statusCode: 500,
