@@ -501,7 +501,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     // wrap server.info in serverInfo function - hoisting not possible otherwise
-    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient, errors, get});
+    const gatewayCodec = require('./gateway')({
+        serverInfo: key => server.info[key],
+        mleClient,
+        errors,
+        get
+    });
 
     function gateway($meta, methodName = $meta.method) {
         if (socket.gateway) {

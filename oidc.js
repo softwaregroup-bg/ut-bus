@@ -163,5 +163,19 @@ module.exports = ({
         };
     }
 
-    return {get, verify, getIssuers, checkAuth, issuerConfig};
+    return {
+        get: (url, errorHttp, errorEmpty, headers, protocol) => get(
+            url,
+            errorHttp,
+            errorEmpty,
+            headers,
+            protocol,
+            tls,
+            request
+        ),
+        verify,
+        getIssuers,
+        checkAuth,
+        issuerConfig
+    };
 };
