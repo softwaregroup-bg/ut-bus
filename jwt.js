@@ -76,8 +76,8 @@ module.exports = ({
                             const cachedCredentials = cache && cache.get(token);
                             if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
                             const [username, password] = Buffer.from(token, 'base64')
-                                    .toString('utf8')
-                                    .split(':');
+                                .toString('utf8')
+                                .split(':');
                             const {
                                 protocol: loginProtocol,
                                 hostname,
@@ -119,7 +119,7 @@ module.exports = ({
                 tokenCache,
                 request => request.headers.authorization && request.headers.authorization.match(/^basic\s+(.+)$/i)?.[1]
             ));
-            
+
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
             server.auth.strategy('asset', 'asset-cookie');
