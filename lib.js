@@ -1,9 +1,9 @@
 module.exports = {
-    resolveService: (() => {
+    loginService: (() => {
         let loginCache;
 
-        return async(discovery, {name = 'login'} = {}) => {
-            if (!loginCache) loginCache = discovery(name);
+        return async(discovery) => {
+            if (!loginCache) loginCache = discovery('login');
             try {
                 return await loginCache;
             } catch (error) {

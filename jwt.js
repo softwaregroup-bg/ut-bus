@@ -2,9 +2,9 @@ const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
 const LRUCache = require('lru-cache');
 const {
-    resolveService,
+    loginService,
     requestPostForm
-} = require('./helpers');
+} = require('./lib');
 
 module.exports = ({
     config,
@@ -89,7 +89,7 @@ module.exports = ({
                                     protocol,
                                     hostname,
                                     port
-                                } = await resolveService(discoverService);
+                                } = await loginService(discoverService);
                                 actorId = (await requestPostForm(
                                     `${protocol}://${hostname}:${port}/rpc/login/auth`,
                                     errorHttp,

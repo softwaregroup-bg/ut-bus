@@ -1,8 +1,8 @@
 const { JWKS, JWT } = require('jose');
 const {
-    resolveService,
+    loginService,
     requestGet: get
-} = require('./helpers');
+} = require('./lib');
 
 module.exports = ({
     issuers,
@@ -25,7 +25,7 @@ module.exports = ({
 }) => {
     async function openIdConfig(issuer, headers, protocol) {
         if (issuer === 'ut-login') {
-            const {protocol: loginProtocol, hostname, port} = await resolveService(discoverService);
+            const {protocol: loginProtocol, hostname, port} = await loginService(discoverService);
             issuer = `${loginProtocol}://${hostname}:${port}/rpc/login/.well-known/openid-configuration`;
         } else {
             headers = false;
@@ -44,7 +44,7 @@ module.exports = ({
     let actionsCache;
     async function actions(method) {
         if (actionsCache) return actionsCache[method];
-        const {protocol, hostname, port} = await resolveService(discoverService);
+        const {protocol, hostname, port} = await loginService(discoverService);
         actionsCache = await get(
             `${protocol}://${hostname}:${port}/rpc/login/action`,
             errorActionHttp,
