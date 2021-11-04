@@ -1,4 +1,8 @@
 const { JWKS, JWT } = require('jose');
+const {
+    loginService,
+    requestGet: get
+} = require('./lib');
 
 module.exports = ({
     issuers,
@@ -19,74 +23,37 @@ module.exports = ({
         [`${errorPrefix}jwtInvalid`]: errorInvalid
     }
 }) => {
-    const get = (url, errorHttp, errorEmpty, headers, protocol) => new Promise((resolve, reject) => {
-        request({
-            json: true,
-            method: 'GET',
-            url,
-            ...tls,
-            ...headers && {
-                headers: {
-                    'x-forwarded-proto': headers['x-forwarded-proto'] || protocol,
-                    'x-forwarded-host': headers['x-forwarded-host'] || headers.host
-                }
-            }
-        }, (error, response, body) => {
-            if (error) {
-                reject(error);
-            } else if (response.statusCode < 200 || response.statusCode >= 300) {
-                reject(errorHttp({
-                    statusCode: response.statusCode,
-                    statusText: response.statusText,
-                    statusMessage: response.statusMessage,
-                    httpVersion: response.httpVersion,
-                    validation: response.body && response.body.validation,
-                    debug: response.body && response.body.debug,
-                    params: {
-                        code: response.statusCode
-                    },
-                    ...response.request && {
-                        req: {
-                            httpVersion: response.httpVersion,
-                            url: response.request.href,
-                            method: response.request.method
-                        }
-                    }
-                }));
-            } else if (body) {
-                resolve(body);
-            } else {
-                reject(errorEmpty());
-            }
-        });
-    });
-
     async function openIdConfig(issuer, headers, protocol) {
         if (issuer === 'ut-login') {
-            const {protocol: loginProtocol, hostname, port} = await loginService();
+            const {protocol: loginProtocol, hostname, port} = await loginService(discoverService);
             issuer = `${loginProtocol}://${hostname}:${port}/rpc/login/.well-known/openid-configuration`;
         } else {
             headers = false;
         }
-        return await get(issuer, errorOidcHttp, errorOidcEmpty, headers, protocol);
-    }
-
-    let loginCache;
-    async function loginService() {
-        if (!loginCache) loginCache = discoverService('login');
-        try {
-            return await loginCache;
-        } catch (error) {
-            loginCache = false;
-            throw error;
-        }
+        return await get(
+            issuer,
+            errorOidcHttp,
+            errorOidcEmpty,
+            headers,
+            protocol,
+            tls,
+            request
+        );
     }
 
     let actionsCache;
     async function actions(method) {
         if (actionsCache) return actionsCache[method];
-        const {protocol, hostname, port} = await loginService();
-        actionsCache = await get(`${protocol}://${hostname}:${port}/rpc/login/action`, errorActionHttp, errorActionEmpty);
+        const {protocol, hostname, port} = await loginService(discoverService);
+        actionsCache = await get(
+            `${protocol}://${hostname}:${port}/rpc/login/action`,
+            errorActionHttp,
+            errorActionEmpty,
+            {},
+            undefined,
+            tls,
+            request
+        );
         return actionsCache[method];
     }
 
@@ -146,7 +113,15 @@ module.exports = ({
     }
 
     async function jwks(issuerId) {
-        return get((await issuerConfig(issuerId)).jwks_uri, errorOidcHttp, errorOidcEmpty);
+        return get(
+            (await issuerConfig(issuerId)).jwks_uri,
+            errorOidcHttp,
+            errorOidcEmpty,
+            {},
+            undefined,
+            tls,
+            request
+        );
     }
 
     const keys = {};
@@ -188,5 +163,19 @@ module.exports = ({
         };
     }
 
-    return {get, verify, getIssuers, checkAuth, issuerConfig};
+    return {
+        get: (url, errorHttp, errorEmpty, headers, protocol) => get(
+            url,
+            errorHttp,
+            errorEmpty,
+            headers,
+            protocol,
+            tls,
+            request
+        ),
+        verify,
+        getIssuers,
+        checkAuth,
+        issuerConfig
+    };
 };

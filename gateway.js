@@ -55,6 +55,7 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
         host: hostname = 'localhost',
         port = serverInfo('port'),
         url,
+        tls,
         auth,
         encrypt = true,
         method
@@ -84,7 +85,11 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
         const cache = localCache[url] = localCache[url] || {};
 
         if (localKeys && !cache.remoteKeys) {
-            const body = await get(`${url}/rpc/login/.well-known/mle`, errors['bus.jsonRpcHttp'], errors['bus.jsonRpcEmpty']);
+            const body = await get(
+                `${url}/rpc/login/.well-known/mle`,
+                errors['bus.jsonRpcHttp'],
+                errors['bus.jsonRpcEmpty']
+            );
             if (body.sign && body.encrypt) cache.remoteKeys = body;
         }
 

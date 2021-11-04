@@ -392,7 +392,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             Inert,
             H2o2,
             {
-                plugin: jwt,
+                plugin: jwt({
+                    config: socket,
+                    request,
+                    tls: tlsClient,
+                    errorPrefix: 'bus.',
+                    errors,
+                    discoverService
+                }),
                 options: {
                     options: socket,
                     logger,
@@ -431,7 +438,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
 
         result.events.on('start', () => {
             logger && logger.info && logger.info({$meta: {mtid: 'event', method: 'jsonrpc.listen'}, serverInfo: result.info});
-            logger && logger.info && logger.info(`${result.info.protocol}://localhost:${result.info.port}/api`);
+            logger && logger.info && logger.info(`${result.info.uri}/api`);
         });
 
         return result;
@@ -495,7 +502,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     };
 
     // wrap server.info in serverInfo function - hoisting not possible otherwise
-    const gatewayCodec = require('./gateway')({serverInfo: key => server.info[key], mleClient, errors, get});
+    const gatewayCodec = require('./gateway')({
+        serverInfo: key => server.info[key],
+        mleClient,
+        errors,
+        get
+    });
 
     function gateway($meta, methodName = $meta.method) {
         if (socket.gateway) {
