@@ -1,3 +1,12 @@
+# [7.55.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.54.1...v7.55.0) (2021-11-04)
+
+
+### Features
+
+* basic authentication UTCORE-152 ([#113](https://github.com/softwaregroup-bg/ut-bus/issues/113)) ([841acc2](https://github.com/softwaregroup-bg/ut-bus/commit/841acc2889c7201cbf887ebe7a195a86f6de0bd0))
+
+
+
 ## [7.54.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.54.0...v7.54.1) (2021-10-25)
 
 
