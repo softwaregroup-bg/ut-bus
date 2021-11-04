@@ -21,7 +21,7 @@
     "ut-function.capture-hapi": "^1.1.2",
     "ut-function.capture-request": "^1.1.2",
     "ut-function.timing": "^1.2.0",
-    "ut-api": "^7.16.0",
+    "ut-api": "^7.16.1",
     "ut-rpc": "^6.1.2",
     "uuid": "3.3.2"
   },

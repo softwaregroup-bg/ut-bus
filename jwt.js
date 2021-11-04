@@ -80,28 +80,18 @@ module.exports = ({
                                 .toString('utf8')
                                 .split(':');
                             let actorId;
-                            if (config.auth && config.auth['basicauth.basic']) {
-                                const found = config.auth['basicauth.basic']
-                                    .find(({username: u, password: p}) =>
-                                        username === u && password === p
-                                    );
-                                if (!found) {
-                                    throw errorHttp({
-                                        statusCode: 500,
-                                        params: {
-                                            code: 500
-                                        }
-                                    });
-                                }
-                                actorId = found.username;
+                            if (Array.isArray(config.auth?.basic)) {
+                                const found = config.auth.basic.find(item => username === item.username && password === item.password);
+                                if (!found) throw errorHttp({params: {code: 404}});
+                                actorId = found.actorId;
                             } else {
                                 const {
-                                    protocol: loginProtocol,
+                                    protocol,
                                     hostname,
                                     port
                                 } = await resolveService(discoverService);
-                                const {actorId: aId} = await requestPostForm(
-                                    `${loginProtocol}://${hostname}:${port}/rpc/login/auth`,
+                                actorId = (await requestPostForm(
+                                    `${protocol}://${hostname}:${port}/rpc/login/auth`,
                                     errorHttp,
                                     errorEmpty,
                                     {},
@@ -109,8 +99,7 @@ module.exports = ({
                                     tls,
                                     request,
                                     {username, password, channel: 'web'}
-                                );
-                                actorId = aId;
+                                )).actorId;
                             }
                             if (cache) cache.set(token, {}, Date.now());
                             return h.authenticated({credentials: {actorId}});
@@ -134,7 +123,7 @@ module.exports = ({
                 'bus.jwtMissingAssetCookie',
                 request => request.state['ut-bus-asset']
             ));
-            server.auth.scheme('basicauth.basic', basicAuthChecker(
+            server.auth.scheme('basic', basicAuthChecker(
                 tokenCache,
                 request => request.headers.authorization && request.headers.authorization.match(/^basic\s+(.+)$/i)?.[1]
             ));
@@ -142,8 +131,10 @@ module.exports = ({
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
             server.auth.strategy('asset', 'asset-cookie');
-            server.auth.strategy('jwt.apikey', 'jwt');
-            server.auth.strategy('basicauth.basic', 'basicauth.basic');
+            server.auth.strategy('swagger.apiKey', 'jwt');
+            server.auth.strategy('openapi.http.bearer', 'jwt');
+            server.auth.strategy('swagger.basic', 'basic');
+            server.auth.strategy('openapi.http.basic', 'basic');
         },
         pkg: {
             ...pkg,
