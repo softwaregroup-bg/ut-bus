@@ -602,7 +602,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         error.req = response.request && {
                             httpVersion: response.httpVersion,
                             url: response.request.href,
-                            method: response.request.method
+                            method: response.request.method,
+                            ...socket.debug && {params, $meta}
                         };
                         error.res = {
                             httpVersion: response.httpVersion,
