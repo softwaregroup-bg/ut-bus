@@ -1,3 +1,12 @@
+## [7.55.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.55.0...v7.55.1) (2021-11-17)
+
+
+### Bug Fixes
+
+* add debug info in brokerMethod error ([#114](https://github.com/softwaregroup-bg/ut-bus/issues/114)) ([0669856](https://github.com/softwaregroup-bg/ut-bus/commit/0669856e15f7aa062695f78a76478c807e2f7440))
+
+
+
 # [7.55.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.54.1...v7.55.0) (2021-11-04)
 
 
