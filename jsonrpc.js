@@ -599,11 +599,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                                     ? new Error(body.error)
                                     : Object.assign(new Error(), body.error);
                         if (error.type) Object.defineProperty(error, 'name', {value: error.type, configurable: true, enumerable: false});
-                        if (socket.debug) error.debug = {params, $meta};
                         error.req = response.request && {
                             httpVersion: response.httpVersion,
                             url: response.request.href,
-                            method: response.request.method
+                            method: response.request.method,
+                            ...socket.debug && {params, $meta}
                         };
                         error.res = {
                             httpVersion: response.httpVersion,
