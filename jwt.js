@@ -101,7 +101,7 @@ module.exports = ({
                                     {username, password, channel: 'web'}
                                 )).actorId;
                             }
-                            if (cache) cache.set(token, {}, Date.now());
+                            if (cache) cache.set(token, {actorId}, Date.now());
                             return h.authenticated({credentials: {actorId}});
                         } catch (error) {
                             logger && logger.error && logger.error(error);
