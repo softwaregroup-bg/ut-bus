@@ -1,3 +1,12 @@
+## [7.55.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.55.1...v7.55.2) (2021-11-20)
+
+
+### Bug Fixes
+
+* cache creds ([#115](https://github.com/softwaregroup-bg/ut-bus/issues/115)) ([1970cbf](https://github.com/softwaregroup-bg/ut-bus/commit/1970cbf1cf71d1a39d76b4d5ec58f18a933dcc4c))
+
+
+
 ## [7.55.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.55.0...v7.55.1) (2021-11-17)
 
 
