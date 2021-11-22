@@ -2,8 +2,11 @@ const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
 const LRUCache = require('lru-cache');
 const {
+    discoveryService: ds,
     loginService,
-    requestPostForm
+    collectReq,
+    requestPostForm,
+    requestPost
 } = require('./lib');
 
 module.exports = ({
@@ -110,6 +113,75 @@ module.exports = ({
                     }
                 };
             };
+            const customAuthChecker = (cacheConfig, getToken) => () => {
+                const cache = (![0, false, 'false'].includes(cacheConfig)) && new LRUCache({max: 1000, ...cacheConfig});
+                return {
+                    async authenticate(req, h) {
+                        try {
+                            const {
+                                protocol,
+                                hostname,
+                                port
+                            } = await ds(discoverService, 'authSwaggerApiKeyCustom');
+                            const raw = await collectReq(req.raw.req);
+                            const checkResult = await requestPost(
+                                `${protocol}://${hostname}:${port}/rpc/authSwaggerApiKeyCustom/auth/check`,
+                                errorHttp,
+                                errorEmpty,
+                                {},
+                                undefined,
+                                tls,
+                                request,
+                                {
+                                    id: 1,
+                                    jsonrpc: '2.0',
+                                    method: 'authSwaggerApiKeyCustom.auth.check',
+                                    params: {
+                                        path: req.path,
+                                        rawBody: raw.toString('hex'),
+                                        headers: req.headers,
+                                        channel: 'web'
+                                    }
+                                }
+                            );
+                            const token = getToken(req);
+                            if (!token) throw errors['bus.basicAuthMissingHeader']();
+                            const cachedCredentials = cache && cache.get(token);
+                            if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
+                            const [username, password] = Buffer.from(token, 'base64')
+                                .toString('utf8')
+                                .split(':');
+                            let actorId;
+                            if (Array.isArray(config.auth?.basic)) {
+                                const found = config.auth.basic.find(item => username === item.username && password === item.password);
+                                if (!found) throw errorHttp({params: {code: 404}});
+                                actorId = found.actorId;
+                            } else {
+                                const {
+                                    protocol,
+                                    hostname,
+                                    port
+                                } = await ds(discoverService);
+                                actorId = (await requestPostForm(
+                                    `${protocol}://${hostname}:${port}/rpc/login/auth`,
+                                    errorHttp,
+                                    errorEmpty,
+                                    {},
+                                    undefined,
+                                    tls,
+                                    request,
+                                    {username, password, channel: 'web'}
+                                )).actorId;
+                            }
+                            if (cache) cache.set(token, {actorId}, Date.now());
+                            return h.authenticated({credentials: {actorId}});
+                        } catch (error) {
+                            logger && logger.error && logger.error(error);
+                            return h.unauthenticated(Boom.unauthorized(error.message));
+                        }
+                    }
+                };
+            };
 
             server.auth.scheme('jwt', jwtChecker(
                 'ut-bus',
@@ -127,6 +199,10 @@ module.exports = ({
                 tokenCache,
                 request => request.headers.authorization && request.headers.authorization.match(/^basic\s+(.+)$/i)?.[1]
             ));
+            server.auth.scheme('custom', customAuthChecker(
+                tokenCache,
+                request => request.headers.authorization && request.headers.authorization.match(/^signature\s+(.+)$/i)?.[1]
+            ));
 
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
@@ -135,6 +211,7 @@ module.exports = ({
             server.auth.strategy('openapi.http.bearer', 'jwt');
             server.auth.strategy('swagger.basic', 'basic');
             server.auth.strategy('openapi.http.basic', 'basic');
+            server.auth.strategy('swagger.apiKey.custom', 'custom');
         },
         pkg: {
             ...pkg,
