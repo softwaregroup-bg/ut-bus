@@ -114,7 +114,6 @@ module.exports = ({
                 };
             };
             const customAuthChecker = (cacheConfig, getToken) => () => {
-                const cache = (![0, false, 'false'].includes(cacheConfig)) && new LRUCache({max: 1000, ...cacheConfig});
                 return {
                     async authenticate(req, h) {
                         try {
