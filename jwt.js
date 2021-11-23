@@ -124,8 +124,8 @@ module.exports = ({
                                 port
                             } = await ds(discoverService, 'authSwaggerApiKeyCustom');
                             const raw = await collectReq(req.raw.req);
-                            const checkResult = await requestPost(
-                                `${protocol}://${hostname}:${port}/rpc/authSwaggerApiKeyCustom/auth/check`,
+                            const credentials = await requestPost(
+                                `${protocol}://${hostname}:${port}/rpc/openApiAuth/custom/check`,
                                 errorHttp,
                                 errorEmpty,
                                 {},
@@ -135,7 +135,7 @@ module.exports = ({
                                 {
                                     id: 1,
                                     jsonrpc: '2.0',
-                                    method: 'authSwaggerApiKeyCustom.auth.check',
+                                    method: 'openApiAuth.custom.check',
                                     params: {
                                         path: req.path,
                                         rawBody: raw.toString('hex'),
@@ -144,37 +144,7 @@ module.exports = ({
                                     }
                                 }
                             );
-                            const token = getToken(req);
-                            if (!token) throw errors['bus.basicAuthMissingHeader']();
-                            const cachedCredentials = cache && cache.get(token);
-                            if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
-                            const [username, password] = Buffer.from(token, 'base64')
-                                .toString('utf8')
-                                .split(':');
-                            let actorId;
-                            if (Array.isArray(config.auth?.basic)) {
-                                const found = config.auth.basic.find(item => username === item.username && password === item.password);
-                                if (!found) throw errorHttp({params: {code: 404}});
-                                actorId = found.actorId;
-                            } else {
-                                const {
-                                    protocol,
-                                    hostname,
-                                    port
-                                } = await ds(discoverService);
-                                actorId = (await requestPostForm(
-                                    `${protocol}://${hostname}:${port}/rpc/login/auth`,
-                                    errorHttp,
-                                    errorEmpty,
-                                    {},
-                                    undefined,
-                                    tls,
-                                    request,
-                                    {username, password, channel: 'web'}
-                                )).actorId;
-                            }
-                            if (cache) cache.set(token, {actorId}, Date.now());
-                            return h.authenticated({credentials: {actorId}});
+                            return h.authenticated({credentials});
                         } catch (error) {
                             logger && logger.error && logger.error(error);
                             return h.unauthenticated(Boom.unauthorized(error.message));
