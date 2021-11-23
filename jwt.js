@@ -121,7 +121,7 @@ module.exports = ({
                                 protocol,
                                 hostname,
                                 port
-                            } = await ds(discoverService, 'authSwaggerApiKeyCustom');
+                            } = await ds(discoverService, 'openApiAuth');
                             const raw = await collectReq(req.raw.req);
                             const credentials = await requestPost(
                                 `${protocol}://${hostname}:${port}/rpc/openApiAuth/custom/check`,
