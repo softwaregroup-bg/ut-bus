@@ -123,7 +123,7 @@ module.exports = ({
                                 port
                             } = await ds(discoverService, 'openApiAuth');
                             const raw = await collectReq(req.raw.req);
-                            const credentials = await requestPost(
+                            const {result: credentials} = await requestPost(
                                 `${protocol}://${hostname}:${port}/rpc/openApiAuth/custom/check`,
                                 errorHttp,
                                 errorEmpty,
@@ -143,6 +143,7 @@ module.exports = ({
                                     }
                                 }
                             );
+                            req.app.rawPayload = raw;
                             return h.authenticated({credentials});
                         } catch (error) {
                             logger && logger.error && logger.error(error);
