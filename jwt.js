@@ -2,11 +2,8 @@ const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
 const LRUCache = require('lru-cache');
 const {
-    discoveryService: ds,
     loginService,
-    collectReq,
-    requestPostForm,
-    requestPost
+    requestPostForm
 } = require('./lib');
 
 module.exports = ({
@@ -113,45 +110,6 @@ module.exports = ({
                     }
                 };
             };
-            const customAuthChecker = (cacheConfig, getToken) => () => {
-                return {
-                    async authenticate(req, h) {
-                        try {
-                            const {
-                                protocol,
-                                hostname,
-                                port
-                            } = await ds(discoverService, 'openApiAuth');
-                            const raw = await collectReq(req.raw.req);
-                            const {result: credentials} = await requestPost(
-                                `${protocol}://${hostname}:${port}/rpc/openApiAuth/custom/check`,
-                                errorHttp,
-                                errorEmpty,
-                                {},
-                                undefined,
-                                tls,
-                                request,
-                                {
-                                    id: 1,
-                                    jsonrpc: '2.0',
-                                    method: 'openApiAuth.custom.check',
-                                    params: {
-                                        path: req.path,
-                                        rawBody: raw.toString('hex'),
-                                        headers: req.headers,
-                                        channel: 'web'
-                                    }
-                                }
-                            );
-                            req.app.rawPayload = raw;
-                            return h.authenticated({credentials});
-                        } catch (error) {
-                            logger && logger.error && logger.error(error);
-                            return h.unauthenticated(Boom.unauthorized(error.message));
-                        }
-                    }
-                };
-            };
 
             server.auth.scheme('jwt', jwtChecker(
                 'ut-bus',
@@ -169,10 +127,6 @@ module.exports = ({
                 tokenCache,
                 request => request.headers.authorization && request.headers.authorization.match(/^basic\s+(.+)$/i)?.[1]
             ));
-            server.auth.scheme('custom', customAuthChecker(
-                tokenCache,
-                request => request.headers.authorization && request.headers.authorization.match(/^signature\s+(.+)$/i)?.[1]
-            ));
 
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
@@ -181,7 +135,6 @@ module.exports = ({
             server.auth.strategy('openapi.http.bearer', 'jwt');
             server.auth.strategy('swagger.basic', 'basic');
             server.auth.strategy('openapi.http.basic', 'basic');
-            server.auth.strategy('swagger.apiKey.custom', 'custom');
         },
         pkg: {
             ...pkg,

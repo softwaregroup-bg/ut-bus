@@ -171,14 +171,5 @@ module.exports = {
                 }
             });
         });
-    },
-    async collectReq(req) {
-        let collection = Buffer.from([]);
-        return new Promise((resolve, reject) => {
-            req.on('data', (d) => {
-                collection = Buffer.concat([collection, d]);
-            });
-            req.on('end', () => resolve(collection));
-        });
     }
 };
