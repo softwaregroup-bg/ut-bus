@@ -1,3 +1,12 @@
+# [7.56.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.55.2...v7.56.0) (2021-11-24)
+
+
+### Features
+
+* update ut-api ([09c0194](https://github.com/softwaregroup-bg/ut-bus/commit/09c0194816b48da78e363de81589043c454b089c))
+
+
+
 ## [7.55.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.55.1...v7.55.2) (2021-11-20)
 
 
