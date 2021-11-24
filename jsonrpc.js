@@ -468,7 +468,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 throw error;
             }
         },
-        internal
+        internal,
+        forward
     );
 
     utApi.route([{
