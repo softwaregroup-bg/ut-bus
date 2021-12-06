@@ -577,19 +577,7 @@ Full configuration example:
 ```
 ### Message level encryption flow
 
-```sequence
-note left of Client:plain request
-note over Client:1.sign (clientPrivateMlsk) + encrypt (serverPublicMlek)
-Client->Server: encrypted request
-note over Server:2.decrypt (serverPrivateMlek) + verify (clientPublicMlsk)
-note right of Server:plain request
-note right of Server:...
-note right of Server:plain response
-note over Server:3.sign (serverPrivateMlsk) + encrypt (clientPublicMlek)
-Server->Client:encrypted response
-note over Client:4.decrypt (clientPrivateMlek) + verify (serverPublicMlek)
-note left of Client:plain response
-```
+![Message level encryption flow](./doc/mle_flow.svg "Message level encryption flow")
 
 The message level encryption flow consists of 4 main parts:
 
