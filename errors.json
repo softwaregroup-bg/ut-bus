@@ -22,6 +22,8 @@
     "bus.oidcEmpty": {"message": "OpenID returned empty response", "statusCode": 401},
     "bus.basicAuthHttp": {"message": "Login returned HTTP error {code}", "statusCode": 401},
     "bus.basicAuthEmpty": {"message": "Login returned empty response", "statusCode": 401},
+    "bus.customAuthHttp": {"message": "Login returned HTTP error {code}", "statusCode": 401},
+    "bus.customAuthEmpty": {"message": "Login returned empty response", "statusCode": 401},
     "bus.authenticationFailed": {"message": "Authentication failed", "statusCode": 401},
     "bus.actionHttp": {"message": "Listing actions returned HTTP error {code}", "statusCode": 403},
     "bus.actionEmpty": {"message": "Listing actions returned empty response", "statusCode": 403},
