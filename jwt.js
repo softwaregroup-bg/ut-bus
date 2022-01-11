@@ -15,8 +15,8 @@ module.exports = ({
     errorPrefix,
     tls,
     errors: {
-        [`${errorPrefix}basicAuthEmpty`]: errorBasicEmpty,
-        [`${errorPrefix}basicAuthHttp`]: errorBasicHttp
+        [`${errorPrefix}basicAuthEmpty`]: errorEmpty,
+        [`${errorPrefix}basicAuthHttp`]: errorHttp
     }
 }) => ({
     plugin: {
@@ -84,7 +84,7 @@ module.exports = ({
                             let actorId;
                             if (Array.isArray(config.auth?.basic)) {
                                 const found = config.auth.basic.find(item => username === item.username && password === item.password);
-                                if (!found) throw errorBasicHttp({params: {code: 404}});
+                                if (!found) throw errorHttp({params: {code: 404}});
                                 actorId = found.actorId;
                             } else {
                                 const {
@@ -94,8 +94,8 @@ module.exports = ({
                                 } = await loginService(discoverService);
                                 actorId = (await requestPostForm(
                                     `${protocol}://${hostname}:${port}/rpc/login/auth`,
-                                    errorBasicHttp,
-                                    errorBasicEmpty,
+                                    errorHttp,
+                                    errorEmpty,
                                     {},
                                     undefined,
                                     tls,
