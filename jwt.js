@@ -1,13 +1,14 @@
 const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
 const LRUCache = require('lru-cache');
+
 const {
     loginService,
-    requestPostForm,
-    requestPost
+    requestPostForm
 } = require('./lib');
 
 module.exports = ({
+    brokerRequest,
     config,
     discoverService,
     request = require('request'),
@@ -138,32 +139,15 @@ module.exports = ({
                         if (!dest) {
                             throw new Error('Missing method in <uri>.method.x-options.app.securityRequestMethod');
                         }
-                        const {
-                            protocol,
-                            hostname,
-                            port
-                        } = await loginService(discoverService, dest.split('.')[0]);
-                        const {result: {actorId} = {}} = (await requestPost(
-                            `${protocol}://${hostname}:${port}/rpc/${dest.split('.').join('/')}`,
-                            errorCustomHttp,
-                            errorCustomEmpty,
-                            {},
-                            undefined,
-                            tls,
-                            request,
-                            {
-                                jsonrpc: '2.0',
-                                method: dest,
-                                params: {
-                                    headers: req.headers,
-                                    params: req.params,
-                                    payload: req.payload,
-                                    query: req.query,
-                                    path: req.path,
-                                    channel: 'web'
-                                }
-                            }
-                        ));
+                        const [{actorId}] = await brokerRequest({
+                            headers: req.headers,
+                            params: req.params,
+                            payload: req.payload,
+                            query: req.query,
+                            path: req.path,
+                            channel: 'web'
+                        }, {method: dest});
+
                         return h.authenticated({credentials: {actorId}});
                     } catch (error) {
                         logger && logger.error && logger.error(error);
