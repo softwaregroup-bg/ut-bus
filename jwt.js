@@ -16,9 +16,7 @@ module.exports = ({
     tls,
     errors: {
         [`${errorPrefix}basicAuthEmpty`]: errorBasicEmpty,
-        [`${errorPrefix}basicAuthHttp`]: errorBasicHttp,
-        [`${errorPrefix}customAuthEmpty`]: errorCustomEmpty,
-        [`${errorPrefix}customAuthHttp`]: errorCustomHttp
+        [`${errorPrefix}basicAuthHttp`]: errorBasicHttp
     }
 }) => ({
     plugin: {
