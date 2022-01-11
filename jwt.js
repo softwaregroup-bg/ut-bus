@@ -1,12 +1,14 @@
 const pkg = require('./package.json');
 const Boom = require('@hapi/boom');
 const LRUCache = require('lru-cache');
+
 const {
     loginService,
     requestPostForm
 } = require('./lib');
 
 module.exports = ({
+    brokerRequest,
     config,
     discoverService,
     request = require('request'),
@@ -14,7 +16,8 @@ module.exports = ({
     tls,
     errors: {
         [`${errorPrefix}basicAuthEmpty`]: errorEmpty,
-        [`${errorPrefix}basicAuthHttp`]: errorHttp
+        [`${errorPrefix}basicAuthHttp`]: errorHttp,
+        [`${errorPrefix}customAuthHttp`]: eCustomAuthHttp
     }
 }) => ({
     plugin: {
@@ -128,6 +131,33 @@ module.exports = ({
                 request => request.headers.authorization && request.headers.authorization.match(/^basic\s+(.+)$/i)?.[1]
             ));
 
+            server.auth.scheme('swagger.apiKey.custom', (cacheConfig) => ({
+                authenticate: async(req, h) => {
+                    const dest = req.route.settings?.app?.securityRequestMethod;
+                    try {
+                        if (!dest) {
+                            throw new Error('Missing method in <uri>.method.x-options.app.securityRequestMethod');
+                        }
+                        const [{actorId}] = await brokerRequest({
+                            headers: req.headers,
+                            params: req.params,
+                            payload: req.payload,
+                            query: req.query,
+                            path: req.path,
+                            channel: 'web'
+                        }, {method: dest});
+
+                        if (!actorId) {
+                            throw eCustomAuthHttp();
+                        }
+                        return h.authenticated({credentials: {actorId}});
+                    } catch (error) {
+                        logger && logger.error && logger.error(error);
+                        return h.unauthenticated(Boom.unauthorized(error.message));
+                    }
+                }
+            }));
+
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
             server.auth.strategy('asset', 'asset-cookie');
@@ -135,6 +165,7 @@ module.exports = ({
             server.auth.strategy('openapi.http.bearer', 'jwt');
             server.auth.strategy('swagger.basic', 'basic');
             server.auth.strategy('openapi.http.basic', 'basic');
+            server.auth.strategy('swagger.apiKey.custom', 'swagger.apiKey.custom');
         },
         pkg: {
             ...pkg,
