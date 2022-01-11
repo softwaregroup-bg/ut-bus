@@ -16,7 +16,8 @@ module.exports = ({
     tls,
     errors: {
         [`${errorPrefix}basicAuthEmpty`]: errorEmpty,
-        [`${errorPrefix}basicAuthHttp`]: errorHttp
+        [`${errorPrefix}basicAuthHttp`]: errorHttp,
+        [`${errorPrefix}customAuthHttp`]: eCustomAuthHttp
     }
 }) => ({
     plugin: {
@@ -146,6 +147,9 @@ module.exports = ({
                             channel: 'web'
                         }, {method: dest});
 
+                        if (!actorId) {
+                            throw eCustomAuthHttp();
+                        }
                         return h.authenticated({credentials: {actorId}});
                     } catch (error) {
                         logger && logger.error && logger.error(error);
