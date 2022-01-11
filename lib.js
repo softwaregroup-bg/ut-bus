@@ -129,7 +129,8 @@ module.exports = {
             request({
                 method: 'POST',
                 url,
-                body: JSON.stringify(body),
+                json: true,
+                body: body,
                 ...tls,
                 ...headers && {
                     headers: {

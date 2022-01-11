@@ -143,7 +143,7 @@ module.exports = ({
                             hostname,
                             port
                         } = await loginService(discoverService, dest.split('.')[0]);
-                        const actorId = (await requestPost(
+                        const {result: {actorId} = {}} = (await requestPost(
                             `${protocol}://${hostname}:${port}/rpc/${dest.split('.').join('/')}`,
                             errorCustomHttp,
                             errorCustomEmpty,
@@ -160,11 +160,10 @@ module.exports = ({
                                     payload: req.payload,
                                     query: req.query,
                                     path: req.path,
-                                    route: req.route,
                                     channel: 'web'
                                 }
                             }
-                        )).actorId;
+                        ));
                         return h.authenticated({credentials: {actorId}});
                     } catch (error) {
                         logger && logger.error && logger.error(error);
