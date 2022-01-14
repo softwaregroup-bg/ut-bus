@@ -949,6 +949,20 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     }
                 };
             }), moduleName);
+            utApi.route(Object.entries(methods).map(([method, validation]) => {
+                const {
+                    directory,
+                    redirect,
+                    security = {},
+                    auth = false
+                } = typeof validation === 'function' ? validation() : validation;
+                return directory && redirect && {
+                    method: 'GET',
+                    path: '/a/' + method,
+                    options: {auth, security},
+                    handler: (request, h) => h.redirect(redirect)
+                };
+            }).filter(Boolean), moduleName);
         }
     }
 
