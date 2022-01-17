@@ -1,3 +1,12 @@
+## [7.56.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.3...v7.56.4) (2022-01-17)
+
+
+### Bug Fixes
+
+* **BDB-2582:** allow redirect for asset routes ([#120](https://github.com/softwaregroup-bg/ut-bus/issues/120)) ([82301ea](https://github.com/softwaregroup-bg/ut-bus/commit/82301ea39a07e8e6c73a9437a18989bf67927666))
+
+
+
 ## [7.56.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.2...v7.56.3) (2022-01-11)
 
 
