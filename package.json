@@ -4,7 +4,7 @@
   "description": "UT bus module",
   "dependencies": {
     "@hapi/boom": "9.1.0",
-    "@hapi/inert": "6.0.3",
+    "@hapi/inert": "6.0.5",
     "@hapi/h2o2": "9.0.2",
     "@hapi/hapi": "20.0.1",
     "@hapi/bourne": "2.0.0",
@@ -21,7 +21,7 @@
     "ut-function.capture-hapi": "^1.1.2",
     "ut-function.capture-request": "^1.1.2",
     "ut-function.timing": "^1.2.0",
-    "ut-api": "^7.19.0",
+    "ut-api": "^7.19.2",
     "ut-rpc": "^6.1.2",
     "uuid": "3.3.2"
   },
