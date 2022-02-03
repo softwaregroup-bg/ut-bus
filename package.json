@@ -21,7 +21,7 @@
     "ut-function.capture-hapi": "^1.1.2",
     "ut-function.capture-request": "^1.1.2",
     "ut-function.timing": "^1.2.0",
-    "ut-api": "^7.19.3",
+    "ut-api": "^7.19.4",
     "ut-rpc": "^6.1.2",
     "uuid": "3.3.2"
   },
@@ -34,7 +34,7 @@
     "rabbot": "^2.1.0",
     "readable-stream": "2.3.3",
     "tap": "^15.0.9",
-    "ut-tools": "^6.38.2"
+    "ut-tools": "^6.40.1"
   },
   "optionalDependencies": {
     "ut-browser-request": "^1.0.5"
