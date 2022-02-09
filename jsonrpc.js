@@ -787,7 +787,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 validate: {
                     payload: socket.capture ? true : joi.object({
                         jsonrpc: joi.string().valid('2.0').required(),
-                        timeout: joi.number().optional(),
+                        timeout: joi.number().optional().allow(null).example(null),
                         id: joi.alternatives().try(joi.number(), joi.string()).example('1'),
                         method: joi.string().required(),
                         params: joi.array().required()
@@ -845,7 +845,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         const root = (params && (params._currentJoi || params.$_root)) || joi; // until we have a single joi
         return root.object({
             jsonrpc: root.string().valid('2.0').required(),
-            timeout: root.number().optional().allow(null),
+            timeout: root.number().optional().allow(null).example(null),
             id: root.alternatives().try(root.number(), root.string()).example('1'),
             method: root.string().valid(method).required(),
             params
