@@ -1,3 +1,12 @@
+## [7.56.8](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.7...v7.56.8) (2022-02-09)
+
+
+### Bug Fixes
+
+* api improvement ([8e98e45](https://github.com/softwaregroup-bg/ut-bus/commit/8e98e4518ab3238ebf6e03b475d9d05b861d98b6))
+
+
+
 ## [7.56.7](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.6...v7.56.7) (2022-02-03)
 
 
