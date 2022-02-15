@@ -414,6 +414,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             {
                 plugin: mlePlugin,
                 options: {
+                    options: socket,
                     mle,
                     logger,
                     errors

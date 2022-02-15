@@ -3,7 +3,7 @@ const pkg = require('./package.json');
 
 module.exports = {
     plugin: {
-        register(server, {mle, logger, errors}) {
+        register(server, {options: {debug}, mle, logger, errors}) {
             server.ext('onPostAuth', (request, h) => {
                 try {
                     if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
@@ -35,7 +35,8 @@ module.exports = {
                             return h.continue;
                         }
                         if (Object.prototype.hasOwnProperty.call(response.source, 'error')) {
-                            response.source.error = encrypt({...response.source.error});
+                            const props = debug ? Object.getOwnPropertyNames(response.source.error) : ['type', 'message', 'print', 'params'];
+                            response.source.error = encrypt(JSON.parse(JSON.stringify(response.source.error, props)));
                             return h.continue;
                         }
                         response.source = encrypt(response.source);
