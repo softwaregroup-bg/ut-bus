@@ -1,3 +1,12 @@
+## [7.56.10](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.9...v7.56.10) (2022-02-15)
+
+
+### Bug Fixes
+
+* don't use JSON.stringify to serialize errors as the replacer array is used recursively ([6fd9f26](https://github.com/softwaregroup-bg/ut-bus/commit/6fd9f2604417d131d193fa5aa679ae5e2466b72e))
+
+
+
 ## [7.56.9](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.8...v7.56.9) (2022-02-15)
 
 
