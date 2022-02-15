@@ -36,7 +36,8 @@ module.exports = {
                         }
                         if (Object.prototype.hasOwnProperty.call(response.source, 'error')) {
                             const props = debug ? Object.getOwnPropertyNames(response.source.error) : ['type', 'message', 'print', 'params'];
-                            response.source.error = encrypt(JSON.parse(JSON.stringify(response.source.error, props)));
+                            const error = props.reduce((all, prop) => ({...all, [prop]: response.source.error[prop]}), {});
+                            response.source.error = encrypt(error);
                             return h.continue;
                         }
                         response.source = encrypt(response.source);
