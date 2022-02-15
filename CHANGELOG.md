@@ -1,3 +1,12 @@
+## [7.56.9](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.8...v7.56.9) (2022-02-15)
+
+
+### Bug Fixes
+
+* mle error formatting ([#121](https://github.com/softwaregroup-bg/ut-bus/issues/121)) ([08153f6](https://github.com/softwaregroup-bg/ut-bus/commit/08153f62461472f4fc76561e8b4aaeb2a2cfd176))
+
+
+
 ## [7.56.8](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.7...v7.56.8) (2022-02-09)
 
 
