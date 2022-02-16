@@ -1,3 +1,12 @@
+## [7.56.11](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.10...v7.56.11) (2022-02-16)
+
+
+### Bug Fixes
+
+* serialize writable error properties only ([#122](https://github.com/softwaregroup-bg/ut-bus/issues/122)) ([10c3191](https://github.com/softwaregroup-bg/ut-bus/commit/10c31915f8a020acede98e874d074455dd99b91e))
+
+
+
 ## [7.56.10](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.9...v7.56.10) (2022-02-15)
 
 
