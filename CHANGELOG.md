@@ -1,3 +1,12 @@
+# [7.57.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.11...v7.57.0) (2022-02-16)
+
+
+### Features
+
+* uploads in nested objects ([8ad68a6](https://github.com/softwaregroup-bg/ut-bus/commit/8ad68a6eb4773a936008a9ca6ea2f1d5ed92d1e6))
+
+
+
 ## [7.56.11](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.10...v7.56.11) (2022-02-16)
 
 
