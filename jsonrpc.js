@@ -16,6 +16,7 @@ const Pez = require('pez');
 const fs = require('fs');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
+const set = require('lodash.set');
 const mlePlugin = require('./mle');
 const jwt = require('./jwt');
 const jose = require('./jose');
@@ -207,11 +208,11 @@ const uploads = async(workDir, request, logger) => {
                     // if (!isUploadValid(part.fileName, port.config.fileUpload)) return h.response('Invalid file name').code(400);
                     files.push(new Promise((resolve, reject) => {
                         const filename = workDir + '/' + uuid.v4() + '.upload';
-                        params[part.name] = {
+                        set(params, part.name, {
                             originalFilename: part.filename,
                             headers: part.headers,
                             filename
-                        };
+                        });
                         part.on('error', function(error) {
                             logger.error && logger.error(error);
                             reject(error);
@@ -221,7 +222,8 @@ const uploads = async(workDir, request, logger) => {
                 }
             })
             .on('field', (field, value) => {
-                if (typeof params[field] === 'undefined') params[field] = value;
+                if (field === '.') Object.assign(params, bourne.parse(value));
+                else if (typeof params[field] === 'undefined') set(params, field, value);
             })
             .once('error', reject)
             .once('close', () => Promise.all(files).then(() => {
