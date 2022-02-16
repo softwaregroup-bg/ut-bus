@@ -35,8 +35,19 @@ module.exports = {
                             return h.continue;
                         }
                         if (Object.prototype.hasOwnProperty.call(response.source, 'error')) {
-                            const props = debug ? Object.getOwnPropertyNames(response.source.error) : ['type', 'message', 'print', 'params'];
-                            const error = props.reduce((all, prop) => ({...all, [prop]: response.source.error[prop]}), {});
+                            const error = debug
+                                ? Object
+                                    .entries(Object.getOwnPropertyDescriptors(response.source.error))
+                                    .reduce((all, [key, {writable, value}]) => {
+                                        if (writable) all[key] = value;
+                                        return all;
+                                    }, {})
+                                : {
+                                    type: response.source.error.type,
+                                    message: response.source.error.message,
+                                    print: response.source.error.print,
+                                    params: response.source.error.params
+                                };
                             response.source.error = encrypt(error);
                             return h.continue;
                         }
