@@ -1,3 +1,12 @@
+## [7.57.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.0...v7.57.1) (2022-02-17)
+
+
+### Bug Fixes
+
+* be backwards compatible ([151c9ea](https://github.com/softwaregroup-bg/ut-bus/commit/151c9eaa0895f48ef77108728870a6149925599d))
+
+
+
 # [7.57.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.56.11...v7.57.0) (2022-02-16)
 
 
