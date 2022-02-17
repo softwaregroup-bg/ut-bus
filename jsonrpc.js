@@ -16,7 +16,7 @@ const Pez = require('pez');
 const fs = require('fs');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
-const set = require('lodash.set');
+const lodashSet = require('lodash.set');
 const mlePlugin = require('./mle');
 const jwt = require('./jwt');
 const jose = require('./jose');
@@ -193,6 +193,11 @@ const assertDir = dir => {
             throw error;
         }
     }
+};
+
+const set = (target, path, value) => {
+    if (path.startsWith('$.')) lodashSet(target, path.slice(2), value);
+    else target[path] = value;
 };
 
 const uploads = async(workDir, request, logger) => {
