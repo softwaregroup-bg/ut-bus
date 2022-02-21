@@ -1,3 +1,12 @@
+## [7.57.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.1...v7.57.2) (2022-02-21)
+
+
+### Bug Fixes
+
+* use $ for root during upload ([8f9f8d8](https://github.com/softwaregroup-bg/ut-bus/commit/8f9f8d8d5c1aa545e2fe160e97f17880c6f69050))
+
+
+
 ## [7.57.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.0...v7.57.1) (2022-02-17)
 
 
