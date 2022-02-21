@@ -227,7 +227,7 @@ const uploads = async(workDir, request, logger) => {
                 }
             })
             .on('field', (field, value) => {
-                if (field === '.') Object.assign(params, bourne.parse(value));
+                if (field === '$') Object.assign(params, bourne.parse(value));
                 else if (typeof params[field] === 'undefined') set(params, field, value);
             })
             .once('error', reject)
