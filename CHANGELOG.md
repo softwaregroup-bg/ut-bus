@@ -1,3 +1,12 @@
+## [7.57.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.2...v7.57.3) (2022-02-23)
+
+
+### Bug Fixes
+
+* error is undefined ([#123](https://github.com/softwaregroup-bg/ut-bus/issues/123)) ([3f2ec63](https://github.com/softwaregroup-bg/ut-bus/commit/3f2ec63f4243d20e3e3d2c3ddbbcd4dcd470a2ef))
+
+
+
 ## [7.57.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.1...v7.57.2) (2022-02-21)
 
 
