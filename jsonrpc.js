@@ -750,12 +750,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     jsonrpc,
                     id,
                     error: socket.debug ? error : {
-                        type: error.type,
-                        message: error.message,
-                        print: error.print,
-                        params: error.params
+                        type: error?.type,
+                        message: error?.message,
+                        print: error?.print,
+                        params: error?.params
                     }
-                }).header('x-envoy-decorator-operation', method).code(error.statusCode || 500);
+                }).header('x-envoy-decorator-operation', method).code(error?.statusCode || 500);
             }
         };
 
