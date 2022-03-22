@@ -10,7 +10,7 @@
     "@hapi/bourne": "2.0.0",
     "browser-process-hrtime": "1.0.0",
     "content": "4.0.6",
-    "dns-discovery": "6.2.3",
+    "ut-dns-discovery": "^6.2.3",
     "fs-plus": "3.1.1",
     "jose": "2.0.5",
     "lodash.set": "4.3.2",
