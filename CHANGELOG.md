@@ -1,3 +1,12 @@
+# [7.58.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.3...v7.58.0) (2022-03-24)
+
+
+### Features
+
+* fuport node 16, avoid CVE-2021-23386 ([3ec7b4e](https://github.com/softwaregroup-bg/ut-bus/commit/3ec7b4efbd0c02865db98479488bee6e1bd7dbd6))
+
+
+
 ## [7.57.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.2...v7.57.3) (2022-02-23)
 
 
