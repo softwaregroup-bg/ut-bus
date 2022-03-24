@@ -61,7 +61,7 @@ module.exports = ({
                                 sessionId,
                                 ...rest
                             };
-                            if (cache) cache.set(token, credentials, exp * 1000 - Date.now());
+                            if (cache) cache.set(token, credentials, {ttl: exp * 1000});
                             return h.authenticated({credentials});
                         } catch (error) {
                             logger && logger.error && logger.error(error);

@@ -503,7 +503,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const domain = (socket.domain === true) ? require('os').hostname() + tld : socket.domain;
     const consul = socket.consul && initConsul(socket.consul);
     const consulDiscover = socket.consul && socket.consul.discover;
-    const discover = socket.domain && require('dns-discovery')();
+    const discover = socket.domain && require('ut-dns-discovery')();
     const resolver = socket.domain && domainResolver(domain, errors, !!socket.tls);
     const prefix = socket.prefix || '';
     const suffix = socket.suffix || '-service' + tld;
