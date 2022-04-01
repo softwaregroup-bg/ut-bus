@@ -1,23 +1,27 @@
 const tap = require('tap');
 const tests = require('./tests');
-const { JWK } = require('jose');
+const { generateKeyPair, exportJWK } = require('jose');
 const joi = require('joi');
 
 tap.test('Bus to bus MLE', async test => {
     let bus1, bus2, bus3, bus4;
     test.test('Bus 1', async test => {
+        const {privateKey: sign} = await generateKeyPair('ES384', { crv: 'P-384'});
+        const {privateKey: encrypt} = await generateKeyPair('ECDH-ES+A256KW', { crv: 'P-384'});
         bus1 = await tests(test, false, {
             workDir: __dirname,
             joi,
             jsonrpc: {
                 domain: 'bus1',
-                sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}).toJWK(true),
-                encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'}).toJWK(true)
+                sign: await exportJWK(sign),
+                encrypt: await exportJWK(encrypt)
             }
         });
     });
 
     test.test('Bus 2', async test => {
+        const {privateKey: sign} = await generateKeyPair('ES384', { crv: 'P-384'});
+        const {privateKey: encrypt} = await generateKeyPair('ECDH-ES+A256KW', { crv: 'P-384'});
         bus2 = await tests(test, false, {
             workDir: __dirname,
             joi,
@@ -31,8 +35,8 @@ tap.test('Bus to bus MLE', async test => {
                     }
                 },
                 client: {
-                    sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}).toJWK(true),
-                    encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'}).toJWK(true)
+                    sign: await exportJWK(sign),
+                    encrypt: await exportJWK(encrypt)
                 }
             }
         });
@@ -62,6 +66,8 @@ tap.test('Bus to bus MLE', async test => {
     });
 
     test.test('Bus 4', async test => {
+        const {privateKey: sign} = await generateKeyPair('ES384', { crv: 'P-384'});
+        const {privateKey: encrypt} = await generateKeyPair('ECDH-ES+A256KW', { crv: 'P-384'});
         bus4 = await tests(test, false, {
             workDir: __dirname,
             joi,
@@ -88,8 +94,8 @@ tap.test('Bus to bus MLE', async test => {
                     }
                 },
                 client: {
-                    sign: JWK.generateSync('EC', 'P-384', {use: 'sig'}).toJWK(true),
-                    encrypt: JWK.generateSync('EC', 'P-384', {use: 'enc'}).toJWK(true)
+                    sign: await exportJWK(sign),
+                    encrypt: await exportJWK(encrypt)
                 }
             }
         });

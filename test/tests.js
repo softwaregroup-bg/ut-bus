@@ -2,114 +2,123 @@ const {Readable} = require('readable-stream');
 const url = require('url');
 const path = require('path');
 const joi = require('joi');
-const { JWKS, JWK, JWT } = require('jose');
+const { SignJWT, generateKeyPair, exportJWK } = require('jose');
 const {ServiceBus} = require('..');
-
-const key = JWK.generateSync('OKP', 'Ed25519', {use: 'sig'});
-const jwks = new JWKS.KeyStore();
-jwks.add(key);
-
-const api = (server, errors) => ({
-    'module.request': async({text, entityId, echo} = {}, {method}) => {
-        switch (method) {
-            case 'module.entity.actionTimeout':
-            case 'module.entity.actionCached':
-            case 'module.entity.action': {
-                if (text) {
-                    return [text.toUpperCase(), {calls: ['module.entity.action']}];
-                } else {
-                    throw errors['module.invalidParameter']();
-                }
-            }
-            case 'module.entity.get':
-                return ['Entity ' + entityId];
-            case 'module.entity.empty':
-                return;
-            case 'module.entity.public':
-                return ['public'];
-            case 'module.entity.echo':
-                return [echo];
-            case 'module.entity.file':
-                return [url.pathToFileURL(path.join(__dirname, 'file.txt'))];
-            case 'module.entity.stream': {
-                const result = new Readable();
-                result.push('stream content');
-                result.push(null);
-                return [result];
-            }
-            default:
-                throw server.errors['bus.methodNotFound']({params: {method}});
-        }
-    },
-    'login.request': async(params, {auth, method, httpRequest: {url}}) => {
-        switch (method) {
-            case 'login.identity.authenticate':
-                if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
-                return [
-                    JWT.sign({
-                        typ: 'Bearer',
-                        ses: 'test',
-                        per: Buffer.from([15]).toString('Base64'),
-                        enc: JWK.asKey(params.encrypt),
-                        sig: JWK.asKey(params.sign)
-                    }, key, {
-                        issuer: 'ut-login',
-                        audience: 'ut-bus',
-                        expiresIn: '8 h'
-                    })
-                ];
-            case 'login.oauth.token':
-                auth = JSON.parse(params.refresh_token); // eslint-disable-line no-fallthrough
-            case 'login.identity.check':
-            case 'login.identity.exchange': {
-                if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
-                const {sign, encrypt} = server.publicApi.info();
-                return [{
-                    encrypt,
-                    sign,
-                    token_type: 'Bearer',
-                    scope: 'openid',
-                    access_token: JWT.sign({
-                        typ: 'Bearer',
-                        ses: 'test',
-                        per: Buffer.from([31]).toString('Base64'),
-                        ...auth && auth.mlek && {enc: JWK.asKey(auth.mlek)},
-                        ...auth && auth.mlsk && {sig: JWK.asKey(auth.mlsk)}
-                    }, key, {
-                        issuer: 'ut-login',
-                        audience: 'ut-bus',
-                        expiresIn: 3 + ' seconds'
-                    }),
-                    expires_in: 3,
-                    refresh_token: auth && JSON.stringify(auth),
-                    refresh_token_expires_in: 5
-                }];
-            }
-            case 'login.oidc.getConfiguration':
-                return [{
-                    jwks_uri: new URL('../jwks', url.href).href
-                }];
-            case 'login.oidc.mle': {
-                const {sign, encrypt} = server.publicApi.info();
-                return [{sign, encrypt}];
-            }
-            case 'login.action.map':
-                return [{
-                    'module.entity.action': 1,
-                    'module.entity.get': 2,
-                    'module.entity.file': 3,
-                    'module.entity.stream': 4,
-                    'module.entity.echo': 5
-                }];
-            case 'login.oidc.getKeys':
-                return [jwks.toJWKS()];
-            default:
-                throw server.errors['bus.methodNotFound']({params: {method}});
-        }
-    }
-});
-
+const uuid = require('uuid');
+const additionalServerConfig = {
+    // logLevel: 'error',
+    // logFactory: {
+    //     createLog: () => ({
+    //         error: console.error // eslint-disable-line no-console
+    //     })
+    // }
+};
 module.exports = async(test, clientConfig, serverConfig) => {
+    serverConfig = {...serverConfig, ...additionalServerConfig};
+    const {privateKey: key, publicKey} = await generateKeyPair('ES384', { crv: 'P-384', extractable: true});
+    const jwk = {...await exportJWK(publicKey), kid: uuid.v4(), use: 'sig'};
+    const api = (server, errors) => ({
+        'module.request': async({text, entityId, echo} = {}, {method}) => {
+            switch (method) {
+                case 'module.entity.actionTimeout':
+                case 'module.entity.actionCached':
+                case 'module.entity.action': {
+                    if (text) {
+                        return [text.toUpperCase(), {calls: ['module.entity.action']}];
+                    } else {
+                        throw errors['module.invalidParameter']();
+                    }
+                }
+                case 'module.entity.get':
+                    return ['Entity ' + entityId];
+                case 'module.entity.empty':
+                    return;
+                case 'module.entity.public':
+                    return ['public'];
+                case 'module.entity.echo':
+                    return [echo];
+                case 'module.entity.file':
+                    return [url.pathToFileURL(path.join(__dirname, 'file.txt'))];
+                case 'module.entity.stream': {
+                    const result = new Readable();
+                    result.push('stream content');
+                    result.push(null);
+                    return [result];
+                }
+                default:
+                    throw server.errors['bus.methodNotFound']({params: {method}});
+            }
+        },
+        'login.request': async(params, {auth, method, httpRequest: {url}}) => {
+            switch (method) {
+                case 'login.identity.authenticate':
+                    if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
+                    return [
+                        await new SignJWT({
+                            typ: 'Bearer',
+                            ses: 'test',
+                            per: Buffer.from([15]).toString('Base64'),
+                            enc: params.encrypt,
+                            sig: params.sign
+                        })
+                            .setProtectedHeader({ alg: 'ES384', kid: jwk.kid })
+                            .setIssuedAt()
+                            .setIssuer('ut-login')
+                            .setAudience('ut-bus')
+                            .setExpirationTime('8h')
+                            .sign(key)
+                    ];
+                case 'login.oauth.token':
+                    auth = JSON.parse(params.refresh_token); // eslint-disable-line no-fallthrough
+                case 'login.identity.check':
+                case 'login.identity.exchange': {
+                    if (params.password === 'wrong') throw server.errors['bus.authenticationFailed']();
+                    const {sign, encrypt} = server.publicApi.info();
+                    return [{
+                        encrypt,
+                        sign,
+                        token_type: 'Bearer',
+                        scope: 'openid',
+                        access_token: await new SignJWT({
+                            typ: 'Bearer',
+                            ses: 'test_exchange',
+                            per: Buffer.from([31]).toString('Base64'),
+                            ...auth && auth.mlek && {enc: auth.mlek},
+                            ...auth && auth.mlsk && {sig: auth.mlsk}
+                        })
+                            .setProtectedHeader({ alg: 'ES384', kid: jwk.kid, use: jwk.use })
+                            .setIssuer('ut-login')
+                            .setAudience('ut-bus')
+                            .setExpirationTime('3s')
+                            .sign(key),
+                        expires_in: 3,
+                        refresh_token: auth && JSON.stringify(auth),
+                        refresh_token_expires_in: 5
+                    }];
+                }
+                case 'login.oidc.getConfiguration':
+                    return [{
+                        jwks_uri: new URL('../jwks', url.href).href
+                    }];
+                case 'login.oidc.mle': {
+                    const {sign, encrypt} = server.publicApi.info();
+                    return [{sign, encrypt}];
+                }
+                case 'login.action.map':
+                    return [{
+                        'module.entity.action': 1,
+                        'module.entity.get': 2,
+                        'module.entity.file': 3,
+                        'module.entity.stream': 4,
+                        'module.entity.echo': 5
+                    }];
+                case 'login.oidc.getKeys':
+                    return [{keys: [jwk]}];
+                default:
+                    throw server.errors['bus.methodNotFound']({params: {method}});
+            }
+        }
+    });
     const server = new ServiceBus(serverConfig);
     await test.test('Server init', () => server.init());
     const serverApi = server.publicApi;

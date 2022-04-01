@@ -24,12 +24,12 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                     jsonrpc: '2.0',
                     method: 'login.identity.exchange',
                     id: 1,
-                    params: mleClient.signEncrypt({username, password, channel}, encrypt, localKeys)
+                    params: await mleClient.signEncrypt({username, password, channel}, encrypt, localKeys)
                 },
                 json: true
             });
-            if (error) throw Object.assign(new Error(), mleClient.decryptVerify(error, sign));
-            cache.auth = mleClient.decryptVerify(result, sign);
+            if (error) throw Object.assign(new Error(), await mleClient.decryptVerify(error, sign));
+            cache.auth = await mleClient.decryptVerify(result, sign);
         } else {
             const {body: {result, error}} = await httpPost({
                 url: `${url}/rpc/login/identity/check`,
@@ -100,11 +100,11 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
 
         if (!cache.auth && !(username && password)) {
             if (cache.remoteKeys) {
-                codec.encode = params => ({
-                    params: mleClient.signEncrypt(params, cache.remoteKeys.encrypt, localKeys),
+                codec.encode = async params => ({
+                    params: await mleClient.signEncrypt(params, cache.remoteKeys.encrypt, localKeys),
                     method
                 });
-                codec.decode = (result, unpack) => decode(mleClient.decryptVerify(result, cache.remoteKeys.sign), method, unpack);
+                codec.decode = async(result, unpack) => decode(await mleClient.decryptVerify(result, cache.remoteKeys.sign), method, unpack);
             } else {
                 codec.encode = params => ({params, method});
                 codec.decode = (result, unpack) => decode(result, method, unpack);
@@ -134,14 +134,14 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
         }
 
         if (cache.auth.sign && cache.auth.encrypt) {
-            codec.encode = params => ({
-                params: mleClient.signEncrypt(params, cache.auth.encrypt),
+            codec.encode = async params => ({
+                params: await mleClient.signEncrypt(params, cache.auth.encrypt),
                 headers: {
                     authorization: 'Bearer ' + cache.auth.access_token
                 },
                 method
             });
-            codec.decode = (result, unpack) => decode(mleClient.decryptVerify(result, cache.auth.sign), method, unpack);
+            codec.decode = async(result, unpack) => decode(await mleClient.decryptVerify(result, cache.auth.sign), method, unpack);
         } else {
             codec.encode = params => ({
                 params,

@@ -354,8 +354,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const brokerRequest = brokerMethod(false, 'request');
     const session = async(token) => {
         const result = await brokerRequest({
-            username: token.payload.oid || token.payload.sub,
-            installationId: token.payload.oid || token.payload.sub,
+            username: token.oid || token.sub,
+            installationId: token.oid || token.sub,
             type: 'oidc',
             password: '*',
             channel: 'web'
@@ -368,11 +368,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             permissionMap,
             mle
         }] = result;
-        token.payload.per = permissionMap;
-        token.payload.ses = sessionId;
-        if (mle && mle.mlek) token.payload.enc = JSON.parse(mle.mlek);
-        if (mle && mle.mlsk) token.payload.sig = JSON.parse(mle.mlsk);
-        token.payload.sub = String(actorId);
+        token.per = permissionMap;
+        token.ses = sessionId;
+        if (mle && mle.mlek) token.enc = JSON.parse(mle.mlek);
+        if (mle && mle.mlsk) token.sig = JSON.parse(mle.mlsk);
+        token.sub = String(actorId);
     };
 
     const tlsClient = cert(socket.client);
@@ -386,8 +386,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         issuers: socket.openId || {...socket.utLogin !== false && {'ut-login': {audience: 'ut-bus'}}}
     });
 
-    const mle = jose(socket);
-    const mleClient = jose(socket.client || {});
+    const mle = await jose(socket);
+    const mleClient = await jose(socket.client || {});
 
     async function createServer(port) {
         const result = new hapi.Server({
@@ -604,7 +604,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     } else if (body && body.error !== undefined) {
                         const error =
                             body.jsonrpc
-                                ? Object.assign(new Error(), decode(body.error, true))
+                                ? Object.assign(new Error(), await decode(body.error, true))
                                 : typeof body.error === 'string'
                                     ? new Error(body.error)
                                     : Object.assign(new Error(), body.error);
@@ -637,7 +637,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
-                        const result = decode(body.result);
+                        const result = await decode(body.result);
                         if (/\.service\.get$/.test(method)) Object.assign(result[0], requestParams);
                         resolve(result);
                     } else {

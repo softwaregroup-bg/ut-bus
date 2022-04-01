@@ -52,7 +52,7 @@ module.exports = ({
                                 per = '',
                                 // arbitrary
                                 ...rest
-                            } = decoded.payload;
+                            } = decoded;
                             const credentials = {
                                 mlek,
                                 mlsk,
