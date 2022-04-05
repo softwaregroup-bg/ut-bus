@@ -1,3 +1,12 @@
+## [7.58.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.58.0...v7.58.1) (2022-04-01)
+
+
+### Bug Fixes
+
+* remove special symbol from debug params ([#126](https://github.com/softwaregroup-bg/ut-bus/issues/126)) ([32966bf](https://github.com/softwaregroup-bg/ut-bus/commit/32966bfac7df5f32f3bbe0075daaabca0b991b98))
+
+
+
 # [7.58.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.57.3...v7.58.0) (2022-03-24)
 
 
