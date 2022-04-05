@@ -29,6 +29,7 @@ async function importKey(jwk, alg) {
 
 async function exportJWK(key, priv = false) {
     const jwk = isKey(key) ? await jose.exportJWK(key) : key;
+    if (!jwk.kid) jwk.kid = await jose.calculateJwkThumbprint(jwk);
     if (priv) return jwk;
     const { d, p, q, dp, dq, qi, ...publicJwk } = jwk;
     return publicJwk;
