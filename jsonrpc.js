@@ -673,7 +673,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function info() {
         return {
             ...server.info,
-            ...mle.keys
+            ...mle.keys,
+            ...test && {
+                auth: server
+                    .table()
+                    .reduce((all, {settings: {auth, app}}) => ({
+                        ...all,
+                        ...app.method && {
+                            [app.method]: auth && auth.strategies ? auth.strategies[0] : auth
+                        }
+                    }), {})
+            }
         };
     }
 
@@ -928,7 +938,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         return route.settings.handler(request, ...rest);
                     },
                     ...rest,
-                    ...!jsonrpc && params && {app: {payload: params, ...rest.app}}
+                    app: {
+                        ...!jsonrpc && params && {payload: params},
+                        ...rest.app,
+                        method
+                    }
                 };
             }), moduleName);
         } else if (/\.openApi$|^openApi$/.test(moduleName) && utApi) {
