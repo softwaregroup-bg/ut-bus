@@ -36,7 +36,8 @@ async function exportJWK(key, priv = false) {
 }
 
 async function sign(message, {key, alg}) {
-    return new jose.CompactSign(Buffer.from(JSON.stringify(message)))
+    const payload = Buffer.isBuffer(message) ? message : Buffer.from(JSON.stringify(message));
+    return new jose.CompactSign(payload)
         .setProtectedHeader({alg})
         .sign(key);
 }
@@ -54,9 +55,10 @@ function encrypt(jws, {key, alg}, protectedHeader, unprotectedHeader) {
 }
 
 async function decrypt(encrypted, {key}, options) {
-    const { plaintext, protectedHeader } = encrypted.recipients
-        ? await jose.generalDecrypt(encrypted, key)
-        : await jose.flattenedDecrypt(encrypted, key);
+    const jwe = typeof encrypted === 'string' ? JSON.parse(encrypted) : encrypted;
+    const { plaintext, protectedHeader } = jwe.recipients
+        ? await jose.generalDecrypt(jwe, key)
+        : await jose.flattenedDecrypt(jwe, key);
     return options?.complete
         ? { plaintext, protectedHeader }
         : plaintext;
