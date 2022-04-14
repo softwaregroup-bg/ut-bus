@@ -11,8 +11,8 @@ const querystring = require('querystring');
 const os = require('os');
 const osName = [os.type(), os.platform(), os.release()].join(':');
 const hrtime = require('browser-process-hrtime');
-const Content = require('content');
-const Pez = require('pez');
+const Content = require('@hapi/content');
+const Pez = require('@hapi/pez');
 const fs = require('fs');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
@@ -95,7 +95,7 @@ async function failPreRpc(request, h, error) {
     const code = error.statusCode || (error.isJoi && 400) || 500;
     return h
         .response({
-            jsonrpc: request.payload.jsonrpc,
+            jsonrpc: '2.0',
             id: request.payload.id,
             error: {
                 type: error.type,
@@ -741,7 +741,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             case 'http:':
                             case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
                             case 'stream': return h.response(result0.pipe(new Stream.PassThrough()));
-                            case 'jsonrpc': return h.response({jsonrpc, id, result, ...shift && test && {$meta: {validation: $meta.validation, calls: $meta.calls}}});
+                            case 'jsonrpc': return h.response({jsonrpc: '2.0', id, result, ...shift && test && {$meta: {validation: $meta.validation, calls: $meta.calls}}});
                             default: return h.response(result);
                         }
                     } catch (error) {
@@ -757,7 +757,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return applyMeta(response, $meta);
             } catch (error) {
                 return h.response({
-                    jsonrpc,
+                    jsonrpc: '2.0',
                     id,
                     error: socket.debug ? error : {
                         type: error?.type,
@@ -906,7 +906,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }));
                             return h.response({
                                 ...jsonrpc && {
-                                    jsonrpc: request.payload.jsonrpc,
+                                    jsonrpc: '2.0',
                                     id: request.payload.id
                                 },
                                 error: {
