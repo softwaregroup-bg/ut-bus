@@ -29,6 +29,7 @@
         "options": [
             "mle.test.js",
             "bus.test.js",
+            "jose.test.js",
             "jsonrpc.test.js",
             "utError.test.js"
         ]
