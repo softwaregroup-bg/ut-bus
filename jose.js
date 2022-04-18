@@ -54,11 +54,12 @@ function encrypt(jws, {key, alg}, protectedHeader, unprotectedHeader) {
         .encrypt();
 }
 
-async function decrypt(encrypted, {key}, options) {
-    const jwe = typeof encrypted === 'string' ? JSON.parse(encrypted) : encrypted;
-    const { plaintext, protectedHeader } = jwe.recipients
-        ? await jose.generalDecrypt(jwe, key)
-        : await jose.flattenedDecrypt(jwe, key);
+async function decrypt(jwe, {key}, options) {
+    const { plaintext, protectedHeader } = typeof jwe === 'string'
+        ? await jose.compactDecrypt(jwe, key)
+        : jwe.recipients
+            ? await jose.generalDecrypt(jwe, key)
+            : await jose.flattenedDecrypt(jwe, key);
     return options?.complete
         ? { plaintext, protectedHeader }
         : plaintext;
