@@ -31,7 +31,7 @@ module.exports = ({
                             if (!token) throw errors[errorId]();
                             const cachedCredentials = cache && cache.get(token);
                             if (cachedCredentials) return h.authenticated({credentials: cachedCredentials});
-                            const decoded = await verify(token, {issuer: openId, audience});
+                            const {payload} = await verify(token, {issuer: openId, audience});
                             const {
                                 // standard
                                 aud,
@@ -52,7 +52,7 @@ module.exports = ({
                                 per = '',
                                 // arbitrary
                                 ...rest
-                            } = decoded;
+                            } = payload;
                             const credentials = {
                                 mlek,
                                 mlsk,
