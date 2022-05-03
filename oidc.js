@@ -143,27 +143,28 @@ module.exports = ({
     }
 
     async function verify(token, {nonce, audience = 'ut-bus'}, isId) {
-        let decoded;
-        let protectedHeader;
+        let payload;
+        let header;
         try {
-            decoded = decodeJwt(token);
-            protectedHeader = decodeProtectedHeader(token);
+            payload = decodeJwt(token);
+            header = decodeProtectedHeader(token);
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        const config = (decoded.iss && (decoded.iss !== 'ut-login') && (await issuerConfig(decoded.iss))) || {audience};
+        const config = (payload.iss && (payload.iss !== 'ut-login') && (await issuerConfig(payload.iss))) || {audience};
         try {
             if (isId) {
-                await jwtVerify(token, await getKey(decoded, protectedHeader), {audience: config.audience, issuer: decoded.iss, nonce});
+                await jwtVerify(token, await getKey(payload, header), {audience: config.audience, issuer: payload.iss, nonce});
             } else {
-                await jwtVerify(token, await getKey(decoded, protectedHeader), {audience: config.audience});
+                await jwtVerify(token, await getKey(payload, header), {audience: config.audience});
             }
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        if (session && !decoded.ses) await session(decoded);
+        if (session && !payload.ses) await session({payload, header});
         return {
-            ...decoded,
+            payload,
+            header,
             config
         };
     }
