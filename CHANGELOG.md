@@ -1,3 +1,12 @@
+# [7.59.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.58.1...v7.59.0) (2022-05-04)
+
+
+### Features
+
+* upgrade to jose@4 UTCORE-121 ([#132](https://github.com/softwaregroup-bg/ut-bus/issues/132)) ([20fc304](https://github.com/softwaregroup-bg/ut-bus/commit/20fc304b52ccc0d2fc495a9f866c17ce6b2e5dae))
+
+
+
 ## [7.58.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.58.0...v7.58.1) (2022-04-01)
 
 
