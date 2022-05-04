@@ -819,7 +819,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             fn,
             object,
             logger,
-            debug: socket.debug
+            debug: socket.debug,
+            checkAuth
         });
     }
 
