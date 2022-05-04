@@ -1,4 +1,9 @@
-const { JWKS, JWT } = require('jose');
+const {
+    decodeJwt,
+    decodeProtectedHeader,
+    jwtVerify,
+    createLocalJWKSet
+} = require('jose');
 const {
     loginService,
     requestGet: get
@@ -126,37 +131,37 @@ module.exports = ({
 
     const keys = {};
 
-    async function getKey(decoded) {
-        const issuerId = decoded.payload && decoded.payload.iss;
+    async function getKey(decoded, protectedHeader) {
+        const issuerId = decoded?.iss;
         if (!issuerId) throw errorNoIssuer();
-        const kid = decoded.header && decoded.header.kid;
+        const kid = protectedHeader?.kid;
         if (!kid) throw errorNoKid();
-        const jwk = keys[issuerId] && keys[issuerId].get({kid});
-        if (jwk) return jwk;
-        keys[issuerId] = JWKS.asKeyStore(await jwks(issuerId), {ignoreErrors: true});
-        const result = keys[issuerId].get({kid});
+        if (!keys[issuerId]) keys[issuerId] = createLocalJWKSet(await jwks(issuerId));
+        const result = await keys[issuerId](protectedHeader, decoded);
         if (!result) throw errorInvalid({params: {message: 'Invalid OIDC key id'}});
         return result;
     }
 
     async function verify(token, {nonce, audience = 'ut-bus'}, isId) {
         let decoded;
+        let protectedHeader;
         try {
-            decoded = JWT.decode(token, {complete: true});
+            decoded = decodeJwt(token);
+            protectedHeader = decodeProtectedHeader(token);
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        const config = (decoded.payload.iss && (decoded.payload.iss !== 'ut-login') && (await issuerConfig(decoded.payload.iss))) || {audience};
+        const config = (decoded.iss && (decoded.iss !== 'ut-login') && (await issuerConfig(decoded.iss))) || {audience};
         try {
             if (isId) {
-                JWT.IdToken.verify(token, await getKey(decoded), {issuer: decoded.payload.iss, nonce, audience: config.audience});
+                await jwtVerify(token, await getKey(decoded, protectedHeader), {audience: config.audience, issuer: decoded.iss, nonce});
             } else {
-                JWT.verify(token, await getKey(decoded), {audience: config.audience});
+                await jwtVerify(token, await getKey(decoded, protectedHeader), {audience: config.audience});
             }
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        if (session && !decoded.payload.ses) await session(decoded);
+        if (session && !decoded.ses) await session(decoded);
         return {
             ...decoded,
             config

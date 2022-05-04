@@ -4,17 +4,17 @@ const pkg = require('./package.json');
 module.exports = {
     plugin: {
         register(server, {options: {debug}, mle, logger, errors}) {
-            server.ext('onPostAuth', (request, h) => {
+            server.ext('onPostAuth', async(request, h) => {
                 try {
                     if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
                         const {credentials} = request.auth;
                         if (credentials.mlsk === 'header' && credentials.mlek === 'header') {
-                            const {protected: {mlsk, mlek}, cleartext} = mle.decrypt(request.payload.params, { complete: true });
+                            const {protectedHeader: {mlsk, mlek}, plaintext} = await mle.decrypt(request.payload.params, { complete: true });
                             credentials.mlsk = mlsk;
                             credentials.mlek = mlek;
-                            request.payload.params = mle.verify(cleartext, mlsk);
+                            request.payload.params = await mle.verify(plaintext, mlsk);
                         } else {
-                            request.payload.params = mle.decryptVerify(request.payload.params, credentials.mlsk);
+                            request.payload.params = await mle.decryptVerify(request.payload.params, credentials.mlsk);
                         }
                     }
                 } catch (error) {
@@ -24,14 +24,14 @@ module.exports = {
                 return h.continue;
             });
 
-            server.ext('onPreResponse', (request, h) => {
+            server.ext('onPreResponse', async(request, h) => {
                 const response = request.response;
                 if (response.isBoom) return h.continue;
                 if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params && response.source) {
                     try {
                         const encrypt = message => mle.signEncrypt(message, request.auth.credentials && request.auth.credentials.mlek);
                         if (Object.prototype.hasOwnProperty.call(response.source, 'result')) {
-                            response.source.result = encrypt(response.source.result);
+                            response.source.result = await encrypt(response.source.result);
                             return h.continue;
                         }
                         if (Object.prototype.hasOwnProperty.call(response.source, 'error')) {
@@ -48,10 +48,10 @@ module.exports = {
                                     print: response.source.error.print,
                                     params: response.source.error.params
                                 };
-                            response.source.error = encrypt(error);
+                            response.source.error = await encrypt(error);
                             return h.continue;
                         }
-                        response.source = encrypt(response.source);
+                        response.source = await encrypt(response.source);
                         return h.continue;
                     } catch (error) {
                         logger && logger.error && logger.error(errors['bus.mleEncrypt']({cause: error, params: request.payload}));

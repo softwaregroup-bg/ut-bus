@@ -11,8 +11,8 @@ const querystring = require('querystring');
 const os = require('os');
 const osName = [os.type(), os.platform(), os.release()].join(':');
 const hrtime = require('browser-process-hrtime');
-const Content = require('content');
-const Pez = require('pez');
+const Content = require('@hapi/content');
+const Pez = require('@hapi/pez');
 const fs = require('fs');
 const uuid = require('uuid');
 const fsplus = require('fs-plus');
@@ -95,7 +95,7 @@ async function failPreRpc(request, h, error) {
     const code = error.statusCode || (error.isJoi && 400) || 500;
     return h
         .response({
-            jsonrpc: request.payload.jsonrpc,
+            jsonrpc: '2.0',
             id: request.payload.id,
             error: {
                 type: error.type,
@@ -354,8 +354,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     const brokerRequest = brokerMethod(false, 'request');
     const session = async(token) => {
         const result = await brokerRequest({
-            username: token.payload.oid || token.payload.sub,
-            installationId: token.payload.oid || token.payload.sub,
+            username: token.oid || token.sub,
+            installationId: token.oid || token.sub,
             type: 'oidc',
             password: '*',
             channel: 'web'
@@ -368,11 +368,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             permissionMap,
             mle
         }] = result;
-        token.payload.per = permissionMap;
-        token.payload.ses = sessionId;
-        if (mle && mle.mlek) token.payload.enc = JSON.parse(mle.mlek);
-        if (mle && mle.mlsk) token.payload.sig = JSON.parse(mle.mlsk);
-        token.payload.sub = String(actorId);
+        token.per = permissionMap;
+        token.ses = sessionId;
+        if (mle && mle.mlek) token.enc = JSON.parse(mle.mlek);
+        if (mle && mle.mlsk) token.sig = JSON.parse(mle.mlsk);
+        token.sub = String(actorId);
     };
 
     const tlsClient = cert(socket.client);
@@ -386,8 +386,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         issuers: socket.openId || {...socket.utLogin !== false && {'ut-login': {audience: 'ut-bus'}}}
     });
 
-    const mle = jose(socket);
-    const mleClient = jose(socket.client || {});
+    const mle = await jose(socket);
+    const mleClient = await jose(socket.client || {});
 
     async function createServer(port) {
         const result = new hapi.Server({
@@ -604,7 +604,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     } else if (body && body.error !== undefined) {
                         const error =
                             body.jsonrpc
-                                ? Object.assign(new Error(), decode(body.error, true))
+                                ? Object.assign(new Error(), await decode(body.error, true))
                                 : typeof body.error === 'string'
                                     ? new Error(body.error)
                                     : Object.assign(new Error(), body.error);
@@ -637,7 +637,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }
                         }));
                     } else if (body && body.result !== undefined && body.error === undefined) {
-                        const result = decode(body.result);
+                        const result = await decode(body.result);
                         if (/\.service\.get$/.test(method)) Object.assign(result[0], requestParams);
                         resolve(result);
                     } else {
@@ -673,7 +673,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function info() {
         return {
             ...server.info,
-            ...mle.keys
+            ...mle.keys,
+            ...test && {
+                auth: server
+                    .table()
+                    .reduce((all, {settings: {auth, app}}) => ({
+                        ...all,
+                        ...app.method && {
+                            [app.method]: auth && auth.strategies ? auth.strategies[0] : auth
+                        }
+                    }), {})
+            }
         };
     }
 
@@ -731,7 +741,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             case 'http:':
                             case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
                             case 'stream': return h.response(result0.pipe(new Stream.PassThrough()));
-                            case 'jsonrpc': return h.response({jsonrpc, id, result, ...shift && test && {$meta: {validation: $meta.validation, calls: $meta.calls}}});
+                            case 'jsonrpc': return h.response({jsonrpc: '2.0', id, result, ...shift && test && {$meta: {validation: $meta.validation, calls: $meta.calls}}});
                             default: return h.response(result);
                         }
                     } catch (error) {
@@ -747,7 +757,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return applyMeta(response, $meta);
             } catch (error) {
                 return h.response({
-                    jsonrpc,
+                    jsonrpc: '2.0',
                     id,
                     error: socket.debug ? error : {
                         type: error?.type,
@@ -809,7 +819,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             fn,
             object,
             logger,
-            debug: socket.debug
+            debug: socket.debug,
+            checkAuth
         });
     }
 
@@ -896,7 +907,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }));
                             return h.response({
                                 ...jsonrpc && {
-                                    jsonrpc: request.payload.jsonrpc,
+                                    jsonrpc: '2.0',
                                     id: request.payload.id
                                 },
                                 error: {
@@ -928,7 +939,11 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         return route.settings.handler(request, ...rest);
                     },
                     ...rest,
-                    ...!jsonrpc && params && {app: {payload: params, ...rest.app}}
+                    app: {
+                        ...!jsonrpc && params && {payload: params},
+                        ...rest.app,
+                        method
+                    }
                 };
             }), moduleName);
         } else if (/\.openApi$|^openApi$/.test(moduleName) && utApi) {

@@ -518,11 +518,14 @@ library.
 For example [jose](https://github.com/panva/jose):
 
 ```js
-    const {JWK} = require('jose');
-    function getKeys() {
-        const mlsk = JWK.generateSync('EC', 'P-384', {use: 'sig'});
-        const mlek = JWK.generateSync('EC', 'P-384', {use: 'enc'});
-        return {mlsk: JWK.asKey(mlsk), mlek: JWK.asKey(mlek)};
+    const { generateKeyPair } = require('jose');
+    async function getKeys() {
+        const {privateKey: mlsk} = await generateKeyPair('ES384', { crv: 'P-384'});
+        const {privateKey: mlek} = await generateKeyPair('ECDH-ES+A256KW', { crv: 'P-384'});
+        return {
+            mlsk: await exportJWK(mlsk),
+            mlek: await exportJWK(mlek)
+        }
     }
 ```
 
@@ -592,7 +595,7 @@ The message level encryption flow consists of 4 main parts:
     encrypted with `serverPublicMlek`. Pseudo code:
 
     ```js
-    encrypt(sign(msg, clientPrivateMlsk), serverPublicMlek);
+    await encrypt(await sign(msg, clientPrivateMlsk), serverPublicMlek);
     ```
 
     In case of `login.identity.exchange` or in other words
@@ -602,7 +605,7 @@ The message level encryption flow consists of 4 main parts:
 
      ```js
     // protectedHeaders: {mlsk: clientPublicMlsk, mlek: clientPublicMlek}
-    encrypt(sign(msg, clientPrivateMlsk), serverPublicMlek, protectedHeaders);
+    await encrypt(await sign(msg, clientPrivateMlsk), serverPublicMlek, protectedHeaders);
     ```
 
 2. **The server receives the request.**
@@ -611,7 +614,7 @@ The message level encryption flow consists of 4 main parts:
     verified with `clientPublicMlsk`. Pseudo code:
 
     ```js
-    verify(decrypt(msg, serverPrivateMlek), clientPublicMlsk)
+    await verify(await decrypt(msg, serverPrivateMlek), clientPublicMlsk)
     ```
 
 3. **The server sends the response.**
@@ -620,7 +623,7 @@ The message level encryption flow consists of 4 main parts:
     encrypted with `clientPublicMlek`. Pseudo code:
 
     ```js
-    encrypt(sign(msg, serverPrivateMlsk), clientPublicMlek);
+    await encrypt(await sign(msg, serverPrivateMlsk), clientPublicMlek);
     ```
 
 4. **The client receives the response.**
@@ -629,5 +632,5 @@ The message level encryption flow consists of 4 main parts:
     verified with `serverPublicMlek`. Pseudo code:
 
     ```js
-    verify(decrypt(msg, clientPrivateMlek), serverPublicMlek)
+    await verify(await decrypt(msg, clientPrivateMlek), serverPublicMlek)
     ```
