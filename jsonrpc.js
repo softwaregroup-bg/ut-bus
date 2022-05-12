@@ -15,7 +15,6 @@ const Content = require('@hapi/content');
 const Pez = require('@hapi/pez');
 const fs = require('fs');
 const uuid = require('uuid');
-const fsplus = require('fs-plus');
 const lodashSet = require('lodash.set');
 const mlePlugin = require('./mle');
 const jwt = require('./jwt');
@@ -183,7 +182,7 @@ const assertDir = dir => {
     } catch (error) {
         if (error.code === 'ENOENT') {
             try {
-                fsplus.makeTreeSync(dir);
+                fs.mkdirSync(dir, {recursive: true});
             } catch (e) {
                 if (e.code !== 'EEXIST') {
                     throw e;
