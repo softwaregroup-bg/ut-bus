@@ -477,7 +477,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             }
         },
         internal,
-        forward
+        forward,
+        checkAuth
     );
 
     utApi.route([{
@@ -818,8 +819,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             fn,
             object,
             logger,
-            debug: socket.debug,
-            checkAuth
+            debug: socket.debug
         });
     }
 

@@ -22,7 +22,7 @@ module.exports = ({
 }) => ({
     plugin: {
         register(server, {options: {openId, tokenCache, assetTokenCache}, logger, errors, verify}) {
-            const jwtChecker = (audience, cacheConfig, errorId, getToken) => function jose() {
+            const jwtChecker = (audience, cacheConfig, errorId, getToken) => function jose(_, options) {
                 const cache = (![0, false, 'false'].includes(cacheConfig)) && new LRUCache({max: 1000, ...cacheConfig});
                 return {
                     async authenticate(request, h) {
@@ -65,7 +65,14 @@ module.exports = ({
                             return h.authenticated({credentials});
                         } catch (error) {
                             logger && logger.error && logger.error(error);
-                            return h.unauthenticated(Boom.unauthorized(error.message));
+                            const err = Boom.unauthorized(error.message);
+                            if (options.redirect) {
+                                const url = new URL('/rpc/login/form', request.url.href);
+                                url.searchParams.set('redirect_uri', request.url.href);
+                                err.output.payload = `<script>window.location.href = "${url}";</script>`;
+                                err.output.headers.contentType = 'text/html';
+                            }
+                            return h.unauthenticated(err);
                         }
                     }
                 };
@@ -161,6 +168,7 @@ module.exports = ({
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
             server.auth.strategy('asset', 'asset-cookie');
+            server.auth.strategy('api', 'asset-cookie', {redirect: true});
             server.auth.strategy('swagger.apiKey', 'jwt');
             server.auth.strategy('openapi.http.bearer', 'jwt');
             server.auth.strategy('swagger.basic', 'basic');

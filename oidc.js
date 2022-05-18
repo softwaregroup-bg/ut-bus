@@ -68,10 +68,12 @@ module.exports = ({
         return (Number.isInteger(index) && (index < map.length) && (map[index] & (1 << (bit % 8))));
     }
 
-    async function checkAuth(method, map) {
+    async function checkAuth(method, map, dontThrow) {
         if (!await checkAuthSingle(method, map) && !await checkAuthSingle('%', map)) {
+            if (dontThrow) return false;
             throw errorUnauthorized({params: {method}});
         }
+        return true;
     }
 
     const issuerUrl = (base, url) => (base === 'ut-login' ? 'ut-login' : new URL(url, base.replace(/\/?$/, '/')).href);
