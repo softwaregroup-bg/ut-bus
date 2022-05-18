@@ -1,3 +1,12 @@
+## [7.60.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.60.0...v7.60.1) (2022-05-18)
+
+
+### Bug Fixes
+
+* relative redirect #UTCORE-121 ([58b383e](https://github.com/softwaregroup-bg/ut-bus/commit/58b383e92993147d644469f669b6fd3becbbc8b5)), closes [#UTCORE-121](https://github.com/softwaregroup-bg/ut-bus/issues/UTCORE-121)
+
+
+
 # [7.60.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.59.1...v7.60.0) (2022-05-18)
 
 
