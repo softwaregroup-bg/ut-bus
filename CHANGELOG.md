@@ -1,3 +1,12 @@
+# [7.60.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.59.1...v7.60.0) (2022-05-18)
+
+
+### Features
+
+* api docs authentication ([9731673](https://github.com/softwaregroup-bg/ut-bus/commit/973167338c281604dbae74233f5b30cb98f66e13))
+
+
+
 ## [7.59.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.59.0...v7.59.1) (2022-05-12)
 
 
