@@ -68,8 +68,8 @@ module.exports = ({
                             const err = Boom.unauthorized(error.message);
                             if (options.redirect) {
                                 const url = new URL('/rpc/login/form', request.url.href);
-                                url.searchParams.set('redirect_uri', request.url.href);
-                                err.output.payload = `<script>window.location.href = "${url}";</script>`;
+                                url.searchParams.set('redirect_uri', request.url.pathname + request.url.search);
+                                err.output.payload = `<script>window.location.href = "${url.pathname}${url.search}";</script>`;
                                 err.output.headers.contentType = 'text/html';
                             }
                             return h.unauthenticated(err);

@@ -7,10 +7,12 @@
         "hemera",
         "mdns",
         "mlek",
+        "mlsk",
         "moleculer",
         "nats",
         "oidc",
         "openid",
+        "preauthorized",
         "rabbot",
         "reqrep"
     ]
