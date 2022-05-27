@@ -98,7 +98,7 @@ tap.test('Bus routes', async test => {
     });
 
     test.test('JSON RPC', async t => {
-        return request({
+        await request({
             url: new URL('/rpc/module/entity/action', uri),
             json: true,
             method: 'POST',
@@ -115,6 +115,63 @@ tap.test('Bus routes', async test => {
             }
         })
             .then(async({body}) => t.matchSnapshot(await decrypt(body), 'Return JSON RPC response'))
+            .catch(t.threw);
+        await request({
+            url: new URL('/rpc/module/entity/validate', uri),
+            json: true,
+            method: 'POST',
+            headers: {
+                Authorization: auth
+            },
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.validate',
+                id: 1,
+                params: await mleClient.signEncrypt({string: 'test'}, encrypt)
+            }
+        })
+            .then(async({body}) => t.matchSnapshot(await decrypt(body), 'Validation passed'))
+            .catch(t.threw);
+
+        await request({
+            url: new URL('/rpc/module/entity/validate', uri),
+            json: true,
+            method: 'POST',
+            headers: {
+                Authorization: auth
+            },
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.validate',
+                id: 1,
+                params: await mleClient.signEncrypt({string: true}, encrypt)
+            }
+        })
+            .then(async({body}) => t.matchSnapshot(await decrypt(body), 'Validation failed'))
+            .catch(t.threw);
+
+        await request({
+            url: new URL('/rpc/module/entity/xml', uri),
+            method: 'POST',
+            headers: {
+                Authorization: auth,
+                'Content-Type': 'application/xml'
+            },
+            body: '<params><string>test</string></params>'
+        })
+            .then(async({body, statusCode, headers: {'content-type': contentType}}) => t.matchSnapshot({body, statusCode, contentType}, 'XML Response'))
+            .catch(t.threw);
+
+        await request({
+            url: new URL('/rpc/module/entity/xml', uri),
+            method: 'POST',
+            headers: {
+                Authorization: auth,
+                'Content-Type': 'application/xml'
+            },
+            body: ''
+        })
+            .then(async({body, statusCode, headers: {'content-type': contentType}}) => t.matchSnapshot({body, statusCode, contentType}, 'XML Error'))
             .catch(t.threw);
     });
 

@@ -315,6 +315,52 @@ Object {
 }
 `
 
+exports[`test/jsonrpc.test.js TAP Bus routes JSON RPC > Validation failed 1`] = `
+Object {
+  "error": Object {
+    "message": "Method module.entity.validate parameters failed validation",
+    "type": "port.paramsValidation",
+    "validation": Array [
+      Object {
+        "message": "\\"params.string\\" must be a string",
+        "path": Array [
+          "params",
+          "string",
+        ],
+      },
+    ],
+  },
+  "id": 1,
+  "jsonrpc": "2.0",
+}
+`
+
+exports[`test/jsonrpc.test.js TAP Bus routes JSON RPC > Validation passed 1`] = `
+Object {
+  "id": 1,
+  "jsonrpc": "2.0",
+  "result": Object {
+    "string": "test",
+  },
+}
+`
+
+exports[`test/jsonrpc.test.js TAP Bus routes JSON RPC > XML Error 1`] = `
+Object {
+  "body": "<error>Invalid xml</error>",
+  "contentType": "application/xml",
+  "statusCode": 400,
+}
+`
+
+exports[`test/jsonrpc.test.js TAP Bus routes JSON RPC > XML Response 1`] = `
+Object {
+  "body": "<result><string>test</string></result>",
+  "contentType": "application/xml",
+  "statusCode": 200,
+}
+`
+
 exports[`test/jsonrpc.test.js TAP Bus routes Login > Return valid JWT 1`] = `
 Object {
   "aud": "ut-bus",
@@ -324,7 +370,7 @@ Object {
     "use": "enc",
   },
   "iss": "ut-login",
-  "per": "Dw==",
+  "per": "fw==",
   "ses": "test",
   "sig": Object {
     "crv": "P-384",

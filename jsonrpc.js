@@ -756,16 +756,17 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
                 return applyMeta(response, $meta);
             } catch (error) {
-                return h.response({
+                return applyMeta(h.response((!jsonrpc && error.response) ? error.response : {
                     jsonrpc: '2.0',
                     id,
                     error: socket.debug ? error : {
                         type: error?.type,
                         message: error?.message,
                         print: error?.print,
+                        validation: error?.validation,
                         params: error?.params
                     }
-                }).header('x-envoy-decorator-operation', method).code(error?.statusCode || 500);
+                }).header('x-envoy-decorator-operation', method).code(error?.statusCode || 500), {httpResponse: error.httpResponse});
             }
         };
 
@@ -912,6 +913,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                                 error: {
                                     type: 'port.paramsValidation',
                                     message: `Method ${method} parameters failed validation`,
+                                    validation: error?.details?.map?.(({path, message}) => ({path, message})),
                                     ...socket.debug && {cause: error}
                                 }
                             }).header('x-envoy-decorator-operation', method).code(400).takeover();

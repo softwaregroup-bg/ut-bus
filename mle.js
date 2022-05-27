@@ -46,7 +46,8 @@ module.exports = {
                                     type: response.source.error.type,
                                     message: response.source.error.message,
                                     print: response.source.error.print,
-                                    params: response.source.error.params
+                                    params: response.source.error.params,
+                                    validation: response.source.error.validation
                                 };
                             response.source.error = await encrypt(error);
                             return h.continue;

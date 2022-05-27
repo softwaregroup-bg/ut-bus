@@ -18,7 +18,8 @@ module.exports = async(test, clientConfig, serverConfig) => {
     const {privateKey: key, publicKey} = await generateKeyPair('ES384', { crv: 'P-384', extractable: true});
     const jwk = {...await exportJWK(publicKey), kid: uuid.v4(), use: 'sig'};
     const api = (server, errors) => ({
-        'module.request': async({text, entityId, echo} = {}, {method}) => {
+        'module.request': async({text, entityId, echo, ...rest} = {}, $meta) => {
+            const {method} = $meta;
             switch (method) {
                 case 'module.entity.actionTimeout':
                 case 'module.entity.actionCached':
@@ -37,6 +38,19 @@ module.exports = async(test, clientConfig, serverConfig) => {
                     return ['public'];
                 case 'module.entity.echo':
                     return [echo];
+                case 'module.entity.validate':
+                    return [rest];
+                case 'module.entity.xml':
+                    if (!rest.payload.length) {
+                        const error = new Error('Invalid xml');
+                        error.response = '<error>Invalid xml</error>';
+                        error.httpResponse = {
+                            code: 400,
+                            type: 'application/xml'
+                        };
+                        throw error;
+                    }
+                    return [rest.payload.toString().replace(/params>/g, 'result>'), {httpResponse: {type: 'application/xml'}}];
                 case 'module.entity.file':
                     return [url.pathToFileURL(path.join(__dirname, 'file.txt'))];
                 case 'module.entity.stream': {
@@ -57,7 +71,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
                         await new SignJWT({
                             typ: 'Bearer',
                             ses: 'test',
-                            per: Buffer.from([15]).toString('Base64'),
+                            per: Buffer.from([127]).toString('Base64'),
                             enc: params.encrypt,
                             sig: params.sign
                         })
@@ -82,7 +96,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
                         access_token: await new SignJWT({
                             typ: 'Bearer',
                             ses: 'test_exchange',
-                            per: Buffer.from([31]).toString('Base64'),
+                            per: Buffer.from([127]).toString('Base64'),
                             ...auth && auth.mlek && {enc: auth.mlek},
                             ...auth && auth.mlsk && {sig: auth.mlsk}
                         })
@@ -110,7 +124,9 @@ module.exports = async(test, clientConfig, serverConfig) => {
                         'module.entity.get': 2,
                         'module.entity.file': 3,
                         'module.entity.stream': 4,
-                        'module.entity.echo': 5
+                        'module.entity.echo': 5,
+                        'module.entity.validate': 6,
+                        'module.entity.xml': 7
                     }];
                 case 'login.oidc.getKeys':
                     return [{keys: [jwk]}];
@@ -261,6 +277,21 @@ module.exports = async(test, clientConfig, serverConfig) => {
             'module.entity.echo'() {
                 return {
                     params: joi.object()
+                };
+            },
+            'module.entity.validate'() {
+                return {
+                    params: joi.object({
+                        string: joi.string()
+                    }).unknown()
+                };
+            },
+            'module.entity.xml'() {
+                return {
+                    body: {
+                        parse: false,
+                        allow: ['application/soap+xml', 'application/xml', 'application/xop+xml', 'text/xml']
+                    }
                 };
             },
             'module.entity.file'() {
