@@ -1,3 +1,12 @@
+# [7.61.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.60.1...v7.61.0) (2022-05-27)
+
+
+### Features
+
+* return validation details, custom errors ([878fe00](https://github.com/softwaregroup-bg/ut-bus/commit/878fe00685db5d294217ed2c0e9084c0ad5b0586))
+
+
+
 ## [7.60.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.60.0...v7.60.1) (2022-05-18)
 
 
