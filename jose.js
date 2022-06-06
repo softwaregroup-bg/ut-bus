@@ -20,10 +20,19 @@ const isKey = (isBrowser => {
     }
 })(global.window || process.type === 'renderer');
 
-async function importKey(jwk, alg) {
+// idea borrowed from jose 2: https://github.com/panva/jose/blob/v2.x/lib/jwe/encrypt.js#L92
+const defaultAlgByKty = {
+    oct: 'PBES2-HS256+A128KW',
+    EC: 'ECDH-ES',
+    RSA: 'RSA-OAEP',
+    OKP: 'ECDH-ES'
+};
+
+async function importKey(jwk) {
+    const alg = jwk.alg || defaultAlgByKty[jwk.kty];
     return {
         key: isKey(jwk) ? jwk : await jose.importJWK(jwk, alg),
-        alg: jwk.alg || alg
+        alg
     };
 }
 
@@ -81,18 +90,18 @@ async function decryptVerify(message, mlskPub, mlek) {
     return verify(plaintext, mlskPub);
 }
 
-module.exports = async({sign, encrypt, defaultSigAlg = 'ES384', defaultEncAlg = 'ECDH-ES+A256KW'}) => {
-    const mlsk = sign && await importKey(sign, defaultSigAlg);
-    const mlek = encrypt && await importKey(encrypt, defaultEncAlg);
+module.exports = async({sign, encrypt}) => {
+    const mlsk = sign && await importKey(sign);
+    const mlek = encrypt && await importKey(encrypt);
     const result = {
         keys: {
             sign: sign && await exportJWK(sign),
             encrypt: encrypt && await exportJWK(encrypt)
         },
-        signEncrypt: async(msg, key, protectedHeader) => mlsk ? signEncrypt(msg, mlsk, await importKey(key, defaultEncAlg), protectedHeader) : msg,
-        decryptVerify: async(msg, key) => mlek ? decryptVerify(msg, await importKey(key, defaultSigAlg), mlek) : msg,
+        signEncrypt: async(msg, key, protectedHeader) => mlsk ? signEncrypt(msg, mlsk, await importKey(key), protectedHeader) : msg,
+        decryptVerify: async(msg, key) => mlek ? decryptVerify(msg, await importKey(key), mlek) : msg,
         decrypt: (msg, options) => mlek ? decrypt(msg, mlek, options) : msg,
-        verify: async(msg, key) => verify(msg, await importKey(key, defaultSigAlg))
+        verify: async(msg, key) => verify(msg, await importKey(key))
     };
     return result;
 };

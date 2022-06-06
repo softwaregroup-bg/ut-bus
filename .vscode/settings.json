@@ -12,6 +12,7 @@
         "nats",
         "oidc",
         "openid",
+        "PBES",
         "preauthorized",
         "rabbot",
         "reqrep"
