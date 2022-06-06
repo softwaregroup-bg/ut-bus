@@ -22,14 +22,31 @@ const isKey = (isBrowser => {
 
 // idea borrowed from jose 2: https://github.com/panva/jose/blob/v2.x/lib/jwe/encrypt.js#L92
 const defaultAlgByKty = {
-    oct: 'PBES2-HS256+A128KW',
-    EC: 'ECDH-ES',
-    RSA: 'RSA-OAEP',
-    OKP: 'ECDH-ES'
+    oct: {
+        sig: 'HS384',
+        enc: 'A256KW'
+    },
+    EC: {
+        sig: 'ES384',
+        enc: 'ECDH-ES+A256KW'
+    },
+    RSA: {
+        sig: 'RS384',
+        enc: 'RSA-OAEP'
+    },
+    OKP: {
+        sig: 'EdDSA',
+        enc: 'ECDH-ES+A256KW'
+    }
 };
 
-async function importKey(jwk) {
-    const alg = jwk.alg || defaultAlgByKty[jwk.kty];
+async function importKey(jwk, defaultUse = 'enc') {
+    const {
+        kty,
+        use = defaultUse,
+        alg = defaultAlgByKty[kty]?.[use]
+    } = isKey(jwk) ? await exportJWK(jwk) : jwk;
+
     return {
         key: isKey(jwk) ? jwk : await jose.importJWK(jwk, alg),
         alg
@@ -91,17 +108,17 @@ async function decryptVerify(message, mlskPub, mlek) {
 }
 
 module.exports = async({sign, encrypt}) => {
-    const mlsk = sign && await importKey(sign);
-    const mlek = encrypt && await importKey(encrypt);
+    const mlsk = sign && await importKey(sign, 'sig');
+    const mlek = encrypt && await importKey(encrypt, 'enc');
     const result = {
         keys: {
             sign: sign && await exportJWK(sign),
             encrypt: encrypt && await exportJWK(encrypt)
         },
-        signEncrypt: async(msg, key, protectedHeader) => mlsk ? signEncrypt(msg, mlsk, await importKey(key), protectedHeader) : msg,
-        decryptVerify: async(msg, key) => mlek ? decryptVerify(msg, await importKey(key), mlek) : msg,
+        signEncrypt: async(msg, key, protectedHeader) => mlsk ? signEncrypt(msg, mlsk, await importKey(key, 'enc'), protectedHeader) : msg,
+        decryptVerify: async(msg, key) => mlek ? decryptVerify(msg, await importKey(key, 'sig'), mlek) : msg,
         decrypt: (msg, options) => mlek ? decrypt(msg, mlek, options) : msg,
-        verify: async(msg, key) => verify(msg, await importKey(key))
+        verify: async(msg, key) => verify(msg, await importKey(key, 'sig'))
     };
     return result;
 };
