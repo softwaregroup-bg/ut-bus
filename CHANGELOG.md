@@ -1,3 +1,12 @@
+## [7.61.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.61.0...v7.61.1) (2022-06-06)
+
+
+### Bug Fixes
+
+* backwards compatibility with jose 2 for setting default 'alg' by kty ([#134](https://github.com/softwaregroup-bg/ut-bus/issues/134)) ([a46334d](https://github.com/softwaregroup-bg/ut-bus/commit/a46334d056f4a09bd8ba62f5015793f6fa992a3f))
+
+
+
 # [7.61.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.60.1...v7.61.0) (2022-05-27)
 
 
