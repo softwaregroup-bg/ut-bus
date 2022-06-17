@@ -1,3 +1,12 @@
+# [7.62.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.61.1...v7.62.0) (2022-06-17)
+
+
+### Features
+
+* allow configuring imported method name ([a7b20b8](https://github.com/softwaregroup-bg/ut-bus/commit/a7b20b814e4871a088f1cc0bcf766961f30a1eec))
+
+
+
 ## [7.61.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.61.0...v7.61.1) (2022-06-06)
 
 
