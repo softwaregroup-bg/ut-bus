@@ -284,6 +284,7 @@ class Bus extends Broker {
     }
 
     importMethod(methodName, options) {
+        methodName = options?.method || methodName;
         let result = !options && this.importCache[methodName];
 
         const startRetry = (fn, {timeout, retry}) => {
