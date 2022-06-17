@@ -34,7 +34,7 @@
     "rabbot": "^2.1.0",
     "readable-stream": "3.6.0",
     "tap": "^16.0.0",
-    "ut-tools": "^6.40.9"
+    "ut-tools": "^6.41.5"
   },
   "optionalDependencies": {
     "ut-browser-request": "^1.0.5"
