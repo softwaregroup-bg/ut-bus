@@ -61,23 +61,54 @@ async function exportJWK(key, priv = false) {
     return publicJwk;
 }
 
-async function sign(message, {key, alg}) {
+async function sign(message, {key, alg}, options) {
     const payload = Buffer.isBuffer(message) ? message : Buffer.from(JSON.stringify(message));
-    return new jose.CompactSign(payload)
-        .setProtectedHeader({alg})
-        .sign(key);
+    switch (options?.serialization) {
+        case 'general':
+            return new jose.GeneralSign(payload)
+                .addSignature(key)
+                .setProtectedHeader({alg})
+                .sign();
+        case 'flattened':
+            return new jose.FlattenedSign(payload)
+                .setProtectedHeader({alg})
+                .sign(key);
+        default:
+            return new jose.CompactSign(payload)
+                .setProtectedHeader({alg})
+                .sign(key);
+    }
 }
 
-function encrypt(jws, {key, alg}, protectedHeader, unprotectedHeader) {
-    return new jose.GeneralEncrypt(Buffer.from(jws))
-        .setProtectedHeader({
-            alg,
-            enc: 'A128CBC-HS256',
-            ...protectedHeader
-        })
-        .setSharedUnprotectedHeader(unprotectedHeader)
-        .addRecipient(key)
-        .encrypt();
+function encrypt(jws, {key, alg}, protectedHeader, unprotectedHeader, options) {
+    switch (options?.serialization) {
+        case 'compact':
+            return new jose.CompactEncrypt(Buffer.from(jws))
+                .setProtectedHeader({
+                    alg,
+                    enc: 'A128CBC-HS256',
+                    ...protectedHeader
+                })
+                .encrypt(key);
+        case 'flattened':
+            return new jose.FlattenedEncrypt(Buffer.from(jws))
+                .setProtectedHeader({
+                    alg,
+                    enc: 'A128CBC-HS256',
+                    ...protectedHeader
+                })
+                .encrypt(key);
+        default:
+            return new jose.GeneralEncrypt(Buffer.from(jws))
+                .setProtectedHeader({
+                    alg,
+                    enc: 'A128CBC-HS256',
+                    ...protectedHeader
+                })
+                .setSharedUnprotectedHeader(unprotectedHeader)
+                .addRecipient(key)
+                .encrypt();
+    }
 }
 
 async function decrypt(jwe, {key}, options) {
@@ -97,9 +128,9 @@ async function verify(plaintext, {key}) {
     return JSON.parse(decoded);
 }
 
-async function signEncrypt(message, mlsk, mlekPub, protectedHeader, unprotectedHeader) {
-    const jws = await sign(message, mlsk);
-    return encrypt(jws, mlekPub, protectedHeader, unprotectedHeader);
+async function signEncrypt(message, mlsk, mlekPub, protectedHeader, unprotectedHeader, options) {
+    const jws = await sign(message, mlsk, options?.sign);
+    return encrypt(jws, mlekPub, protectedHeader, unprotectedHeader, options?.encrypt);
 }
 
 async function decryptVerify(message, mlskPub, mlek) {
@@ -115,7 +146,9 @@ module.exports = async({sign, encrypt}) => {
             sign: sign && await exportJWK(sign),
             encrypt: encrypt && await exportJWK(encrypt)
         },
-        signEncrypt: async(msg, key, protectedHeader) => mlsk ? signEncrypt(msg, mlsk, await importKey(key, 'enc'), protectedHeader) : msg,
+        signEncrypt: async(msg, key, protectedHeader, unprotectedHeader, options) => mlsk
+            ? signEncrypt(msg, mlsk, await importKey(key, 'enc'), protectedHeader, unprotectedHeader, options)
+            : msg,
         decryptVerify: async(msg, key) => mlek ? decryptVerify(msg, await importKey(key, 'sig'), mlek) : msg,
         decrypt: (msg, options) => mlek ? decrypt(msg, mlek, options) : msg,
         verify: async(msg, key) => verify(msg, await importKey(key, 'sig'))
