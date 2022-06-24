@@ -1,3 +1,12 @@
+## [7.62.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.1...v7.62.2) (2022-06-24)
+
+
+### Bug Fixes
+
+* signEncrypt serialization options ([#135](https://github.com/softwaregroup-bg/ut-bus/issues/135)) ([66ec7ee](https://github.com/softwaregroup-bg/ut-bus/commit/66ec7ee36f69e92f86bf57940ff823acef15d927))
+
+
+
 ## [7.62.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.0...v7.62.1) (2022-06-21)
 
 
