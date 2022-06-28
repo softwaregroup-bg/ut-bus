@@ -5,18 +5,17 @@ module.exports = {
     plugin: {
         register(server, {options: {debug}, mle, logger, errors}) {
             server.ext('onPostAuth', async(request, h) => {
-                const {credentials, strategy} = request.auth;
-                if (strategy && credentials?.mlsk && credentials?.mlek) {
+                if (request.auth.strategy) {
                     const [where, what] = request.payload?.jsonrpc ? [request.payload, 'params'] : [request, 'payload'];
                     if (where[what]) {
                         try {
-                            if (credentials.mlsk === 'header' && credentials.mlek === 'header') {
+                            if (request.auth.mlsk === 'header' && request.auth.mlek === 'header') {
                                 const {protectedHeader: {mlsk, mlek}, plaintext} = await mle.decrypt(where[what], { complete: true });
-                                credentials.mlsk = mlsk;
-                                credentials.mlek = mlek;
+                                request.auth.mlsk = mlsk;
+                                request.auth.mlek = mlek;
                                 where[what] = await mle.verify(plaintext, mlsk);
                             } else {
-                                where[what] = await mle.decryptVerify(where[what], credentials.mlsk);
+                                where[what] = await mle.decryptVerify(where[what], request.auth.mlsk);
                             }
                         } catch (error) {
                             logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: where}));
