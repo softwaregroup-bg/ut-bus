@@ -8,14 +8,15 @@ module.exports = {
                 if (request.auth.strategy) {
                     const [where, what] = request.payload?.jsonrpc ? [request.payload, 'params'] : [request, 'payload'];
                     if (where[what]) {
+                        const {credentials} = request.auth;
                         try {
-                            if (request.auth.mlsk === 'header' && request.auth.mlek === 'header') {
+                            if (credentials.mlsk === 'header' && credentials.mlek === 'header') {
                                 const {protectedHeader: {mlsk, mlek}, plaintext} = await mle.decrypt(where[what], { complete: true });
-                                request.auth.mlsk = mlsk;
-                                request.auth.mlek = mlek;
+                                credentials.mlsk = mlsk;
+                                credentials.mlek = mlek;
                                 where[what] = await mle.verify(plaintext, mlsk);
                             } else {
-                                where[what] = await mle.decryptVerify(where[what], request.auth.mlsk);
+                                where[what] = await mle.decryptVerify(where[what], credentials.mlsk);
                             }
                         } catch (error) {
                             logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: where}));
