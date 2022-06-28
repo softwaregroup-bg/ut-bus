@@ -5,7 +5,7 @@ module.exports = {
     plugin: {
         register(server, {options: {debug}, mle, logger, errors}) {
             server.ext('onPostAuth', async(request, h) => {
-                if (request.auth.strategy) {
+                if (request.auth.strategy && request.mime === 'application/json') {
                     const [where, what] = request.payload?.jsonrpc ? [request.payload, 'params'] : [request, 'payload'];
                     if (where[what]) {
                         const {credentials} = request.auth;
