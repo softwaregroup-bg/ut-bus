@@ -19,7 +19,7 @@ module.exports = {
                                 where[what] = await mle.decryptVerify(where[what], credentials.mlsk);
                             }
                         } catch (error) {
-                            logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: where}));
+                            logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
                             return Boom.badRequest();
                         }
                     }
@@ -30,32 +30,32 @@ module.exports = {
             server.ext('onPreResponse', async(request, h) => {
                 const response = request.response;
                 if (response.isBoom) return h.continue;
-                if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params && response.source) {
+                if (request.auth.strategy && request.mime === 'application/json' && response.source) {
+                    const encrypt = message => mle.signEncrypt(message, request.auth.credentials && request.auth.credentials.mlek);
+                    const [where, result, error] = request.payload.jsonrpc ? [response.source, 'result', 'error'] : [response, 'source'];
                     try {
-                        const encrypt = message => mle.signEncrypt(message, request.auth.credentials && request.auth.credentials.mlek);
-                        if (Object.prototype.hasOwnProperty.call(response.source, 'result')) {
-                            response.source.result = await encrypt(response.source.result);
+                        if (Object.prototype.hasOwnProperty.call(where, result)) {
+                            where[result] = await encrypt(where[result]);
                             return h.continue;
                         }
-                        if (Object.prototype.hasOwnProperty.call(response.source, 'error')) {
-                            const error = debug
+                        if (error && Object.prototype.hasOwnProperty.call(where, error)) {
+                            const err = debug
                                 ? Object
-                                    .entries(Object.getOwnPropertyDescriptors(response.source.error))
+                                    .entries(Object.getOwnPropertyDescriptors(where[error]))
                                     .reduce((all, [key, {writable, value}]) => {
                                         if (writable) all[key] = value;
                                         return all;
                                     }, {})
                                 : {
-                                    type: response.source.error.type,
-                                    message: response.source.error.message,
-                                    print: response.source.error.print,
-                                    params: response.source.error.params,
-                                    validation: response.source.error.validation
+                                    type: where[error].type,
+                                    message: where[error].message,
+                                    print: where[error].print,
+                                    params: where[error].params,
+                                    validation: where[error].validation
                                 };
-                            response.source.error = await encrypt(error);
+                            where[error] = await encrypt(err);
                             return h.continue;
                         }
-                        response.source = await encrypt(response.source);
                         return h.continue;
                     } catch (error) {
                         logger && logger.error && logger.error(errors['bus.mleEncrypt']({cause: error, params: request.payload}));
