@@ -1,3 +1,12 @@
+## [7.62.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.3...v7.62.4) (2022-06-29)
+
+
+### Bug Fixes
+
+* rest mle response ([#137](https://github.com/softwaregroup-bg/ut-bus/issues/137)) ([589fa07](https://github.com/softwaregroup-bg/ut-bus/commit/589fa076eba48beaf255cdb7eaf00932315a6896))
+
+
+
 ## [7.62.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.2...v7.62.3) (2022-06-29)
 
 
