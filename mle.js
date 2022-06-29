@@ -19,7 +19,7 @@ module.exports = {
                                 where[what] = await mle.decryptVerify(where[what], credentials.mlsk);
                             }
                         } catch (error) {
-                            logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: where}));
+                            logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
                             return Boom.badRequest();
                         }
                     }
@@ -58,7 +58,7 @@ module.exports = {
                         }
                         return h.continue;
                     } catch (error) {
-                        logger && logger.error && logger.error(errors['bus.mleEncrypt']({cause: error, params: where}));
+                        logger && logger.error && logger.error(errors['bus.mleEncrypt']({cause: error, params: request.payload}));
                         return Boom.badRequest();
                     }
                 }
