@@ -5,21 +5,24 @@ module.exports = {
     plugin: {
         register(server, {options: {debug}, mle, logger, errors}) {
             server.ext('onPostAuth', async(request, h) => {
-                try {
-                    if (request.auth.strategy && request.payload && request.payload.jsonrpc && request.payload.params) {
+                if (request.auth.strategy && request.mime === 'application/json') {
+                    const [where, what] = request.payload?.jsonrpc ? [request.payload, 'params'] : [request, 'payload'];
+                    if (where[what]) {
                         const {credentials} = request.auth;
-                        if (credentials.mlsk === 'header' && credentials.mlek === 'header') {
-                            const {protectedHeader: {mlsk, mlek}, plaintext} = await mle.decrypt(request.payload.params, { complete: true });
-                            credentials.mlsk = mlsk;
-                            credentials.mlek = mlek;
-                            request.payload.params = await mle.verify(plaintext, mlsk);
-                        } else {
-                            request.payload.params = await mle.decryptVerify(request.payload.params, credentials.mlsk);
+                        try {
+                            if (credentials.mlsk === 'header' && credentials.mlek === 'header') {
+                                const {protectedHeader: {mlsk, mlek}, plaintext} = await mle.decrypt(where[what], { complete: true });
+                                credentials.mlsk = mlsk;
+                                credentials.mlek = mlek;
+                                where[what] = await mle.verify(plaintext, mlsk);
+                            } else {
+                                where[what] = await mle.decryptVerify(where[what], credentials.mlsk);
+                            }
+                        } catch (error) {
+                            logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: where}));
+                            return Boom.badRequest();
                         }
                     }
-                } catch (error) {
-                    logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
-                    return Boom.badRequest();
                 }
                 return h.continue;
             });
