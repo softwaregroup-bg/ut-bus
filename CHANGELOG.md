@@ -1,3 +1,12 @@
+## [7.62.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.4...v7.62.5) (2022-06-30)
+
+
+### Bug Fixes
+
+* limit debug logging for meta ([5e3c569](https://github.com/softwaregroup-bg/ut-bus/commit/5e3c569268851d74f90ea16cadb1d3e0173a0103))
+
+
+
 ## [7.62.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.3...v7.62.4) (2022-06-29)
 
 
