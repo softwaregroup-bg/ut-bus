@@ -1,3 +1,12 @@
+## [7.62.7](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.6...v7.62.7) (2022-06-30)
+
+
+### Bug Fixes
+
+* improve logging ([5e6f57a](https://github.com/softwaregroup-bg/ut-bus/commit/5e6f57a653b89ece4db228115ce76a4c560dd54b))
+
+
+
 ## [7.62.6](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.5...v7.62.6) (2022-06-30)
 
 
