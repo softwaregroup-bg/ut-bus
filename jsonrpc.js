@@ -85,6 +85,15 @@ function extendMeta(req, version, serviceName) {
     };
 }
 
+function hideAuth() {
+    const {params, meta: {httpRequest, mtid, method, forward, language}} = this;
+    if (Array.isArray(params) && params.length) params[params.length - 1] = 'meta&';
+    return {
+        params,
+        meta: {mtid, method, url: httpRequest?.url, language, forward}
+    };
+}
+
 async function failPre(request, h, error) {
     if (error.isJoi) return Boom.badRequest(error.message, error);
     return Boom.internal(error.message, undefined, error.statusCode);
@@ -613,7 +622,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             httpVersion: response.httpVersion,
                             url: response.request.href,
                             method: response.request.method,
-                            ...socket.debug && {params, meta: $meta}
+                            ...socket.debug && {params, meta: $meta, toJSON: hideAuth}
                         };
                         error.res = {
                             httpVersion: response.httpVersion,
