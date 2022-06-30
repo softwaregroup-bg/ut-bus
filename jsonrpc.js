@@ -86,11 +86,11 @@ function extendMeta(req, version, serviceName) {
 }
 
 function hideAuth() {
-    const {params, meta: {httpRequest, mtid, method, forward, language}} = this;
+    const {params, meta: {httpRequest, mtid, method, forward, language, cache}} = this;
     if (Array.isArray(params) && params.length) params[params.length - 1] = 'meta&';
     return {
         params,
-        meta: {mtid, method, url: httpRequest?.url, language, forward}
+        meta: {mtid, method, url: httpRequest?.url, language, forward, cache}
     };
 }
 
@@ -817,7 +817,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         jsonrpc: joi.string().valid('2.0').required().description('Version of the JSON-RPC protocol'),
                         timeout: joi.number().optional().allow(null).example(null).description('Timeout in milliseconds'),
                         id: joi.alternatives().try(joi.number(), joi.string().min(1).max(36)).example('1').description('Unique identifier of the request'),
-                        method: joi.string().required().description('Name of the method').min(6).max(255),
+                        method: joi.string().required().description('Name of the method').min(5).max(255), // 'cache'.length === 5
                         params: joi.array().required().description('Method parameters')
                     })
                 }
