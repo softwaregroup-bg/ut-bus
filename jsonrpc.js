@@ -85,9 +85,11 @@ function extendMeta(req, version, serviceName) {
     };
 }
 
-function hideAuth() {
-    const {params, meta: {httpRequest, mtid, method, forward, language, cache}} = this;
-    if (Array.isArray(params) && params.length) params[params.length - 1] = 'meta&';
+function sanitize(params, {httpRequest, mtid, method, forward, language, cache}) {
+    if (Array.isArray(params) && params.length) {
+        params = [...params];
+        params[params.length - 1] = 'meta&';
+    }
     return {
         params,
         meta: {mtid, method, url: httpRequest?.url, language, forward, cache}
@@ -622,7 +624,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             httpVersion: response.httpVersion,
                             url: response.request.href,
                             method: response.request.method,
-                            ...socket.debug && {params, meta: $meta, toJSON: hideAuth}
+                            ...socket.debug && sanitize(params, $meta)
                         };
                         error.res = {
                             httpVersion: response.httpVersion,
