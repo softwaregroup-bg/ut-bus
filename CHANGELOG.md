@@ -1,3 +1,12 @@
+## [7.62.6](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.5...v7.62.6) (2022-06-30)
+
+
+### Bug Fixes
+
+* validation ([3fdb0b5](https://github.com/softwaregroup-bg/ut-bus/commit/3fdb0b5086a60fb8a7878260e2aeb9cebaf4caac))
+
+
+
 ## [7.62.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.4...v7.62.5) (2022-06-30)
 
 
