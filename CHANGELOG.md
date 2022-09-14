@@ -1,3 +1,12 @@
+## [7.62.9](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.8...v7.62.9) (2022-09-14)
+
+
+### Bug Fixes
+
+* handle httpResponse in rest handlers ([51f2c2f](https://github.com/softwaregroup-bg/ut-bus/commit/51f2c2f8120c244dae554383c4bd73d571d31688))
+
+
+
 ## [7.62.8](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.7...v7.62.8) (2022-08-25)
 
 
