@@ -17,9 +17,9 @@
     "multicast-dns": "7.2.4",
     "reconnect-core": "1.3.0",
     "request": "2.88.0",
-    "ut-api": "^8.1.5",
+    "ut-api": "^8.1.6",
     "ut-dns-discovery": "^6.2.3",
-    "ut-function.capture-hapi": "^1.1.2",
+    "ut-function.capture-hapi": "^1.1.3",
     "ut-function.capture-request": "^1.1.2",
     "ut-function.timing": "^1.2.0",
     "ut-rpc": "^6.1.2",
@@ -33,8 +33,7 @@
     "nats": "^1.2.2",
     "rabbot": "^2.1.0",
     "readable-stream": "3.6.0",
-    "tap": "^16.0.0",
-    "ut-tools": "^6.41.5"
+    "tap": "^16.0.0"
   },
   "optionalDependencies": {
     "ut-browser-request": "^1.0.5"
