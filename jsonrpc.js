@@ -85,6 +85,17 @@ function extendMeta(req, version, serviceName) {
     };
 }
 
+function sanitize(params, {httpRequest, mtid, method, forward, language, cache}) {
+    if (Array.isArray(params) && params.length) {
+        params = [...params];
+        params[params.length - 1] = 'meta&';
+    }
+    return {
+        params,
+        meta: {mtid, method, url: httpRequest?.url, language, forward, cache}
+    };
+}
+
 async function failPre(request, h, error) {
     if (error.isJoi) return Boom.badRequest(error.message, error);
     return Boom.internal(error.message, undefined, error.statusCode);
@@ -478,7 +489,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         },
         internal,
         forward,
-        checkAuth
+        checkAuth,
+        applyMeta
     );
 
     utApi.route([{
@@ -613,7 +625,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             httpVersion: response.httpVersion,
                             url: response.request.href,
                             method: response.request.method,
-                            ...socket.debug && {params, meta: $meta}
+                            ...socket.debug && sanitize(params, $meta)
                         };
                         error.res = {
                             httpVersion: response.httpVersion,
@@ -808,7 +820,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                         jsonrpc: joi.string().valid('2.0').required().description('Version of the JSON-RPC protocol'),
                         timeout: joi.number().optional().allow(null).example(null).description('Timeout in milliseconds'),
                         id: joi.alternatives().try(joi.number(), joi.string().min(1).max(36)).example('1').description('Unique identifier of the request'),
-                        method: joi.string().required().description('Name of the method').min(6).max(255),
+                        method: joi.string().required().description('Name of the method').min(5).max(255), // 'cache'.length === 5
                         params: joi.array().required().description('Method parameters')
                     })
                 }

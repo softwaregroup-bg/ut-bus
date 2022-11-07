@@ -1,3 +1,56 @@
+## [7.62.10](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.9...v7.62.10) (2022-10-21)
+
+
+
+## [7.62.9](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.8...v7.62.9) (2022-09-14)
+
+
+### Bug Fixes
+
+* handle httpResponse in rest handlers ([51f2c2f](https://github.com/softwaregroup-bg/ut-bus/commit/51f2c2f8120c244dae554383c4bd73d571d31688))
+
+
+
+## [7.62.8](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.7...v7.62.8) (2022-08-25)
+
+
+
+## [7.62.7](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.6...v7.62.7) (2022-06-30)
+
+
+### Bug Fixes
+
+* improve logging ([5e6f57a](https://github.com/softwaregroup-bg/ut-bus/commit/5e6f57a653b89ece4db228115ce76a4c560dd54b))
+
+
+
+## [7.62.6](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.5...v7.62.6) (2022-06-30)
+
+
+### Bug Fixes
+
+* validation ([3fdb0b5](https://github.com/softwaregroup-bg/ut-bus/commit/3fdb0b5086a60fb8a7878260e2aeb9cebaf4caac))
+
+
+
+## [7.62.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.4...v7.62.5) (2022-06-30)
+
+
+### Bug Fixes
+
+* limit debug logging for meta ([5e3c569](https://github.com/softwaregroup-bg/ut-bus/commit/5e3c569268851d74f90ea16cadb1d3e0173a0103))
+
+
+
+## [7.62.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.3...v7.62.4) (2022-06-29)
+
+
+### Bug Fixes
+
+* rest mle response ([#137](https://github.com/softwaregroup-bg/ut-bus/issues/137)) ([589fa07](https://github.com/softwaregroup-bg/ut-bus/commit/589fa076eba48beaf255cdb7eaf00932315a6896))
+
+
+
 ## [7.62.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.2...v7.62.3) (2022-06-29)
 
 
