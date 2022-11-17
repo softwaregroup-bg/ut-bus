@@ -1,3 +1,12 @@
+## [7.62.12](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.11...v7.62.12) (2022-11-17)
+
+
+### Bug Fixes
+
+* disable mle per api ([#138](https://github.com/softwaregroup-bg/ut-bus/issues/138)) ([a966688](https://github.com/softwaregroup-bg/ut-bus/commit/a966688f44c61cbb339214845aace9220d7cfdae))
+
+
+
 ## [7.62.11](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.10...v7.62.11) (2022-11-07)
 
 
