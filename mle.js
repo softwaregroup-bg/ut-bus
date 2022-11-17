@@ -7,7 +7,7 @@ module.exports = {
             server.ext('onPostAuth', async(request, h) => {
                 if (request.auth.strategy && request.mime === 'application/json') {
                     const [where, what] = request.payload?.jsonrpc ? [request.payload, 'params'] : [request, 'payload'];
-                    if (where[what]) {
+                    if (where[what] && request.route.settings.app?.mle !== false) {
                         const {credentials} = request.auth;
                         try {
                             if (credentials.mlsk === 'header' && credentials.mlek === 'header') {
@@ -19,7 +19,7 @@ module.exports = {
                                 where[what] = await mle.decryptVerify(where[what], credentials.mlsk);
                             }
                         } catch (error) {
-                            logger && logger.error && logger.error(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
+                            logger?.error?.(errors['bus.mleDecrypt']({cause: error, params: request.payload}));
                             return Boom.badRequest();
                         }
                     }
@@ -31,7 +31,9 @@ module.exports = {
                 const response = request.response;
                 if (response.isBoom) return h.continue;
                 if (request.auth.strategy && request.mime === 'application/json' && response.source) {
-                    const encrypt = message => mle.signEncrypt(message, request.auth.credentials && request.auth.credentials.mlek);
+                    const encrypt = message => request.route.settings.app?.mle === false
+                        ? message
+                        : mle.signEncrypt(message, request.auth.credentials?.mlek);
                     const [where, result, error] = request.payload.jsonrpc ? [response.source, 'result', 'error'] : [response, 'source'];
                     try {
                         if (Object.prototype.hasOwnProperty.call(where, result)) {
@@ -58,7 +60,7 @@ module.exports = {
                         }
                         return h.continue;
                     } catch (error) {
-                        logger && logger.error && logger.error(errors['bus.mleEncrypt']({cause: error, params: request.payload}));
+                        logger?.error?.(errors['bus.mleEncrypt']({cause: error, params: request.payload}));
                         return Boom.badRequest();
                     }
                 }

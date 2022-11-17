@@ -50,7 +50,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return function() {
             const $meta = (arguments.length > 1 && arguments[arguments.length - 1]) || {};
             return hemera.act({
-                channel: channel,
+                channel,
                 topic: 'ports.' + $meta.method.split('.').shift() + '.' + methodType,
                 args: Array.prototype.slice.call(arguments)
             }).then(resp => resp.data);
@@ -76,7 +76,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 if (fn instanceof Function && fn.name) {
                     methodNames.push(hemera.add({
                         pubsub$: !reqrep,
-                        channel: channel,
+                        channel,
                         topic: namespace + '.' + fn.name
                     }, async(req) => fn.apply(null, req.args)));
                     localRegister(namespace, fn.name, fn, reqrep);
@@ -87,7 +87,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 if (methods[key] instanceof Function) {
                     methodNames.push(hemera.add({
                         pubsub$: !reqrep,
-                        channel: channel,
+                        channel,
                         topic: namespace + '.' + key
                     }, async(req) => methods[key].apply(methods, req.args)));
                     localRegister(namespace, key, methods[key].bind(methods), reqrep);
