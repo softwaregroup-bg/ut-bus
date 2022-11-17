@@ -33,7 +33,7 @@ module.exports = {
                 if (request.auth.strategy && request.mime === 'application/json' && response.source) {
                     const encrypt = message => request.route.settings.app?.mle === false
                         ? message
-                        : mle.signEncrypt(message, request.auth.credentials?.mlek)
+                        : mle.signEncrypt(message, request.auth.credentials?.mlek);
                     const [where, result, error] = request.payload.jsonrpc ? [response.source, 'result', 'error'] : [response, 'source'];
                     try {
                         if (Object.prototype.hasOwnProperty.call(where, result)) {
