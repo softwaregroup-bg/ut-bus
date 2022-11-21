@@ -1,3 +1,12 @@
+## [7.62.13](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.12...v7.62.13) (2022-11-21)
+
+
+### Bug Fixes
+
+* CVE-2022-36083 ([f36c3d0](https://github.com/softwaregroup-bg/ut-bus/commit/f36c3d0d6e624a258b495c782348b18488283933))
+
+
+
 ## [7.62.12](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.11...v7.62.12) (2022-11-17)
 
 
