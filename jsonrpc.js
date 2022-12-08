@@ -884,8 +884,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     }
 
     const commonPre = [];
-    if (socket.onRequest) {
-        const onRequestPre = config => {
+    if (socket.pre) {
+        const preHandler = config => {
             const {method, authOnly = false} = typeof config === 'string'
                 ? {method: config}
                 : config;
@@ -894,16 +894,16 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             };
         };
 
-        if (Array.isArray(socket.onRequest)) {
-            socket.onRequest.forEach(config => {
+        if (Array.isArray(socket.pre)) {
+            socket.pre.forEach(config => {
                 if (Array.isArray(config)) {
-                    commonPre.push(config.map(onRequestPre));
+                    commonPre.push(config.map(preHandler));
                 } else {
-                    commonPre.push(onRequestPre(config));
+                    commonPre.push(preHandler(config));
                 }
             });
         } else {
-            commonPre.push(onRequestPre(socket.onRequest));
+            commonPre.push(preHandler(socket.pre));
         }
     }
 
