@@ -116,6 +116,77 @@ http transport over json-rpc 2.0 protocol.
     * `key` - Client private key
     * `ca` - Trusted root certificate for mutual TSL with self signed
     (server) certificates.
+* `pre` (object | string |  array) [optional] - Enables pre hooks
+  * `method` - the backend method to be called
+  * `authOnly` [optional] - whether the hook to be called for
+  authenticated requests only (default `false`)
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "pre": {
+                            "method": "user.request.check",
+                            "authOnly:": true
+                        }
+                    }
+                }
+            }
+        }
+    ```
+
+    Instead of an object the configuration can be just a `string`
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "pre": "user.request.check"
+                        // this is equivalent to
+                        // "pre": { "method": "user.request.check" }
+                    }
+                }
+            }
+        }
+    ```
+
+    Or it can be an array of objects or strings. e.g.
+
+    ```json
+        // 2 methods to be called consequently
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "onRequest": ["user.request.check1", "user.request.check2"]
+                    }
+                }
+            }
+        }
+    ```
+
+    or
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "onRequest": [
+                            "user.request.check",
+                            ["user.request.check1", "user.request.check2"]
+                        ]
+                    }
+                }
+            }
+        }
+    ```
+
+    For more information about how to set a mixed array of actions
+    аnd what logic stands behind that, please check
+    this [link](https://hapi.dev/api/?v=21.1.0#-routeoptionspre)
 
 Configuration examples:
 
