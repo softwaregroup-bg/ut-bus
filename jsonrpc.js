@@ -883,6 +883,30 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         });
     }
 
+    const commonPre = [];
+    if (socket.pre) {
+        const preHandler = config => {
+            const {method, authOnly = false} = typeof config === 'string'
+                ? {method: config}
+                : config;
+            return ({pre: {utBus: {params: [params, meta]}}}) => {
+                return (!authOnly || meta.auth) && brokerRequest({params, meta}, {method});
+            };
+        };
+
+        if (Array.isArray(socket.pre)) {
+            socket.pre.forEach(config => {
+                if (Array.isArray(config)) {
+                    commonPre.push(config.map(preHandler));
+                } else {
+                    commonPre.push(preHandler(config));
+                }
+            });
+        } else {
+            commonPre.push(preHandler(socket.pre));
+        }
+    }
+
     function localMethod(methods, moduleName, {version} = {}) {
         if (/\.validation|\.api|^validation$|^api$/.test(moduleName) && utApi && Object.entries(methods).length) {
             utApi.rpcRoutes(Object.entries(methods).map(([method, validation]) => {
@@ -906,7 +930,12 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     cors: socket.cors || false,
                     security: socket.security || false,
                     timeout: {server: false, ...socket.timeout},
-                    pre: jsonrpc ? preJsonRpc(socket.capture, checkAuth, version, logger) : prePlain(socket.capture, checkAuth, dir || workDir, method, version, logger),
+                    pre: [
+                        ...jsonrpc
+                            ? preJsonRpc(socket.capture, checkAuth, version, logger)
+                            : prePlain(socket.capture, checkAuth, dir || workDir, method, version, logger),
+                        ...commonPre
+                    ],
                     validate: {
                         failAction(request, h, error) {
                             logger.error && logger.error(errors['bus.requestValidation']({

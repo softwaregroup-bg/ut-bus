@@ -116,6 +116,79 @@ http transport over json-rpc 2.0 protocol.
     * `key` - Client private key
     * `ca` - Trusted root certificate for mutual TSL with self signed
     (server) certificates.
+* `pre` (object | string |  array) [optional] - Enables pre hooks
+  * `method` - the backend method to be called
+  * `authOnly` [optional] - whether the hook to be called for
+  authenticated requests only (default `false`)
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "pre": {
+                            "method": "subject.object.predicate",
+                            "authOnly:": true
+                        }
+                    }
+                }
+            }
+        }
+    ```
+
+    Instead of an object the configuration can be just a `string`
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "pre": "subject.object.predicate"
+                    }
+                }
+            }
+        }
+    ```
+
+    ```{"pre": "subject.object.predicate"}``` is equivalent to
+    ```{"pre": { "method": "subject.object.predicate" }}```
+
+    Or it can be an array of objects or strings.
+    For example if you want 2 methods to be called consequently:
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "onRequest": ["subject.object.predicate1", "subject.object.predicate2"]
+                    }
+                }
+            }
+        }
+    ```
+
+    or a method to be called first and another 2 methods
+    to be called in parallel after that:
+
+    ```json
+        {
+            "utBus": {
+                "serviceBus": {
+                    "jsonrpc": {
+                        "onRequest": [
+                            "subject.object.predicate",
+                            ["subject.object.predicate1", "subject.object.predicate2"]
+                        ]
+                    }
+                }
+            }
+        }
+    ```
+
+    For more information about how to set a mixed array of actions
+    аnd what logic stands behind that, please check
+    this [link](https://hapi.dev/api/?v=21.1.0#-routeoptionspre)
 
 Configuration examples:
 
