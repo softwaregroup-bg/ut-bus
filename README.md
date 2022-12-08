@@ -127,7 +127,7 @@ http transport over json-rpc 2.0 protocol.
                 "serviceBus": {
                     "jsonrpc": {
                         "pre": {
-                            "method": "user.request.check",
+                            "method": "subject.object.predicate",
                             "authOnly:": true
                         }
                     }
@@ -143,31 +143,33 @@ http transport over json-rpc 2.0 protocol.
             "utBus": {
                 "serviceBus": {
                     "jsonrpc": {
-                        "pre": "user.request.check"
-                        // this is equivalent to
-                        // "pre": { "method": "user.request.check" }
+                        "pre": "subject.object.predicate"
                     }
                 }
             }
         }
     ```
 
-    Or it can be an array of objects or strings. e.g.
+    ```{"pre": "subject.object.predicate"}``` is equivalent to
+    ```{"pre": { "method": "subject.object.predicate" }}```
+
+    Or it can be an array of objects or strings.
+    For example if you want 2 methods to be called consequently:
 
     ```json
-        // 2 methods to be called consequently
         {
             "utBus": {
                 "serviceBus": {
                     "jsonrpc": {
-                        "onRequest": ["user.request.check1", "user.request.check2"]
+                        "onRequest": ["subject.object.predicate1", "subject.object.predicate2"]
                     }
                 }
             }
         }
     ```
 
-    or
+    or a method to be called first and another 2 methods
+    to be called in parallel after that:
 
     ```json
         {
@@ -175,8 +177,8 @@ http transport over json-rpc 2.0 protocol.
                 "serviceBus": {
                     "jsonrpc": {
                         "onRequest": [
-                            "user.request.check",
-                            ["user.request.check1", "user.request.check2"]
+                            "subject.object.predicate",
+                            ["subject.object.predicate1", "subject.object.predicate2"]
                         ]
                     }
                 }
