@@ -1,3 +1,12 @@
+## [7.62.14](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.13...v7.62.14) (2022-12-08)
+
+
+### Bug Fixes
+
+* socket.pre hooks configuration ([#140](https://github.com/softwaregroup-bg/ut-bus/issues/140)) ([bc37cd5](https://github.com/softwaregroup-bg/ut-bus/commit/bc37cd55f41f6c1e8b147930d9e7a62b1723516a))
+
+
+
 ## [7.62.13](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.12...v7.62.13) (2022-11-21)
 
 
