@@ -1,3 +1,12 @@
+## [7.62.15](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.14...v7.62.15) (2022-12-12)
+
+
+### Bug Fixes
+
+* rename meta -> preMeta ([#141](https://github.com/softwaregroup-bg/ut-bus/issues/141)) ([c9025d4](https://github.com/softwaregroup-bg/ut-bus/commit/c9025d448f37f2efffbede5e9b3a9661483002c5))
+
+
+
 ## [7.62.14](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.13...v7.62.14) (2022-12-08)
 
 
