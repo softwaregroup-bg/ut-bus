@@ -1,3 +1,12 @@
+## [7.62.16](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.15...v7.62.16) (2022-12-12)
+
+
+### Bug Fixes
+
+* pre handler can not return undefined ([4b8e72f](https://github.com/softwaregroup-bg/ut-bus/commit/4b8e72f00d0baf94873b293191b5231c7c5f0f40))
+
+
+
 ## [7.62.15](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.14...v7.62.15) (2022-12-12)
 
 
