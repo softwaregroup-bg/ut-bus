@@ -889,8 +889,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
             const {method, authOnly = false} = typeof config === 'string'
                 ? {method: config}
                 : config;
-            return ({pre: {utBus: {params: [params, meta]}}}) => {
-                return (!authOnly || meta.auth) && brokerRequest({params, meta}, {method});
+            return ({pre: {utBus: {params: [params, preMeta]}}}) => {
+                return (!authOnly || preMeta.auth) && brokerRequest({params, preMeta}, {method});
             };
         };
 
