@@ -890,7 +890,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 ? {method: config}
                 : config;
             return ({pre: {utBus: {params: [params, preMeta]}}}) => {
-                return (!authOnly || preMeta.auth) && brokerRequest({params, preMeta}, {method});
+                if (authOnly && !preMeta.auth) return null;
+                return brokerRequest({params, preMeta}, {method});
             };
         };
 

@@ -128,7 +128,7 @@ http transport over json-rpc 2.0 protocol.
                     "jsonrpc": {
                         "pre": {
                             "method": "subject.object.predicate",
-                            "authOnly:": true
+                            "authOnly": true
                         }
                     }
                 }
@@ -161,7 +161,7 @@ http transport over json-rpc 2.0 protocol.
             "utBus": {
                 "serviceBus": {
                     "jsonrpc": {
-                        "onRequest": ["subject.object.predicate1", "subject.object.predicate2"]
+                        "pre": ["subject.object.predicate1", "subject.object.predicate2"]
                     }
                 }
             }
@@ -176,7 +176,7 @@ http transport over json-rpc 2.0 protocol.
             "utBus": {
                 "serviceBus": {
                     "jsonrpc": {
-                        "onRequest": [
+                        "pre": [
                             "subject.object.predicate",
                             ["subject.object.predicate1", "subject.object.predicate2"]
                         ]
