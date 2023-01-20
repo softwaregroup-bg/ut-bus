@@ -819,7 +819,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     payload: socket.capture ? true : joi.object({
                         jsonrpc: joi.string().valid('2.0').required().description('Version of the JSON-RPC protocol'),
                         timeout: joi.number().optional().allow(null).example(null).description('Timeout in milliseconds'),
-                        id: joi.alternatives().try(joi.number(), joi.string().min(1).max(36)).example('1').description('Unique identifier of the request'),
+                        id: joi.alternatives().try(joi.number(), joi.string().min(1).max(64)).example('1').description('Unique identifier of the request'),
                         method: joi.string().required().description('Name of the method').min(5).max(255), // 'cache'.length === 5
                         params: joi.array().required().description('Method parameters')
                     })
@@ -877,7 +877,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return root.object({
             jsonrpc: root.string().valid('2.0').required().description('Version of the JSON-RPC protocol'),
             timeout: root.number().optional().allow(null).example(null).description('Timeout in milliseconds'),
-            id: root.alternatives().try(root.number(), root.string().min(1).max(36)).example('1').description('Unique identifier of the request'),
+            id: root.alternatives().try(root.number(), root.string().min(1).max(64)).example('1').description('Unique identifier of the request'),
             method: root.string().valid(method).required().description('Name of the method'),
             params: params.description('Method parameters')
         });
