@@ -1,3 +1,12 @@
+## [7.62.19](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.18...v7.62.19) (2023-02-16)
+
+
+### Bug Fixes
+
+* **BDB-5714:** token cache ttl ([#142](https://github.com/softwaregroup-bg/ut-bus/issues/142)) ([3c2ff32](https://github.com/softwaregroup-bg/ut-bus/commit/3c2ff32d2a4a9f652a8cecf70d5d954610d00232))
+
+
+
 ## [7.62.18](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.17...v7.62.18) (2023-02-01)
 
 
