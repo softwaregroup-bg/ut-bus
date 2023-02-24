@@ -47,7 +47,8 @@ tap.test('bus', async function test(t) {
         socket: 'test',
         id: 'bus4',
         canSkipSocket: true,
-        logFactory: null
+        logFactory: null,
+        jsonrpc: true
     });
 
     await t.test('Init broker', () => broker.init());
@@ -122,6 +123,42 @@ tap.test('bus', async function test(t) {
         'test.request': () => 'bus4'
     }, 'ports');
     t.matchSnapshot({result: await bus4Api.importMethod('test.entity.action')('bus2')}, 'm3');
+    await t.test('Gateway', async t => {
+        bus4Api.registerLocal({}, 'ut-port', {name: 'ut-port', version: '6.28.0'});
+        bus4Api.registerLocal({
+            'login.identity.check'() {
+                return {
+                    auth: false,
+                    params: joi.object(),
+                    result: joi.object()
+                };
+            }
+        }, 'login.validation', {version: '1.0.0'});
+        bus4Api.register({
+            'login.request'(msg, $meta) {
+                switch ($meta.method) {
+                    case 'login.identity.check': return [];
+                    default: return [{}];
+                }
+            }
+        }, 'ports');
+        await t.test('bus4 started', () => bus4.start());
+        await t.test('bus4 ready', () => bus4Api.ready());
+        const {host, port} = bus4.rpc.info();
+        try {
+            await bus4Api.importMethod('test.request')({}, {
+                gateway: {
+                    host,
+                    port,
+                    username: 'unknown',
+                    password: 'unknown'
+                }
+            });
+        } catch (e) {
+            t.equal(e.type, 'bus.jsonRpcEmpty', 'JSON RPC response without response and error');
+        }
+    });
+
     await t.test('Destroy bus1', () => bus1.destroy());
     await t.test('Destroy bus2', () => bus2.destroy());
     await t.test('Destroy bus3', () => bus3.destroy());

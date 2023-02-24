@@ -29,7 +29,8 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                 json: true
             });
             if (error) throw Object.assign(new Error(), await mleClient.decryptVerify(error, sign));
-            cache.auth = await mleClient.decryptVerify(result, sign);
+            else if (result) cache.auth = await mleClient.decryptVerify(result, sign);
+            else throw errors['bus.jsonRpcEmpty']();
         } else {
             const {body: {result, error}} = await httpPost({
                 url: `${url}/rpc/login/identity/check`,
@@ -42,7 +43,8 @@ module.exports = ({serverInfo, mleClient, errors, get}) => {
                 json: true
             });
             if (error) throw Object.assign(new Error(), error);
-            cache.auth = result;
+            else if (result) cache.auth = result;
+            else throw errors['bus.jsonRpcEmpty']();
         }
         cache.tokenInfo = tokenInfo(cache.auth);
     }
