@@ -131,7 +131,7 @@ module.exports = ({
                 'ut-bus/asset',
                 assetTokenCache,
                 'bus.jwtMissingAssetCookie',
-                request => request.state['ut-bus-asset']
+                request => request.state['ut-bus-asset-viewAs'] || request.state['ut-bus-asset']
             ));
             server.auth.scheme('basic', basicAuthChecker(
                 tokenCache,
