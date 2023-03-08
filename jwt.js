@@ -168,6 +168,7 @@ module.exports = ({
             server.auth.strategy('openId', 'jwt');
             server.auth.strategy('preauthorized', 'jwt');
             server.auth.strategy('asset', 'asset-cookie');
+            server.auth.strategy('preauthorized.asset', 'asset-cookie');
             server.auth.strategy('api', 'asset-cookie', {redirect: true});
             server.auth.strategy('swagger.apiKey', 'jwt');
             server.auth.strategy('openapi.http.bearer', 'jwt');
