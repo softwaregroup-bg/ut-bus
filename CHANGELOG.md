@@ -1,3 +1,12 @@
+# [7.63.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.23...v7.63.0) (2023-03-08)
+
+
+### Features
+
+* ut-bus-asset-viewAs ([#144](https://github.com/softwaregroup-bg/ut-bus/issues/144)) ([624d668](https://github.com/softwaregroup-bg/ut-bus/commit/624d668b565151a4fa32c58f7e0be7e3640f7d47))
+
+
+
 ## [7.62.23](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.22...v7.62.23) (2023-02-28)
 
 
