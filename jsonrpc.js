@@ -259,7 +259,9 @@ const prePlain = (capture, checkAuth, workDir, method, version, logger) => [capt
     failAction: failPre,
     method: async(request, h) => {
         try {
-            if (request.auth.strategy) await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            if (request.auth.strategy && request.auth.strategy !== 'preauthorized.asset') {
+                await checkAuth(method, request.auth.credentials && request.auth.credentials.permissionMap);
+            }
             const $meta = {
                 mtid: 'request',
                 method,
@@ -925,7 +927,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 const isGetHead = ['get', 'head'].includes(httpMethod && httpMethod.toLowerCase());
                 return {
                     method,
-                    route: path ? `${rest.auth === 'asset' ? '/aa/' : '/rpc/'}${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
+                    route: path ? `${rest.auth?.endsWith?.('asset') ? '/aa/' : '/rpc/'}${method.split('.')[0]}/${path.replace(/^\/+/, '')}`.replace(/\/+$/, '') : undefined,
                     httpMethod,
                     version,
                     cors: socket.cors || false,

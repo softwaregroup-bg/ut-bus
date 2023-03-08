@@ -163,7 +163,7 @@ module.exports = ({
         } catch (error) {
             throw errorInvalid({params: {message: error.message}, cause: error});
         }
-        if (session && !decoded.ses) await session(decoded);
+        if (session && audience === 'ut-bus' && !decoded.ses) await session(decoded);
         return {
             ...decoded,
             config
