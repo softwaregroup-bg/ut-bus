@@ -50,7 +50,7 @@ module.exports = ({
     async function actions(method) {
         if (actionsCache) return actionsCache[method];
         const {protocol, hostname, port} = await loginService(discoverService);
-        actionsCache = await get(
+        const actionsMap = await get(
             `${protocol}://${hostname}:${port}/rpc/login/action`,
             errorActionHttp,
             errorActionEmpty,
@@ -59,13 +59,30 @@ module.exports = ({
             tls,
             request
         );
+        const fuzzyMap = Object.entries(actionsMap).reduce((all, [action, bit]) => {
+            for (let i = 1, segments = action.split('.'), n = segments.length; i < n; i += 1) {
+                const key = segments.slice(0, i).concat('%').join('.');
+                if (!all[key]) all[key] = [];
+                all[key].push(bit);
+            }
+            return all;
+        }, {});
+
+        actionsCache = {...fuzzyMap, ...actionsMap};
+
         return actionsCache[method];
     }
 
-    async function checkAuthSingle(method, map) {
-        const bit = await actions(method) - 1;
+    function checkPermission(bit, map) {
+        bit -= 1;
         const index = Math.floor(bit / 8);
         return (Number.isInteger(index) && (index < map.length) && (map[index] & (1 << (bit % 8))));
+    };
+
+    async function checkAuthSingle(method, map) {
+        const bit = await actions(method);
+        if (Array.isArray(bit)) return bit.map(b => checkPermission(b, map)).filter(Boolean).length;
+        return checkPermission(bit, map);
     }
 
     async function checkAuth(method, map, dontThrow) {
