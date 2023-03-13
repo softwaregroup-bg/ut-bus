@@ -80,9 +80,16 @@ module.exports = ({
     };
 
     async function checkAuthSingle(method, map) {
+        if (Array.isArray(method)) {
+            for (const m of method) {
+                if (!await checkAuthSingle(m, map)) return false;
+            }
+            return true;
+        }
         const bit = await actions(method);
-        if (Array.isArray(bit)) return bit.map(b => checkPermission(b, map)).filter(Boolean).length;
-        return checkPermission(bit, map);
+        return Array.isArray(bit)
+            ? bit.some(b => checkPermission(b, map))
+            : checkPermission(bit, map);
     }
 
     async function checkAuth(method, map, dontThrow) {
