@@ -1,3 +1,12 @@
+# [7.64.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.63.0...v7.64.0) (2023-03-13)
+
+
+### Features
+
+* fuzzy permission check ([#145](https://github.com/softwaregroup-bg/ut-bus/issues/145)) ([6ddae31](https://github.com/softwaregroup-bg/ut-bus/commit/6ddae3146ab3fb914c69c844818281debbe83748))
+
+
+
 # [7.63.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.62.23...v7.63.0) (2023-03-08)
 
 
