@@ -1,3 +1,12 @@
+## [7.64.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.1...v7.64.2) (2023-04-18)
+
+
+### Bug Fixes
+
+* possibility to clear HTTP cookie via response.unstate ([#147](https://github.com/softwaregroup-bg/ut-bus/issues/147)) ([0f57385](https://github.com/softwaregroup-bg/ut-bus/commit/0f573850a8931f54faf2ffe8e7877b7bcb01a436))
+
+
+
 ## [7.64.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.0...v7.64.1) (2023-03-13)
 
 
