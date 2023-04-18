@@ -722,7 +722,10 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
     function applyMeta(response, {
         httpResponse
     } = {}) {
-        httpResponse && ['code', 'redirect', 'created', 'etag', 'location', 'ttl', 'temporary', 'permanent', 'type', 'state', 'header'].forEach(method => {
+        httpResponse && [
+            'code', 'redirect', 'created', 'etag', 'location', 'ttl',
+            'temporary', 'permanent', 'type', 'state', 'unstate', 'header'
+        ].forEach(method => {
             if (Object.prototype.hasOwnProperty.call(httpResponse, method)) {
                 const params = httpResponse[method];
                 if (Array.isArray(params?.[0])) { // setting multiple headers and cookies require nested arrays
