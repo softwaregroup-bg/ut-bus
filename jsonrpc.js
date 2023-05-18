@@ -237,8 +237,13 @@ const uploads = async(workDir, request, logger) => {
                 }
             })
             .on('field', (field, value) => {
-                if (field === '$') Object.assign(params, bourne.parse(value));
-                else if (typeof params[field] === 'undefined') set(params, field, value);
+                try {
+                    if (field === '$') Object.assign(params, bourne.parse(value));
+                    else if (typeof params[field] === 'undefined') set(params, field, value);
+                } catch (error) {
+                    error.isJoi = true;
+                    dispenser.emit('error', error);
+                }
             })
             .once('error', reject)
             .once('close', () => Promise.all(files).then(() => {
@@ -328,7 +333,7 @@ const domainResolver = (domain, errors, tls) => {
             const err = errors['bus.mdnsResolver']({params: {namespace}});
             err.cause = e;
             throw err;
-        };
+        }
     };
 };
 
@@ -613,7 +618,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                                     sendRequest(callback);
                                     return;
                             }
-                        };
+                        }
                         reject(error);
                     } else if (body && body.error !== undefined) {
                         const error =
