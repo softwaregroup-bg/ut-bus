@@ -1,3 +1,12 @@
+## [7.64.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.2...v7.64.3) (2023-05-18)
+
+
+### Bug Fixes
+
+* handle parsing errors for uploads ([0eb1eaa](https://github.com/softwaregroup-bg/ut-bus/commit/0eb1eaa301a2bcf63f469f9aeb2a242f55d2294a))
+
+
+
 ## [7.64.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.1...v7.64.2) (2023-04-18)
 
 
