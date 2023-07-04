@@ -1,3 +1,12 @@
+## [7.64.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.4...v7.64.5) (2023-07-04)
+
+
+### Bug Fixes
+
+* Error fields visibility cofiguration ([#148](https://github.com/softwaregroup-bg/ut-bus/issues/148)) ([ec85575](https://github.com/softwaregroup-bg/ut-bus/commit/ec85575809ee4ef5960ed87daf2c80cd4d54c0b0))
+
+
+
 ## [7.64.4](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.3...v7.64.4) (2023-05-22)
 
 
