@@ -707,3 +707,39 @@ The message level encryption flow consists of 4 main parts:
     ```js
     await verify(await decrypt(msg, clientPrivateMlek), serverPublicMlek)
     ```
+
+### Custom error fields
+
+By default (when not in debug mode),
+ut-bus will preserve the following error fields:
+
+* `type`
+* `message`
+* `print`
+* `validation`
+* `params`
+
+in order to add/remove fields, the following configuration can be provided.
+e.g:
+
+```js
+{
+    utBus: {
+        serviceBus: {
+            errorFields: {
+                cause: 'error',
+                customField: true,
+                params: false
+            }
+        }
+    }
+}
+```
+
+The `errorFields` object specifies how
+certain fields to be treated. Where:
+
+* `true` means that the key should be preserved
+* `false` means that the key should be omitted
+* `'error'` means that the key should be preserved
+and treated as an error object (i.e. formatted recursively)
