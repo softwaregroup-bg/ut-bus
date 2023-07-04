@@ -743,6 +743,34 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         return response;
     }
 
+    const errorFields = Object.entries({
+        type: true,
+        message: true,
+        print: true,
+        validation: true,
+        params: true,
+        ...socket.errorFields // e.g. {cause: 'error'}
+    });
+
+    function formatError(error) {
+        return errorFields
+            .reduce((e, [key, value]) => {
+                if (value && typeof error[key] !== 'undefined') {
+                    switch (value) {
+                        case true:
+                            e[key] = error[key];
+                            break;
+                        case 'error':
+                            e[key] = formatError(error[key]);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                return e;
+            }, {});
+    }
+
     async function registerRoute(namespace, name, fn, object, {version}) {
         const path = '/rpc/' + namespace + '/' + name.split('.').join('/');
         const handler = async function({pre}, h) {
@@ -781,13 +809,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return applyMeta(h.response((!jsonrpc && error.response) ? error.response : {
                     jsonrpc: '2.0',
                     id,
-                    error: socket.debug ? error : {
-                        type: error?.type,
-                        message: error?.message,
-                        print: error?.print,
-                        validation: error?.validation,
-                        params: error?.params
-                    }
+                    error: socket.debug ? error : formatError(error)
                 }).header('x-envoy-decorator-operation', method).code(error?.statusCode || 500), {httpResponse: error.httpResponse});
             }
         };

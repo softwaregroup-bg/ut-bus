@@ -323,3 +323,44 @@ tap.test('Bus routes', async test => {
 
     await test.test('Server stop', () => server.stop());
 });
+
+tap.test('Bus errors', async test => {
+    const server = await tests(test, false, {
+        workDir: __dirname,
+        joi,
+        jsonrpc: {
+            errorFields: {
+                cause: 'error',
+                x: true,
+                y: false
+            }
+        }
+    });
+    const {uri} = server.rpc.info();
+
+    test.test('Custom error fields', async t => {
+        await request({
+            url: new URL('/rpc/module/entity/public', uri),
+            json: true,
+            method: 'POST',
+            body: {
+                jsonrpc: '2.0',
+                method: 'module.entity.public',
+                id: 1,
+                params: {
+                    error: {
+                        cause: {
+                            message: 'error cause preserved'
+                        },
+                        x: 1,
+                        y: 2
+                    }
+                }
+            }
+        })
+            .then(({body}) => t.matchSnapshot(body, 'Return error with custom fields configured'))
+            .catch(t.threw);
+    });
+
+    await test.test('Server stop', () => server.stop());
+});

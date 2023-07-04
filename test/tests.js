@@ -18,7 +18,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
     const {privateKey: key, publicKey} = await generateKeyPair('ES384', { crv: 'P-384', extractable: true});
     const jwk = {...await exportJWK(publicKey), kid: uuid.v4(), use: 'sig'};
     const api = (server, errors) => ({
-        'module.request': async({text, entityId, echo, ...rest} = {}, $meta) => {
+        'module.request': async({text, entityId, echo, error, ...rest} = {}, $meta) => {
             const {method} = $meta;
             switch (method) {
                 case 'module.entity.actionTimeout':
@@ -35,6 +35,7 @@ module.exports = async(test, clientConfig, serverConfig) => {
                 case 'module.entity.empty':
                     return;
                 case 'module.entity.public':
+                    if (error) throw errors['module.invalidParameter'](error);
                     return ['public'];
                 case 'module.entity.echo':
                     return [echo];
