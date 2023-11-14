@@ -1,3 +1,12 @@
+## [7.64.6](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.5...v7.64.6) (2023-11-14)
+
+
+### Bug Fixes
+
+* handle stream error ([73d914c](https://github.com/softwaregroup-bg/ut-bus/commit/73d914ce27811d4cc6f95c58b6c49f4781bad431))
+
+
+
 ## [7.64.5](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.4...v7.64.5) (2023-07-04)
 
 
