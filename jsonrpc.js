@@ -790,7 +790,14 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             }
                             case 'http:':
                             case 'https:': return h.response(request(result.href).pipe(new Stream.PassThrough()));
-                            case 'stream': return h.response(result0.pipe(new Stream.PassThrough()));
+                            case 'stream': {
+                                const pass = new Stream.PassThrough();
+                                result0.on('error', error => {
+                                    pass.end();
+                                    logger && logger.error && logger.error(error);
+                                });
+                                return h.response(result0.pipe(pass));
+                            }
                             case 'jsonrpc': return h.response({jsonrpc: '2.0', id, result, ...shift && test && {$meta: {validation: $meta.validation, calls: $meta.calls}}});
                             default: return h.response(result);
                         }
