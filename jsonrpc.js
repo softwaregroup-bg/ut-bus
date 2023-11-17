@@ -441,7 +441,8 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                     options: socket,
                     mle,
                     logger,
-                    errors
+                    errors,
+                    formatError
                 }
             }
         ]);

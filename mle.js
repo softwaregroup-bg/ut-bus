@@ -3,7 +3,7 @@ const pkg = require('./package.json');
 
 module.exports = {
     plugin: {
-        register(server, {options: {debug}, mle, logger, errors}) {
+        register(server, {options: {debug}, mle, logger, errors, formatError}) {
             server.ext('onPostAuth', async(request, h) => {
                 if (request.auth.strategy && request.mime === 'application/json') {
                     const [where, what] = request.payload?.jsonrpc ? [request.payload, 'params'] : [request, 'payload'];
@@ -48,13 +48,7 @@ module.exports = {
                                         if (writable) all[key] = value;
                                         return all;
                                     }, {})
-                                : {
-                                    type: where[error].type,
-                                    message: where[error].message,
-                                    print: where[error].print,
-                                    params: where[error].params,
-                                    validation: where[error].validation
-                                };
+                                : formatError(where[error]);
                             where[error] = await encrypt(err);
                             return h.continue;
                         }
