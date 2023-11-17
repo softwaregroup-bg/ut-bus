@@ -1,3 +1,12 @@
+## [7.64.7](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.6...v7.64.7) (2023-11-17)
+
+
+### Bug Fixes
+
+* format error in mle plugin in accordance to formatError configuration ([#149](https://github.com/softwaregroup-bg/ut-bus/issues/149)) ([811c6e9](https://github.com/softwaregroup-bg/ut-bus/commit/811c6e9c7aa00dd4d53fdc6fe0707347db1e790e))
+
+
+
 ## [7.64.6](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.5...v7.64.6) (2023-11-14)
 
 
