@@ -1,3 +1,12 @@
+## [7.64.8](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.7...v7.64.8) (2024-02-28)
+
+
+### Bug Fixes
+
+* support non jsonrpc requests properly ([#150](https://github.com/softwaregroup-bg/ut-bus/issues/150)) ([91ea356](https://github.com/softwaregroup-bg/ut-bus/commit/91ea35664e7c45d19f2d234ade2487ea339688b9))
+
+
+
 ## [7.64.7](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.6...v7.64.7) (2023-11-17)
 
 
