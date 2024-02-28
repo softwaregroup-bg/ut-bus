@@ -34,7 +34,7 @@ module.exports = {
                     const encrypt = message => request.route.settings.app?.mle === false
                         ? message
                         : mle.signEncrypt(message, request.auth.credentials?.mlek);
-                    const [where, result, error] = request.payload.jsonrpc ? [response.source, 'result', 'error'] : [response, 'source'];
+                    const [where, result, error] = request.payload?.jsonrpc ? [response.source, 'result', 'error'] : [response, 'source'];
                     try {
                         if (Object.prototype.hasOwnProperty.call(where, result)) {
                             where[result] = await encrypt(where[result]);
