@@ -1,3 +1,12 @@
+# [7.65.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.8...v7.65.0) (2024-06-27)
+
+
+### Features
+
+* **CBI-999:** browser/server ut version ([ea0d7b5](https://github.com/softwaregroup-bg/ut-bus/commit/ea0d7b502f1b6357ed6b3709e696341ca8a15345))
+
+
+
 ## [7.64.8](https://github.com/softwaregroup-bg/ut-bus/compare/v7.64.7...v7.64.8) (2024-02-28)
 
 
