@@ -457,6 +457,9 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         }
 
         result.ext('onPreResponse', ({response, route}, h) => {
+            if (response?.headers) {
+                response.headers['x-ut-version'] = version;
+            }
             response && response.isBoom &&
             route && route.settings && route.settings.app && route.settings.app.logError &&
             logger && logger.error && logger.error(response);
