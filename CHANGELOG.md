@@ -1,3 +1,7 @@
+## [7.65.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.65.1...v7.65.2) (2024-07-25)
+
+
+
 ## [7.65.1](https://github.com/softwaregroup-bg/ut-bus/compare/v7.65.0...v7.65.1) (2024-07-24)
 
 
