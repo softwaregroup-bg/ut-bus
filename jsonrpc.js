@@ -21,6 +21,7 @@ const jwt = require('./jwt');
 const jose = require('./jose');
 const {after, spare} = require('ut-function.timing');
 const cert = require('./cert');
+const LRUCache = require('lru-cache');
 
 function initConsul({discover, ...config}) {
     const consul = require('consul')(Object.assign({
@@ -504,7 +505,45 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
         applyMeta
     );
 
+    const temp = (cache => {
+        let baseUrl;
+        const url = key => {
+            if (!baseUrl) {
+                const protocol = socket.protocol || server.info.protocol;
+                const host = socket.host || server.info.host;
+                const port = socket.port || server.info.port;
+                baseUrl = `${protocol}://${host}:${port}/temp/`;
+            }
+            return baseUrl + key;
+        };
+        return {
+            get: key => cache.get(key),
+            set(value, options) {
+                const key = uuid.v4();
+                cache.set(key, value, options);
+                return url(key);
+            }
+        };
+    })(new LRUCache({max: 1000, ttl: 1000 * 60 * 1}));
+
     utApi.route([{
+        method: 'GET',
+        path: '/temp/{key}',
+        options: {
+            auth: false,
+            handler({params: {key}}) {
+                const value = temp.get(key);
+                switch (typeof value) {
+                    case 'undefined':
+                        throw Boom.notFound();
+                    case 'function':
+                        return value(...arguments);
+                    default:
+                        return value;
+                }
+            }
+        }
+    }, {
         method: 'GET',
         path: '/healthz',
         options: {
@@ -585,6 +624,13 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 ...tlsClient,
                 followRedirect: false,
                 json: true,
+                jsonReplacer(key, value) {
+                    if (value instanceof Stream) {
+                        const url = temp.set((_, h) => h.response(value.pipe(new Stream.PassThrough())));
+                        return { $remoteStream: url };
+                    }
+                    return value;
+                },
                 method: 'POST',
                 url: `${requestParams.protocol}://${requestParams.hostname}:${requestParams.port}${requestParams.path}`,
                 body: {
