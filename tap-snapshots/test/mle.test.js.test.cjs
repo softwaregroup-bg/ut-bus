@@ -153,6 +153,7 @@ Object {
     "defineError",
     "fetchErrors",
     "getError",
+    "translateError",
   ],
 }
 `
@@ -252,6 +253,7 @@ Object {
     "defineError",
     "fetchErrors",
     "getError",
+    "translateError",
   ],
 }
 `
@@ -351,6 +353,7 @@ Object {
     "defineError",
     "fetchErrors",
     "getError",
+    "translateError",
   ],
 }
 `
