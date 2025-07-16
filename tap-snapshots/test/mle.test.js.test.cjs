@@ -54,6 +54,7 @@ Object {
     "defineError",
     "fetchErrors",
     "getError",
+    "translateError",
   ],
 }
 `
