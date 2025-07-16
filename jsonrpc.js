@@ -117,6 +117,19 @@ async function failPreRpc(request, h, error) {
         .takeover();
 }
 
+function parseAcceptLanguageHeader(header, except) {
+    const parts = header.split(',');
+    const set = new Set();
+    const languages = [];
+    for (let order = 0; order < parts.length; order++) {
+        const language = parts[order].substr(0, 2);
+        if (language === except || set.has(language)) continue;
+        set.add(language);
+        languages.push({language, order});
+    }
+    return languages;
+}
+
 const setBody = {
     assign: 'body',
     failAction: 'error',
@@ -817,6 +830,22 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
                 return applyMeta(response, $meta);
             } catch (error) {
+                if (socket.translateErrors && error.type) {
+                    const $meta = params[params.length - 1];
+                    const acceptLanguage = $meta?.httpRequest?.headers['accept-language'] || $meta?.language?.iso2Code;
+                    const languageList = acceptLanguage && parseAcceptLanguageHeader(acceptLanguage, 'en');
+
+                    if (languageList?.length) {
+                        const [{translation}] = await brokerRequest(
+                            {itemCode: error.type, languageList},
+                            {...$meta, method: 'core.translation.errorFetch'}
+                        ).catch(err => logger.error(Error(`Could not translate error: ${err.message}`)));
+                        if (translation) {
+                            error = errors.translateError(error, translation.itemNameTranslation);
+                            logger.error(error);
+                        }
+                    }
+                }
                 return applyMeta(h.response((!jsonrpc && error.response) ? error.response : {
                     jsonrpc: '2.0',
                     id,
