@@ -841,7 +841,7 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                             {...$meta, method: 'core.translation.errorFetch'}
                         ).catch(err => logger.error(Error(`Could not translate error: ${err.message}`)));
                         if (translation) {
-                            error = errors.translateError(error, translation.itemNameTranslation);
+                            errors.translateError(error, translation.itemNameTranslation);
                             logger.error(error);
                         }
                     }
