@@ -102,6 +102,16 @@ module.exports = ({logFactory, logLevel, errorPrint}) => {
                 result[type] = errors[type] = handler;
             });
             return result;
+        },
+        translate(error, translation) {
+            error.originalMessage = error.message;
+            if (error.params) {
+                error.message = interpolate(translation, error.params);
+            } else {
+                error.message = translation;
+            }
+            error.stack = `<<<${error.message}>>>\n${error.stack}`;
+            return error;
         }
     };
     return api;

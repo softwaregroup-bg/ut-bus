@@ -18,7 +18,8 @@ class Broker {
         this.errors = Object.assign({}, this.errorsApi.register(errorsMap), {
             defineError: this.errorsApi.define,
             getError: this.errorsApi.get,
-            fetchErrors: this.errorsApi.fetch
+            fetchErrors: this.errorsApi.fetch,
+            translateError: this.errorsApi.translate
         });
         this.rpc = {
             start: () => Promise.reject(this.errors['bus.notInitialized']()),

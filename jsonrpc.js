@@ -817,6 +817,20 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 if (result && typeof result.httpResponse === 'function') applyMeta(response, {httpResponse: result.httpResponse()});
                 return applyMeta(response, $meta);
             } catch (error) {
+                if (Array.isArray(socket.translateErrors) && socket.translateErrors.length && error.type) {
+                    const $meta = params[params.length - 1];
+                    const language = ($meta?.httpRequest?.headers['accept-language']?.substr(0, 2) || $meta?.language?.iso2Code)?.toLowerCase();
+                    if (socket.translateErrors.includes(language)) {
+                        const [{translation}] = await brokerRequest(
+                            {itemCode: error.type, language},
+                            {...$meta, method: 'core.translation.errorFetch'}
+                        ).catch(err => { logger.error(Error(`Could not translate error: ${err.message}`)); });
+                        if (translation) {
+                            errors.translateError(error, translation.itemNameTranslation);
+                            logger.error(error);
+                        }
+                    }
+                }
                 return applyMeta(h.response((!jsonrpc && error.response) ? error.response : {
                     jsonrpc: '2.0',
                     id,
