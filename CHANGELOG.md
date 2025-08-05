@@ -1,3 +1,20 @@
+# [7.66.0](https://github.com/softwaregroup-bg/ut-bus/compare/v7.65.2...v7.66.0) (2025-08-05)
+
+
+### Bug Fixes
+
+* lint ([755c819](https://github.com/softwaregroup-bg/ut-bus/commit/755c819c5ee4c8df41db4696f5f20c1b6f818f61))
+* support only single language ([680f976](https://github.com/softwaregroup-bg/ut-bus/commit/680f976019d51a8d3580c55f1074e49b14e7ff23))
+* tests ([bb48732](https://github.com/softwaregroup-bg/ut-bus/commit/bb48732b7dad7046380bd663358dec94100d54a3))
+* tests ([b195841](https://github.com/softwaregroup-bg/ut-bus/commit/b1958415f7dc146458bfb4afa026d6fdf34854aa))
+
+
+### Features
+
+* **GTIH-1203:** translate error messages based on accept-language header ([8da8fea](https://github.com/softwaregroup-bg/ut-bus/commit/8da8fea44e779ba41d87bcd3972af758f0528efd))
+
+
+
 ## [7.65.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.65.1...v7.65.2) (2024-07-25)
 
 
