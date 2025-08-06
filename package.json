@@ -1,6 +1,6 @@
 {
   "name": "ut-bus",
-  "version": "7.66.1",
+  "version": "7.66.2",
   "description": "UT bus module",
   "dependencies": {
     "@hapi/boom": "9.1.4",
