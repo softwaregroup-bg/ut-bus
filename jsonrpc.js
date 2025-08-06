@@ -818,12 +818,15 @@ module.exports = async function create({id, socket, channel, logLevel, logger, m
                 return applyMeta(response, $meta);
             } catch (error) {
                 logger && logger.error && logger.error(error);
+                logger && logger.error && logger.error(Error(JSON.stringify(socket.translateErrors)));
                 logger && logger.error && logger.error(Error('Before entering jsonrpc error translation'));
                 if (Array.isArray(socket.translateErrors) && socket.translateErrors.length && error.type) {
                     const $meta = params[params.length - 1];
                     const language = ($meta?.httpRequest?.headers['accept-language']?.substr(0, 2) || $meta?.language?.iso2Code)?.toLowerCase();
+                    logger && logger.error && logger.error(Error(`checking for language ${language}`));
                     if (socket.translateErrors.includes(language)) {
                         logger && logger.error && logger.error(Error('Entered jsonrpc error translation'));
+                        logger && logger.error && logger.error(Error(`entered: translating for language ${language}`));
                         const [{translation}] = await brokerRequest(
                             {itemCode: error.type, language},
                             {...$meta, method: 'core.translation.errorFetch'}
