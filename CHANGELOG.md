@@ -1,3 +1,12 @@
+## [7.66.3](https://github.com/softwaregroup-bg/ut-bus/compare/v7.66.2...v7.66.3) (2025-08-06)
+
+
+### Bug Fixes
+
+* logger error for translations DII-1 ([7e2da13](https://github.com/softwaregroup-bg/ut-bus/commit/7e2da132a4dea70bfa35ba3cf4a982594d4c2d06))
+
+
+
 ## [7.66.2](https://github.com/softwaregroup-bg/ut-bus/compare/v7.66.1...v7.66.2) (2025-08-06)
 
 
