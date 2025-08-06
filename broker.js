@@ -45,7 +45,7 @@ class Broker {
             rpc = require('./utRpc');
         }
         this.rpc = await rpc({
-            socket: this.hemera || this.moleculer || this.jsonrpc || this.rabbot || this.socket,
+            socket: this.hemera || this.jsonrpc || this.rabbot || this.moleculer || this.socket,
             id: this.id,
             channel: this.channel,
             logLevel: this.logLevel,
